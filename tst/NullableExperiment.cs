@@ -2,7 +2,7 @@ using System;
 using Xunit;
 
 namespace Tlabs.Core.Tests {
-  public class UnitTest1 {
+  public class NullableExperiment {
 
     class NullCondClass {
       public int inum= 123;
@@ -16,7 +16,7 @@ namespace Tlabs.Core.Tests {
     }
 
     [Fact]
-    public void NullableExperiment() {
+    public void BasicExperiment() {
       object o= 123;
       var ni= o as int?;
       Assert.NotNull(ni);
@@ -26,7 +26,7 @@ namespace Tlabs.Core.Tests {
       Assert.Equal(0, i);
     }
 
-    [Fact] void NullableConvertTest() {
+    [Fact] void ConvertTest() {
       double dbl= 2.7182;
       var decType= typeof(decimal?);
 

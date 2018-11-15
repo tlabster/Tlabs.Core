@@ -66,12 +66,16 @@ namespace Tlabs.Misc {
       val= resolvedKey= null;
       var valDict= prop;
       var keyToks= propKeyPath.Split('.');
-
+      int l= 0;
       foreach (string ktok in keyToks) {
         resolvedKey= ktok;
         if (!valDict.TryGetValue(ktok, out val)) return false;
+        ++l;
         valDict= val as IDictionary<string, object>;
-        if (null == valDict) break;   //no more dictionaries to resolve
+        if (null == valDict) {   //no more dictionaries to resolve
+          if (l == keyToks.Length) break; //resolved
+          return false;
+        }
       }
       return true;
     }
@@ -132,7 +136,7 @@ namespace Tlabs.Misc {
         if (null == (dict= o as IDictionary<string, object>)) return false;
         valDict= dict;
       }
-      return true;
+      throw new IndexOutOfRangeException(propKeyPath);  //must not happen
     }
 
   }

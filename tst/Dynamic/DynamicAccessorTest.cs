@@ -51,7 +51,7 @@ namespace Tlabs.Dynamic.Tests {
       Assert.Equal("xxx", propAcc["propStr"].Get(obj));
 
       propAcc["propBool"].Set(obj, false);
-      Assert.Equal(false, propAcc["propBool"].Get(obj));
+      Assert.False((bool) propAcc["propBool"].Get(obj));
 
       propAcc["propDec"].Set(obj, 9.99m);
       Assert.Equal(9.99m, propAcc["propDec"].Get(obj));
@@ -80,7 +80,7 @@ namespace Tlabs.Dynamic.Tests {
       Assert.Equal("xxx", propAcc["propStr"].Get(obj));
 
       props["propBool"]= false;
-      Assert.Equal(false, propAcc["propBool"].Get(obj));
+      Assert.False((bool) propAcc["propBool"].Get(obj));
 
       props["propDec"]= 9.99m;
       Assert.Equal(9.99m, propAcc["propDec"].Get(obj));

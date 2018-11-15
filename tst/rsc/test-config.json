@@ -1,0 +1,114 @@
+﻿{
+  "logging": {
+    //console log
+    "IncludeScopes": false,
+    "PathFormat": "%EXEPATH%/log/log-{Hour}.txt",
+    "FileSizeLimitBytes": 102400,
+    "RetainedFileCountLimit": 15,
+    "LogLevel": {
+      "Default": "Debug",
+      "System": "Warning",
+      "Microsoft": "Warning",
+      "BriefTempl": "Information"
+    }
+  },
+  "webHosting": { //see: https://docs.microsoft.com/en-us/aspnet/core/fundamentals/hosting
+    "applicationName": "test-app",
+    "urls": "http://+:8086",
+    "webroot": "www",
+    "configurator": {
+      "assemblyPath": {
+        "ord": 10,
+        "type": "Tlabs.Config.AssemblyPathConfigurator, Tlabs.Core",
+        "config": {
+          "path": ".;binx"
+        }
+      },
+      "serverKestrel": {
+        "ord": 100,
+        "type": "Tlabs.Config.KestrelConfigurator, Tlabs.SrvBase",
+        "config": {
+          "urls": "http://+:8086"
+        }
+      }
+    }
+  },
+
+  "applicationMiddleware": {
+    "staticPages": {
+      "ord": 10,
+      "type": "Tlabs.Config.StaticContentConfigurator, Tlabs.SrvBase",
+      "config": {
+        "defaultPage": "index.html"
+      }
+    },
+    "debugPages": {
+      "ord": 20,
+      "type": "Tlabs.Config.DebugPagesConfigurator, Tlabs.SrvBase"
+    },
+    "MVC": {
+      "ord": 100,
+      "type": "Tlabs.Config.MvcMiddlewareConfigurator, Tlabs.SrvBase"
+    },
+    "DataStoreValidation": {
+      "ord": 9999,
+      "type": "Tlabs.Data.DataStoreValidationConfigurator, Tlabs.Data"
+    }
+  },
+
+  "applicationServices": {
+    "ASPNET.MVC": {
+      "type": "Tlabs.Config.MvcSvcConfigurator, Tlabs.SrvBase",
+      "config": {
+        "formatting": "Indented", //"None"
+        "authentication": true
+      }
+    },
+    "IdentityOptions": {
+      "type": "Tlabs.Config.IdentityConfigurator, Tlabs.SrvBase",
+      "config": {
+        "idleLogoffMinutes": 30,
+        "RequireDigit": true,
+        "RequireLenght": 8,
+        "RequireNonAlphanumeric": false,
+        "RequireUppercase": false,
+        "RequireLowercase": false,
+        "RequireUniqueEmail": false
+      }
+    },
+    "Json.Serializer": {
+      "type": "Tlabs.Data.Serialize.Json.SerializationConfigurator, Tlabs.Data"
+    },
+    "DataEntities": {
+      "type": "Tlabs.Data.RepositoriesConfigurator, Tlabs.Data"
+    }
+  },
+
+  "appMessage": {},
+
+  "rolePermissions": {
+    "authorizedPaths": {
+      "BASIC": "(^api/.*|^usr/)",
+      "ADMIN": "(^api/users.*|^api/roles.*|^api/admin/.*|^usr/.*)",
+      "PROTECTED": "(^api/.*|^usr/)",
+      "TEAMLEAD": "(^api/users.*|^api/roles.*|^api/admin/.*|^usr/.*)"
+    },
+    "deniedPaths": {
+      "BASIC": "^api/admin/.*",
+      "ADMIN": "",
+      "PROTECTED": "^api/admin/.*",
+      "TEAMLEAD": ""
+    }
+  },
+
+  "rootProperty": "test",
+
+  "tstSection" : {
+    "tstXyzConfig": {
+      "type": "Tlabs.Config.Tests.ConfigTest+TestConfigurator, Tlabs.Core.Tests",
+      "config": {
+        "test": "x"
+      }
+    }
+  }
+}
