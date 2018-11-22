@@ -35,7 +35,7 @@ namespace Tlabs.Misc {
       }
     }
 
-    ///<summary>Gets an already cached value for the given <paramref name="key"/> or adds or the value returned from <paramref name="getValue"/> if no cached value exists.</summary>
+    ///<summary>Gets an already cached value for the given <paramref name="key"/> or if no cached value exists adds the value returned from <paramref name="getValue"/>.</summary>
     ///<returns>The value for the <paramref name="key"/> in the cache or the value returned from <paramref name="getValue"/>.</returns>
     public T this[K key, Func<T> getValue] {
       get {
