@@ -14,8 +14,9 @@ namespace Tlabs.Config.Tests {
       }
     }
 
-    private readonly ITestOutputHelper tstout;
     private int appliedConfigCount= 0;
+
+    private readonly ITestOutputHelper tstout;
 
     public ConfigTest(ITestOutputHelper output) {
       this.tstout= output;

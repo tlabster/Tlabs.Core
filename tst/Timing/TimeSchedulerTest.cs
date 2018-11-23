@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Tlabs.Timing.Test {
   [CollectionDefinition("TstTimeScope")]
@@ -23,12 +24,15 @@ namespace Tlabs.Timing.Test {
     int testHandlerCnt2;
     Action dueTimeTestHandler3;
     int testHandlerCnt3;
+    readonly ITestOutputHelper tstout;
 
-    public TimeSchedulerTest(TstTimeEnvironment appTimeEnv) {
+
+    public TimeSchedulerTest(TstTimeEnvironment appTimeEnv, ITestOutputHelper tstout) {
       this.dueTimeTestHandler1= DueTimeTestHandler1;
       this.dueTimeTestHandler2= DueTimeTestHandler2;
       this.dueTimeTestHandler3= DueTimeTestHandler3;
       this.appTimeEnv= appTimeEnv;
+      this.tstout= tstout;
     }
 
     [Fact]
@@ -53,10 +57,10 @@ namespace Tlabs.Timing.Test {
       tmScheduler.Add(schTime1, dueTimeTestHandler1);
       Assert.Equal(expectedTime, tmScheduler.NextDueTime);
       schTime1.ScheduleTime= schTime1.ScheduleTime.AddMilliseconds(delay);//reschedule
-      Sync.Wait(1, delay+10);
+      Sync.Wait(1, delay+10, tstout);
       Assert.Equal(1, testHandlerCnt1);
       Assert.Equal(schTime1.ScheduleTime, tmScheduler.NextDueTime);
-      Sync.Wait(1, delay+10);
+      Sync.Wait(1, delay+10, tstout);
       Assert.Equal(2, testHandlerCnt1);
       Assert.Equal(DateTime.MaxValue, tmScheduler.NextDueTime);
 
@@ -136,17 +140,17 @@ namespace Tlabs.Timing.Test {
       Assert.Equal(t, (DateTime)tmScheduler.NextDueTime);   //, "first schedule time nust be schTime1");
       schTime1.ScheduleTime= schTime1.ScheduleTime.AddMilliseconds(200);//reschedule
       Assert.Equal(t, (DateTime)tmScheduler.NextDueTime);   //, "first schedule time nust be schTime1 even when rescheduled");
-      Sync.Wait(1, 120);
+      Sync.Wait(1, 120, tstout);
       Assert.Equal(1, testHandlerCnt1);
       Assert.Equal(0, testHandlerCnt2);
       Assert.Equal(0, testHandlerCnt3);
       Assert.Equal(schTime2.DueDate(startTime), (DateTime)tmScheduler.NextDueTime);   //, "next schedule time nust be schTime2/3");
-      Sync.Wait(2, 120);
+      Sync.Wait(2, 120, tstout);
       Assert.Equal(1, testHandlerCnt1);
       Assert.Equal(1, testHandlerCnt2);
       Assert.Equal(1, testHandlerCnt3);
       Assert.Equal(schTime1.DueDate(startTime), (DateTime)tmScheduler.NextDueTime);   //, "next schedule time nust be schTime1 again");
-      Sync.Wait(1, 120);
+      Sync.Wait(1, 120, tstout);
       Assert.Equal(2, testHandlerCnt1);
       Assert.Equal(1, testHandlerCnt2);
       Assert.Equal(1, testHandlerCnt3);
@@ -194,7 +198,7 @@ namespace Tlabs.Timing.Test {
         }
       }
 
-      public static void Wait(int cnt, int waitTime) {
+      public static void Wait(int cnt, int waitTime, ITestOutputHelper tstout) {
         if (null != sync) throw new InvalidOperationException("already waiting...");
         var sy= sync= new Sync();
         var start= App.TimeInfo.Now;
@@ -203,7 +207,7 @@ namespace Tlabs.Timing.Test {
           Assert.True(Monitor.Wait(sy, waitTime + 2000));
         }
         sync= null;
-        Console.WriteLine("Sync.Wait: {0:G}ms - estimated {1:D}ms", (App.TimeInfo.Now-start).TotalMilliseconds, waitTime);
+        tstout.WriteLine("Sync.Wait: {0:G}ms - estimated {1:D}ms", (App.TimeInfo.Now-start).TotalMilliseconds, waitTime);
       }
     }
 

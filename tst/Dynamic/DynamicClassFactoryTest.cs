@@ -4,12 +4,39 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Tlabs.Dynamic.Tests {
-  public partial class DynamicClassFactoryTests {
+  public class DynamicClassFactoryTests {
+
+    ITestOutputHelper tstout;
+    public DynamicClassFactoryTests(ITestOutputHelper tstout) {
+      this.tstout= tstout;
+    }
 
     [Fact]
     public void BasicTest() {
+      
+      Assert.ThrowsAny<ArgumentException>(() => DynamicClassFactory.CreateType(null));
+
+      var emptyProps= new List<DynamicProperty>();
+      var emptyType= DynamicClassFactory.CreateType(emptyProps);
+      Assert.IsAssignableFrom<Type>(emptyType);
+      Assert.False(emptyType.IsGenericTypeDefinition);
+      Assert.True(emptyType.Name.EndsWith("`0")); //no explicit name, zero properties
+      Assert.Same(emptyType, DynamicClassFactory.CreateType(emptyProps));
+      tstout.WriteLine(emptyType.Name);
+
+      var myTypeName= "my--test-TYPE";
+      var emptyType2= DynamicClassFactory.CreateType(emptyProps, typeof(object), myTypeName);
+      Assert.NotSame(emptyType, emptyType2);
+      Assert.Contains(myTypeName, emptyType2.Name); //has explicit name
+      tstout.WriteLine(emptyType2.Name);
+
+    }
+
+    [Fact]
+    public void DynamicTypeTest() {
       var props= new List<DynamicProperty> {
         new DynamicProperty("Text", typeof(string)),
         new DynamicProperty("Num", typeof(double)),
@@ -18,6 +45,8 @@ namespace Tlabs.Dynamic.Tests {
       };
 
       Type createdType= DynamicClassFactory.CreateType(props);
+      tstout.WriteLine(createdType.Name);
+      tstout.WriteLine(createdType.FullName);
       Assert.NotEmpty(createdType.FullName);
       Assert.Equal(4, createdType.GetProperties().Length);
       Assert.NotNull(createdType.GetProperty("Num"));

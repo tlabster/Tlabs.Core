@@ -18,7 +18,6 @@ namespace Tlabs.Dynamic {
     // EmptyTypes is used to indicate that we are looking for someting without any parameters. 
     private static readonly Type[] EmptyTypes= new Type[0];
 
-    private static readonly ConcurrentDictionary<string, Type> GeneratedTypes= new ConcurrentDictionary<string, Type>();
     private static readonly Misc.BasicCache<string, Type> typeCache= new Misc.BasicCache<string, Type>();
     
     private static readonly ModuleBuilder ModuleBuilder;
@@ -42,7 +41,16 @@ namespace Tlabs.Dynamic {
     private static readonly MethodInfo EqualityComparerEquals= EqualityComparer.GetMethod("Equals", new[] { EqualityComparerGenericArgument, EqualityComparerGenericArgument });
     private static readonly MethodInfo EqualityComparerGetHashCode= EqualityComparer.GetMethod("GetHashCode", new[] { EqualityComparerGenericArgument });
 
-    private static int _index= -1;
+    private static readonly Type DefaultBaseType= typeof(object);
+    private static readonly string typeNamePrefix= "<>__" + nameof(DynamicClassFactory) + "__";
+    private static int sequence= 0;
+
+    class PropertyDef {
+      public string Name;
+      public Type Type;
+      public IList<DynamicAttribute> Attributes;
+      public FieldBuilder Field;
+    }
 
     /// <summary>
     /// Initializes the <see cref="DynamicClassFactory"/> class.
@@ -86,76 +94,79 @@ namespace Tlabs.Dynamic {
     public static Type CreateType(IList<DynamicProperty> properties, Type parentType= null, string typeName= null) {
       if (null == properties) throw new ArgumentNullException(nameof(properties));
 
-      string typeKey= typeName ?? GenerateKey(properties);
+      string typeKey= typeName ?? generateTypeKey(properties);
+      Func<Type> createNew= () => createNewType(properties, parentType, typeName);
 
-      return typeCache[typeKey, () => createNewType(properties, parentType, typeName)];
+      return typeCache[typeKey, createNew];
     }
 
     private static Type createNewType(IList<DynamicProperty> properties, Type parentType, string typeName) {
       Type type;
-      int index= Interlocked.Increment(ref _index);
+      string seq= $":{Interlocked.Increment(ref sequence)}";
+      var genericType= string.IsNullOrEmpty(typeName);
 
-      string name= names.Length != 0 ? $"<>f__AnonymousType{index}`{names.Length}" : $"<>f__AnonymousType{index}";
+      string name=   typeNamePrefix
+                   + (genericType ? $"{seq}`{properties.Count}" : (typeName + seq.ToString()));
 
-      if (parentType == null)
-        parentType= typeof(object);
-
-      TypeBuilder tb= ModuleBuilder.DefineType(name, TypeAttributes.AnsiClass | TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoLayout | TypeAttributes.BeforeFieldInit, parentType);
+      TypeBuilder tb= ModuleBuilder.DefineType(name,
+                                                 TypeAttributes.AnsiClass
+                                               | TypeAttributes.Public
+                                               | TypeAttributes.Class
+                                               | TypeAttributes.AutoLayout
+                                               | TypeAttributes.BeforeFieldInit,
+                                               parentType ?? DefaultBaseType);
       tb.SetCustomAttribute(CompilerGeneratedAttrib);
 
-      GenericTypeParameterBuilder[] generics;
 
-      if (names.Length != 0) {
-        string[] genericNames= names.Select(genericName => $"<{genericName}>j__TPar").ToArray();
-        generics= tb.DefineGenericParameters(genericNames);
-        foreach (GenericTypeParameterBuilder b in generics) {
-          b.SetCustomAttribute(CompilerGeneratedAttrib);
+      var propDefs= properties.Select(prop => new PropertyDef { Name= prop.Name, Type= prop.Type, Attributes= prop.Attributes }).ToList();
+
+      if (genericType) {
+        var genericParams=   propDefs.Count > 0
+                           ? tb.DefineGenericParameters(propDefs.Select(prop => $"TPar__<{prop.Name}>").ToArray())
+                           : new GenericTypeParameterBuilder[0];
+        for (int l= 0; l < genericParams.Length; ++l) {
+          var tp= genericParams[l];
+          tp.SetCustomAttribute(CompilerGeneratedAttrib);
+          propDefs[l].Type= tp; //use generic type parameter type
         }
       }
-      else {
-        generics= new GenericTypeParameterBuilder[0];
-      }
 
-      var fields= new FieldBuilder[names.Length];
+      // There are two loops here because we want to have all the getter methods before all the other methods
+      foreach (var prop in propDefs) {
+        var propField= prop.Field= tb.DefineField($"<{prop.Name}>i__Field", prop.Type, FieldAttributes.Private | FieldAttributes.InitOnly);
+        propField.SetCustomAttribute(DebuggerBrowsableAttrib);
 
-      // There are two for cycles because we want to have all the getter methods before all the other methods
-      for (int i= 0; i < names.Length; i++) {
-        // field
-        fields[i]= tb.DefineField($"<{names[i]}>i__Field", generics[i], FieldAttributes.Private | FieldAttributes.InitOnly);
-        fields[i].SetCustomAttribute(DebuggerBrowsableAttrib);
-
-        PropertyBuilder property= tb.DefineProperty(names[i], PropertyAttributes.None, CallingConventions.HasThis, generics[i], EmptyTypes);
+        PropertyBuilder property= tb.DefineProperty(prop.Name, PropertyAttributes.None, CallingConventions.HasThis, prop.Type, EmptyTypes);
 
         // getter
-        MethodBuilder getter= tb.DefineMethod($"get_{names[i]}", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName, CallingConventions.HasThis, generics[i], null);
+        MethodBuilder getter= tb.DefineMethod($"get_{prop.Name}", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName, CallingConventions.HasThis, prop.Type, null);
         getter.SetCustomAttribute(CompilerGeneratedAttrib);
         ILGenerator ilgeneratorGetter= getter.GetILGenerator();
         ilgeneratorGetter.Emit(OpCodes.Ldarg_0);
-        ilgeneratorGetter.Emit(OpCodes.Ldfld, fields[i]);
+        ilgeneratorGetter.Emit(OpCodes.Ldfld, propField);
         ilgeneratorGetter.Emit(OpCodes.Ret);
         property.SetGetMethod(getter);
 
         // setter
-        MethodBuilder setter= tb.DefineMethod($"set_{names[i]}", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName, CallingConventions.HasThis, null, new[] { generics[i] });
+        MethodBuilder setter= tb.DefineMethod($"set_{prop.Name}", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName, CallingConventions.HasThis, null, new[] { prop.Type });
         setter.SetCustomAttribute(CompilerGeneratedAttrib);
 
         // workaround for https://github.com/dotnet/corefx/issues/7792
-        setter.DefineParameter(1, ParameterAttributes.In, generics[i].Name);
+        setter.DefineParameter(1, ParameterAttributes.In, "value");
 
         ILGenerator ilgeneratorSetter= setter.GetILGenerator();
         ilgeneratorSetter.Emit(OpCodes.Ldarg_0);
         ilgeneratorSetter.Emit(OpCodes.Ldarg_1);
-        ilgeneratorSetter.Emit(OpCodes.Stfld, fields[i]);
+        ilgeneratorSetter.Emit(OpCodes.Stfld, propField);
         ilgeneratorSetter.Emit(OpCodes.Ret);
         property.SetSetMethod(setter);
 
         /* Apply custom property attributes:
           */
-        var propAttribs= properties[i].Attributes;
-        if (null != propAttribs) foreach (var attr in propAttribs) {
+        if (null != prop.Attributes) foreach (var attr in prop.Attributes) {
           property.SetCustomAttribute(
             new CustomAttributeBuilder(attr.Type.GetConstructor(attr.Parameters.Select(o => o?.GetType()).ToArray()),
-                                        attr.Parameters)
+                                      attr.Parameters)
           );
         }
       }
@@ -188,24 +199,23 @@ namespace Tlabs.Dynamic {
       ILGenerator ilgeneratorGetHashCode= getHashCode.GetILGenerator();
       ilgeneratorGetHashCode.DeclareLocal(typeof(int));
 
-      if (names.Length == 0) {
+      if (properties.Count == 0) {
         ilgeneratorGetHashCode.Emit(OpCodes.Ldc_I4_0);
       }
       else {
         // As done by Roslyn
         // Note that initHash can vary, because string.GetHashCode() isn't "stable" for different compilation of the code
         int initHash= 0;
-
-        for (int i= 0; i < names.Length; i++) {
-          initHash= unchecked(initHash * (-1521134295) + fields[i].Name.GetHashCode());
-        }
+        foreach (var prop in properties)
+          initHash= unchecked(initHash * (-1521134295) + prop.Name.GetHashCode());
 
         // Note that the CSC seems to generate a different seed for every anonymous class
         ilgeneratorGetHashCode.Emit(OpCodes.Ldc_I4, initHash);
       }
 
-      for (int i= 0; i < names.Length; i++) {
-        Type equalityComparerT= EqualityComparer.MakeGenericType(generics[i]);
+      var first= true;
+      foreach (var prop in propDefs) {
+        Type equalityComparerT= EqualityComparer.MakeGenericType(prop.Type);
 
         // Equals()
         MethodInfo equalityComparerTDefault= TypeBuilder.GetMethod(equalityComparerT, EqualityComparerDefault);
@@ -216,9 +226,9 @@ namespace Tlabs.Dynamic {
         ilgeneratorEquals.Emit(OpCodes.Brfalse, equalsLabel);
         ilgeneratorEquals.Emit(OpCodes.Call, equalityComparerTDefault);
         ilgeneratorEquals.Emit(OpCodes.Ldarg_0);
-        ilgeneratorEquals.Emit(OpCodes.Ldfld, fields[i]);
+        ilgeneratorEquals.Emit(OpCodes.Ldfld, prop.Field);
         ilgeneratorEquals.Emit(OpCodes.Ldloc_0);
-        ilgeneratorEquals.Emit(OpCodes.Ldfld, fields[i]);
+        ilgeneratorEquals.Emit(OpCodes.Ldfld, prop.Field);
         ilgeneratorEquals.Emit(OpCodes.Callvirt, equalityComparerTEquals);
 
         // GetHashCode();
@@ -229,25 +239,26 @@ namespace Tlabs.Dynamic {
         ilgeneratorGetHashCode.Emit(OpCodes.Mul);
         ilgeneratorGetHashCode.Emit(OpCodes.Call, equalityComparerTDefault);
         ilgeneratorGetHashCode.Emit(OpCodes.Ldarg_0);
-        ilgeneratorGetHashCode.Emit(OpCodes.Ldfld, fields[i]);
+        ilgeneratorGetHashCode.Emit(OpCodes.Ldfld, prop.Field);
         ilgeneratorGetHashCode.Emit(OpCodes.Callvirt, equalityComparerTGetHashCode);
         ilgeneratorGetHashCode.Emit(OpCodes.Add);
 
         // ToString();
         ilgeneratorToString.Emit(OpCodes.Ldloc_0);
-        ilgeneratorToString.Emit(OpCodes.Ldstr, i == 0 ? $"{{ {names[i]}= " : $", {names[i]}= ");
+        ilgeneratorToString.Emit(OpCodes.Ldstr, first ? $"{{ {prop.Name}= " : $", {prop.Name}= ");
         ilgeneratorToString.Emit(OpCodes.Callvirt, StringBuilderAppendString);
         ilgeneratorToString.Emit(OpCodes.Pop);
         ilgeneratorToString.Emit(OpCodes.Ldloc_0);
         ilgeneratorToString.Emit(OpCodes.Ldarg_0);
-        ilgeneratorToString.Emit(OpCodes.Ldfld, fields[i]);
-        ilgeneratorToString.Emit(OpCodes.Box, generics[i]);
+        ilgeneratorToString.Emit(OpCodes.Ldfld, prop.Field);
+        ilgeneratorToString.Emit(OpCodes.Box, prop.Type);
         ilgeneratorToString.Emit(OpCodes.Callvirt, StringBuilderAppendObject);
         ilgeneratorToString.Emit(OpCodes.Pop);
+        first= false;
       }
 
       // Equals()
-      if (names.Length == 0) {
+      if (properties.Count == 0) {
         ilgeneratorEquals.Emit(OpCodes.Ldnull);
         ilgeneratorEquals.Emit(OpCodes.Ceq);
         ilgeneratorEquals.Emit(OpCodes.Ldc_I4_0);
@@ -268,7 +279,7 @@ namespace Tlabs.Dynamic {
 
       // ToString()
       ilgeneratorToString.Emit(OpCodes.Ldloc_0);
-      ilgeneratorToString.Emit(OpCodes.Ldstr, names.Length == 0 ? "{ }" : " }");
+      ilgeneratorToString.Emit(OpCodes.Ldstr, properties.Count == 0 ? "{ }" : " }");
       ilgeneratorToString.Emit(OpCodes.Callvirt, StringBuilderAppendString);
       ilgeneratorToString.Emit(OpCodes.Pop);
       ilgeneratorToString.Emit(OpCodes.Ldloc_0);
@@ -276,33 +287,16 @@ namespace Tlabs.Dynamic {
       ilgeneratorToString.Emit(OpCodes.Ret);
 
       type= tb.CreateTypeInfo().AsType();
-
-      type= GeneratedTypes.GetOrAdd(typeKey, type);
-
-      if (types.Length != 0) {
-        type= type.MakeGenericType(types);
-      }
+      if (type.IsGenericTypeDefinition)
+        type= type.MakeGenericType(propDefs.Select(p => p.Type).ToArray());
 
       return type;
     }
 
-    /// <summary>
-    /// Generates the key.
-    /// Anonymous classes are generics based. The generic classes are distinguished by number of parameters and name of parameters. The specific types of the parameters are the generic arguments.
-    /// </summary>
-    /// <param name="dynamicProperties">The dynamic propertys.</param>
-    /// <returns></returns>
-    private static string GenerateKey(IEnumerable<DynamicProperty> dynamicProperties) {
-      // We recreate this by creating a fullName composed of all the property names and types, separated by a "|".
-      // And append and extra field depending on createParameterCtor.
-      return string.Format("{0}_{1}", string.Join("|", dynamicProperties.Select(p => Escape(p.Name) + "~" + p.Type.FullName).ToArray()), string.Empty);
-    }
+    // We recreate this by combining all property names and types, separated by a "|".
+    private static string generateTypeKey(IEnumerable<DynamicProperty> props) => string.Join("|", props.Select(p => encodeName(p.Name) + "~" + p.Type.FullName).ToArray());
 
-    private static string Escape(string str) {
-      // We escape the \ with \\, so that we can safely escape the "|" (that we use as a separator) with "\|"
-      str= str.Replace(@"\", @"\\");
-      str= str.Replace(@"|", @"\|");
-      return str;
-    }
+    // We escape the \ with \\, so that we can safely escape the "|" (that we use as a separator) with "\|"
+    private static string encodeName(string name) => name.Replace(@"\", @"\\").Replace(@"|", @"\|");
   }
 }
