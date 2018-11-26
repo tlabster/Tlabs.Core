@@ -94,7 +94,11 @@ namespace Tlabs.Dynamic {
     public static Type CreateType(IList<DynamicProperty> properties, Type parentType= null, string typeName= null) {
       if (null == properties) throw new ArgumentNullException(nameof(properties));
 
-      string typeKey= typeName ?? generateTypeKey(properties);
+      parentType= parentType ?? DefaultBaseType;
+      string typeKey=   string.IsNullOrEmpty(typeName)
+                      ? generateTypeKey(properties, parentType)
+                      : typeName + "~" + parentType.Name;
+      
       Func<Type> createNew= () => createNewType(properties, parentType, typeName);
 
       return typeCache[typeKey, createNew];
@@ -114,7 +118,7 @@ namespace Tlabs.Dynamic {
                                                | TypeAttributes.Class
                                                | TypeAttributes.AutoLayout
                                                | TypeAttributes.BeforeFieldInit,
-                                               parentType ?? DefaultBaseType);
+                                               parentType);
       tb.SetCustomAttribute(CompilerGeneratedAttrib);
 
 
@@ -298,7 +302,8 @@ namespace Tlabs.Dynamic {
     }
 
     // We recreate this by combining all property names and types, separated by a "|".
-    private static string generateTypeKey(IEnumerable<DynamicProperty> props) => string.Join("|", props.Select(p => encodeName(p.Name) + "~" + p.Type.Name).ToArray());
+    private static string generateTypeKey(IEnumerable<DynamicProperty> props, Type parentType)
+      => $"{string.Join("|", props.Select(p => encodeName(p.Name) + ":" + p.Type.Name).ToArray())}~{parentType.Name}";
 
     // We escape the \ with \\, so that we can safely escape the "|" (that we use as a separator) with "\|"
     private static string encodeName(string name) => name.Replace(@"\", @"\\").Replace(@"|", @"\|");

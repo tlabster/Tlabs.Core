@@ -9,6 +9,10 @@ using Xunit.Abstractions;
 namespace Tlabs.Dynamic.Tests {
   public class DynamicClassFactoryTests {
 
+    public class TestBaseClass : ICloneable {
+      public object Clone() => this.MemberwiseClone();
+    }
+
     ITestOutputHelper tstout;
     public DynamicClassFactoryTests(ITestOutputHelper tstout) {
       this.tstout= tstout;
@@ -44,19 +48,42 @@ namespace Tlabs.Dynamic.Tests {
         new DynamicProperty("Bools", typeof(bool[]))
       };
 
-      Type createdType= DynamicClassFactory.CreateType(props, typeof(object), "DYN-propType");
-      tstout.WriteLine(createdType.Name);
-      tstout.WriteLine(createdType.FullName);
-      Assert.NotEmpty(createdType.FullName);
-      Assert.Equal(4, createdType.GetProperties().Length);
-      Assert.NotNull(createdType.GetProperty("Num"));
-      Assert.Null(createdType.GetProperty("x y z"));
+      Type genericType= DynamicClassFactory.CreateType(props);
+      testDynamicType(genericType);
 
-      dynamic obj= Activator.CreateInstance(createdType);
+      Type fixedNameType= DynamicClassFactory.CreateType(props, typeof(object), "DYN-propType");
+      Assert.NotSame(genericType, fixedNameType);
+      testDynamicType(fixedNameType);
+
+      Type derivedGenericType= DynamicClassFactory.CreateType(props, typeof(TestBaseClass));
+      dynamic obj= Activator.CreateInstance(derivedGenericType);
+      Assert.IsAssignableFrom<TestBaseClass>(obj);
+      Assert.NotSame(obj, obj.Clone());
+      Assert.NotSame(genericType, derivedGenericType);
+      testDynamicType(derivedGenericType);
+
+
+      Type derivedFnType= DynamicClassFactory.CreateType(props, typeof(TestBaseClass), "DYN-propType");
+      obj= Activator.CreateInstance(derivedGenericType);
+      Assert.IsAssignableFrom<TestBaseClass>(obj);
+      Assert.NotSame(obj, obj.Clone());
+      Assert.NotSame(fixedNameType, derivedFnType);
+      testDynamicType(derivedFnType);
+    }
+
+    private void testDynamicType(Type dynType) {
+      tstout.WriteLine(dynType.Name);
+      tstout.WriteLine(dynType.FullName);
+      Assert.NotEmpty(dynType.FullName);
+      Assert.Equal(4, dynType.GetProperties().Length);
+      Assert.NotNull(dynType.GetProperty("Num"));
+      Assert.Null(dynType.GetProperty("x y z"));
+
+      dynamic obj= Activator.CreateInstance(dynType);
       var num= 1.23;
       obj.Num= num;
       Assert.Equal(num, obj.Num);
-      
+
       float? noNum= obj.NullNum;
       Assert.False(noNum.HasValue);
 
