@@ -44,7 +44,7 @@ namespace Tlabs.Dynamic.Tests {
         new DynamicProperty("Bools", typeof(bool[]))
       };
 
-      Type createdType= DynamicClassFactory.CreateType(props);
+      Type createdType= DynamicClassFactory.CreateType(props, typeof(object), "DYN-propType");
       tstout.WriteLine(createdType.Name);
       tstout.WriteLine(createdType.FullName);
       Assert.NotEmpty(createdType.FullName);

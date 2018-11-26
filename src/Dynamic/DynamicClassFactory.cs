@@ -199,9 +199,7 @@ namespace Tlabs.Dynamic {
       ILGenerator ilgeneratorGetHashCode= getHashCode.GetILGenerator();
       ilgeneratorGetHashCode.DeclareLocal(typeof(int));
 
-      if (properties.Count == 0) {
-        ilgeneratorGetHashCode.Emit(OpCodes.Ldc_I4_0);
-      }
+      if (properties.Count == 0) ilgeneratorGetHashCode.Emit(OpCodes.Ldc_I4_0);
       else {
         // As done by Roslyn
         // Note that initHash can vary, because string.GetHashCode() isn't "stable" for different compilation of the code
@@ -218,8 +216,12 @@ namespace Tlabs.Dynamic {
         Type equalityComparerT= EqualityComparer.MakeGenericType(prop.Type);
 
         // Equals()
-        MethodInfo equalityComparerTDefault= TypeBuilder.GetMethod(equalityComparerT, EqualityComparerDefault);
-        MethodInfo equalityComparerTEquals= TypeBuilder.GetMethod(equalityComparerT, EqualityComparerEquals);
+         MethodInfo equalityComparerTDefault=   genericType
+                                              ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerDefault)
+                                              : equalityComparerT.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public);                                              
+        MethodInfo equalityComparerTEquals=   genericType
+                                              ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerEquals)
+                                              : equalityComparerT.GetMethod("Equals", new[] { prop.Type, prop.Type });
 
         // Illegal one-byte branch at position: 9. Requested branch was: 143.
         // So replace OpCodes.Brfalse_S to OpCodes.Brfalse
@@ -232,7 +234,9 @@ namespace Tlabs.Dynamic {
         ilgeneratorEquals.Emit(OpCodes.Callvirt, equalityComparerTEquals);
 
         // GetHashCode();
-        MethodInfo equalityComparerTGetHashCode= TypeBuilder.GetMethod(equalityComparerT, EqualityComparerGetHashCode);
+        MethodInfo equalityComparerTGetHashCode=   genericType
+                                                 ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerGetHashCode)
+                                                 : equalityComparerT.GetMethod("GetHashCode", new[] { prop.Type });
         ilgeneratorGetHashCode.Emit(OpCodes.Stloc_0);
         ilgeneratorGetHashCode.Emit(OpCodes.Ldc_I4, -1521134295);
         ilgeneratorGetHashCode.Emit(OpCodes.Ldloc_0);
@@ -288,13 +292,13 @@ namespace Tlabs.Dynamic {
 
       type= tb.CreateTypeInfo().AsType();
       if (type.IsGenericTypeDefinition)
-        type= type.MakeGenericType(propDefs.Select(p => p.Type).ToArray());
+        type= type.MakeGenericType(properties.Select(p => p.Type).ToArray());
 
       return type;
     }
 
     // We recreate this by combining all property names and types, separated by a "|".
-    private static string generateTypeKey(IEnumerable<DynamicProperty> props) => string.Join("|", props.Select(p => encodeName(p.Name) + "~" + p.Type.FullName).ToArray());
+    private static string generateTypeKey(IEnumerable<DynamicProperty> props) => string.Join("|", props.Select(p => encodeName(p.Name) + "~" + p.Type.Name).ToArray());
 
     // We escape the \ with \\, so that we can safely escape the "|" (that we use as a separator) with "\|"
     private static string encodeName(string name) => name.Replace(@"\", @"\\").Replace(@"|", @"\|");
