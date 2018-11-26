@@ -140,32 +140,31 @@ namespace Tlabs.Dynamic {
       // ToString()
       MethodBuilder toString= tb.DefineMethod("ToString", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, CallingConventions.HasThis, typeof(string), EmptyTypes);
       toString.SetCustomAttribute(DebuggerHiddenAttrib);
-      ILGenerator ilgeneratorToString= toString.GetILGenerator();
-      ilgeneratorToString.DeclareLocal(typeof(StringBuilder));
-      ilgeneratorToString.Emit(OpCodes.Newobj, StringBuilderCtor);
-      ilgeneratorToString.Emit(OpCodes.Stloc_0);
+      var ilToString= toString.GetILGenerator();
+      ilToString.DeclareLocal(typeof(StringBuilder));
+      ilToString.Emit(OpCodes.Newobj, StringBuilderCtor);
+      ilToString.Emit(OpCodes.Stloc_0);
 
-      // Equals
-      MethodBuilder equals= tb.DefineMethod("Equals", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, CallingConventions.HasThis, typeof(bool), new[] { typeof(object) });
+      // Equals()
+      var equals= tb.DefineMethod("Equals", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, CallingConventions.HasThis, typeof(bool), new[] { typeof(object) });
       equals.SetCustomAttribute(DebuggerHiddenAttrib);
       equals.DefineParameter(1, ParameterAttributes.In, "value");
 
-      ILGenerator ilgeneratorEquals= equals.GetILGenerator();
-      ilgeneratorEquals.DeclareLocal(tb);
-      ilgeneratorEquals.Emit(OpCodes.Ldarg_1);
-      ilgeneratorEquals.Emit(OpCodes.Isinst, tb);
-      ilgeneratorEquals.Emit(OpCodes.Stloc_0);
-      ilgeneratorEquals.Emit(OpCodes.Ldloc_0);
-
-      Label equalsLabel= ilgeneratorEquals.DefineLabel();
+      var ilEquals= equals.GetILGenerator();
+      ilEquals.DeclareLocal(tb);
+      ilEquals.Emit(OpCodes.Ldarg_1);
+      ilEquals.Emit(OpCodes.Isinst, tb);
+      ilEquals.Emit(OpCodes.Stloc_0);
+      ilEquals.Emit(OpCodes.Ldloc_0);
+      Label equalsLabel= ilEquals.DefineLabel();
 
       // GetHashCode()
-      MethodBuilder getHashCode= tb.DefineMethod("GetHashCode", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, CallingConventions.HasThis, typeof(int), EmptyTypes);
+      var getHashCode= tb.DefineMethod("GetHashCode", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, CallingConventions.HasThis, typeof(int), EmptyTypes);
       getHashCode.SetCustomAttribute(DebuggerHiddenAttrib);
-      ILGenerator ilgeneratorGetHashCode= getHashCode.GetILGenerator();
-      ilgeneratorGetHashCode.DeclareLocal(typeof(int));
+      ILGenerator ilGetHashCode= getHashCode.GetILGenerator();
+      ilGetHashCode.DeclareLocal(typeof(int));
 
-      if (properties.Count == 0) ilgeneratorGetHashCode.Emit(OpCodes.Ldc_I4_0);
+      if (properties.Count == 0) ilGetHashCode.Emit(OpCodes.Ldc_I4_0);
       else {
         // As done by Roslyn
         // Note that initHash can vary, because string.GetHashCode() isn't "stable" for different compilation of the code
@@ -174,7 +173,7 @@ namespace Tlabs.Dynamic {
           initHash= unchecked(initHash * (-1521134295) + prop.Name.GetHashCode());
 
         // Note that the CSC seems to generate a different seed for every anonymous class
-        ilgeneratorGetHashCode.Emit(OpCodes.Ldc_I4, initHash);
+        ilGetHashCode.Emit(OpCodes.Ldc_I4, initHash);
       }
 
       var first= true;
@@ -182,7 +181,7 @@ namespace Tlabs.Dynamic {
         Type equalityComparerT= EqualityComparer.MakeGenericType(prop.Type);
 
         // Equals()
-         MethodInfo equalityComparerTDefault=   genericType
+        MethodInfo equalityComparerTDefault=   genericType
                                               ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerDefault)
                                               : equalityComparerT.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public);                                              
         MethodInfo equalityComparerTEquals=   genericType
@@ -191,70 +190,70 @@ namespace Tlabs.Dynamic {
 
         // Illegal one-byte branch at position: 9. Requested branch was: 143.
         // So replace OpCodes.Brfalse_S to OpCodes.Brfalse
-        ilgeneratorEquals.Emit(OpCodes.Brfalse, equalsLabel);
-        ilgeneratorEquals.Emit(OpCodes.Call, equalityComparerTDefault);
-        ilgeneratorEquals.Emit(OpCodes.Ldarg_0);
-        ilgeneratorEquals.Emit(OpCodes.Ldfld, prop.Field);
-        ilgeneratorEquals.Emit(OpCodes.Ldloc_0);
-        ilgeneratorEquals.Emit(OpCodes.Ldfld, prop.Field);
-        ilgeneratorEquals.Emit(OpCodes.Callvirt, equalityComparerTEquals);
+        ilEquals.Emit(OpCodes.Brfalse, equalsLabel);
+        ilEquals.Emit(OpCodes.Call, equalityComparerTDefault);
+        ilEquals.Emit(OpCodes.Ldarg_0);
+        ilEquals.Emit(OpCodes.Ldfld, prop.Field);
+        ilEquals.Emit(OpCodes.Ldloc_0);
+        ilEquals.Emit(OpCodes.Ldfld, prop.Field);
+        ilEquals.Emit(OpCodes.Callvirt, equalityComparerTEquals);
 
         // GetHashCode();
         MethodInfo equalityComparerTGetHashCode=   genericType
                                                  ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerGetHashCode)
                                                  : equalityComparerT.GetMethod("GetHashCode", new[] { prop.Type });
-        ilgeneratorGetHashCode.Emit(OpCodes.Stloc_0);
-        ilgeneratorGetHashCode.Emit(OpCodes.Ldc_I4, -1521134295);
-        ilgeneratorGetHashCode.Emit(OpCodes.Ldloc_0);
-        ilgeneratorGetHashCode.Emit(OpCodes.Mul);
-        ilgeneratorGetHashCode.Emit(OpCodes.Call, equalityComparerTDefault);
-        ilgeneratorGetHashCode.Emit(OpCodes.Ldarg_0);
-        ilgeneratorGetHashCode.Emit(OpCodes.Ldfld, prop.Field);
-        ilgeneratorGetHashCode.Emit(OpCodes.Callvirt, equalityComparerTGetHashCode);
-        ilgeneratorGetHashCode.Emit(OpCodes.Add);
+        ilGetHashCode.Emit(OpCodes.Stloc_0);
+        ilGetHashCode.Emit(OpCodes.Ldc_I4, -1521134295);
+        ilGetHashCode.Emit(OpCodes.Ldloc_0);
+        ilGetHashCode.Emit(OpCodes.Mul);
+        ilGetHashCode.Emit(OpCodes.Call, equalityComparerTDefault);
+        ilGetHashCode.Emit(OpCodes.Ldarg_0);
+        ilGetHashCode.Emit(OpCodes.Ldfld, prop.Field);
+        ilGetHashCode.Emit(OpCodes.Callvirt, equalityComparerTGetHashCode);
+        ilGetHashCode.Emit(OpCodes.Add);
 
         // ToString();
-        ilgeneratorToString.Emit(OpCodes.Ldloc_0);
-        ilgeneratorToString.Emit(OpCodes.Ldstr, first ? $"{{ {prop.Name}= " : $", {prop.Name}= ");
-        ilgeneratorToString.Emit(OpCodes.Callvirt, StringBuilderAppendString);
-        ilgeneratorToString.Emit(OpCodes.Pop);
-        ilgeneratorToString.Emit(OpCodes.Ldloc_0);
-        ilgeneratorToString.Emit(OpCodes.Ldarg_0);
-        ilgeneratorToString.Emit(OpCodes.Ldfld, prop.Field);
-        ilgeneratorToString.Emit(OpCodes.Box, prop.Type);
-        ilgeneratorToString.Emit(OpCodes.Callvirt, StringBuilderAppendObject);
-        ilgeneratorToString.Emit(OpCodes.Pop);
+        ilToString.Emit(OpCodes.Ldloc_0);
+        ilToString.Emit(OpCodes.Ldstr, first ? $"{{ {prop.Name}= " : $", {prop.Name}= ");
+        ilToString.Emit(OpCodes.Callvirt, StringBuilderAppendString);
+        ilToString.Emit(OpCodes.Pop);
+        ilToString.Emit(OpCodes.Ldloc_0);
+        ilToString.Emit(OpCodes.Ldarg_0);
+        ilToString.Emit(OpCodes.Ldfld, prop.Field);
+        ilToString.Emit(OpCodes.Box, prop.Type);
+        ilToString.Emit(OpCodes.Callvirt, StringBuilderAppendObject);
+        ilToString.Emit(OpCodes.Pop);
         first= false;
       }
 
       // Equals()
       if (properties.Count == 0) {
-        ilgeneratorEquals.Emit(OpCodes.Ldnull);
-        ilgeneratorEquals.Emit(OpCodes.Ceq);
-        ilgeneratorEquals.Emit(OpCodes.Ldc_I4_0);
-        ilgeneratorEquals.Emit(OpCodes.Ceq);
+        ilEquals.Emit(OpCodes.Ldnull);
+        ilEquals.Emit(OpCodes.Ceq);
+        ilEquals.Emit(OpCodes.Ldc_I4_0);
+        ilEquals.Emit(OpCodes.Ceq);
       }
       else {
-        ilgeneratorEquals.Emit(OpCodes.Ret);
-        ilgeneratorEquals.MarkLabel(equalsLabel);
-        ilgeneratorEquals.Emit(OpCodes.Ldc_I4_0);
+        ilEquals.Emit(OpCodes.Ret);
+        ilEquals.MarkLabel(equalsLabel);
+        ilEquals.Emit(OpCodes.Ldc_I4_0);
       }
 
-      ilgeneratorEquals.Emit(OpCodes.Ret);
+      ilEquals.Emit(OpCodes.Ret);
 
       // GetHashCode()
-      ilgeneratorGetHashCode.Emit(OpCodes.Stloc_0);
-      ilgeneratorGetHashCode.Emit(OpCodes.Ldloc_0);
-      ilgeneratorGetHashCode.Emit(OpCodes.Ret);
+      ilGetHashCode.Emit(OpCodes.Stloc_0);
+      ilGetHashCode.Emit(OpCodes.Ldloc_0);
+      ilGetHashCode.Emit(OpCodes.Ret);
 
       // ToString()
-      ilgeneratorToString.Emit(OpCodes.Ldloc_0);
-      ilgeneratorToString.Emit(OpCodes.Ldstr, properties.Count == 0 ? "{ }" : " }");
-      ilgeneratorToString.Emit(OpCodes.Callvirt, StringBuilderAppendString);
-      ilgeneratorToString.Emit(OpCodes.Pop);
-      ilgeneratorToString.Emit(OpCodes.Ldloc_0);
-      ilgeneratorToString.Emit(OpCodes.Callvirt, ToStringMethod);
-      ilgeneratorToString.Emit(OpCodes.Ret);
+      ilToString.Emit(OpCodes.Ldloc_0);
+      ilToString.Emit(OpCodes.Ldstr, properties.Count == 0 ? "{ }" : " }");
+      ilToString.Emit(OpCodes.Callvirt, StringBuilderAppendString);
+      ilToString.Emit(OpCodes.Pop);
+      ilToString.Emit(OpCodes.Ldloc_0);
+      ilToString.Emit(OpCodes.Callvirt, ToStringMethod);
+      ilToString.Emit(OpCodes.Ret);
 
       type= tb.CreateTypeInfo().AsType();
       if (type.IsGenericTypeDefinition)
