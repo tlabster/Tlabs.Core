@@ -135,45 +135,7 @@ namespace Tlabs.Dynamic {
         }
       }
 
-      // There are two loops here because we want to have all the getter methods before all the other methods
-      foreach (var prop in propDefs) {
-        var propField= prop.Field= tb.DefineField($"<{prop.Name}>i__Field", prop.Type, FieldAttributes.Private | FieldAttributes.InitOnly);
-        propField.SetCustomAttribute(DebuggerBrowsableAttrib);
-
-        PropertyBuilder property= tb.DefineProperty(prop.Name, PropertyAttributes.None, CallingConventions.HasThis, prop.Type, EmptyTypes);
-
-        // getter
-        MethodBuilder getter= tb.DefineMethod($"get_{prop.Name}", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName, CallingConventions.HasThis, prop.Type, null);
-        getter.SetCustomAttribute(CompilerGeneratedAttrib);
-        ILGenerator ilgeneratorGetter= getter.GetILGenerator();
-        ilgeneratorGetter.Emit(OpCodes.Ldarg_0);
-        ilgeneratorGetter.Emit(OpCodes.Ldfld, propField);
-        ilgeneratorGetter.Emit(OpCodes.Ret);
-        property.SetGetMethod(getter);
-
-        // setter
-        MethodBuilder setter= tb.DefineMethod($"set_{prop.Name}", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName, CallingConventions.HasThis, null, new[] { prop.Type });
-        setter.SetCustomAttribute(CompilerGeneratedAttrib);
-
-        // workaround for https://github.com/dotnet/corefx/issues/7792
-        setter.DefineParameter(1, ParameterAttributes.In, "value");
-
-        ILGenerator ilgeneratorSetter= setter.GetILGenerator();
-        ilgeneratorSetter.Emit(OpCodes.Ldarg_0);
-        ilgeneratorSetter.Emit(OpCodes.Ldarg_1);
-        ilgeneratorSetter.Emit(OpCodes.Stfld, propField);
-        ilgeneratorSetter.Emit(OpCodes.Ret);
-        property.SetSetMethod(setter);
-
-        /* Apply custom property attributes:
-          */
-        if (null != prop.Attributes) foreach (var attr in prop.Attributes) {
-          property.SetCustomAttribute(
-            new CustomAttributeBuilder(attr.Type.GetConstructor(attr.Parameters.Select(o => o?.GetType()).ToArray()),
-                                      attr.Parameters)
-          );
-        }
-      }
+      generateProperties(tb, propDefs);
 
       // ToString()
       MethodBuilder toString= tb.DefineMethod("ToString", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig, CallingConventions.HasThis, typeof(string), EmptyTypes);
@@ -299,6 +261,47 @@ namespace Tlabs.Dynamic {
         type= type.MakeGenericType(properties.Select(p => p.Type).ToArray());
 
       return type;
+    }
+
+    private static void generateProperties(TypeBuilder tb, IList<PropertyDef> propDefs) {
+      foreach (var prop in propDefs) {
+        var propField= prop.Field= tb.DefineField($"<{prop.Name}>i__Field", prop.Type, FieldAttributes.Private | FieldAttributes.InitOnly);
+        propField.SetCustomAttribute(DebuggerBrowsableAttrib);
+
+        PropertyBuilder property= tb.DefineProperty(prop.Name, PropertyAttributes.None, CallingConventions.HasThis, prop.Type, EmptyTypes);
+
+        // getter
+        MethodBuilder getter= tb.DefineMethod($"get_{prop.Name}", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName, CallingConventions.HasThis, prop.Type, null);
+        getter.SetCustomAttribute(CompilerGeneratedAttrib);
+        ILGenerator ilgeneratorGetter= getter.GetILGenerator();
+        ilgeneratorGetter.Emit(OpCodes.Ldarg_0);
+        ilgeneratorGetter.Emit(OpCodes.Ldfld, propField);
+        ilgeneratorGetter.Emit(OpCodes.Ret);
+        property.SetGetMethod(getter);
+
+        // setter
+        MethodBuilder setter= tb.DefineMethod($"set_{prop.Name}", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName, CallingConventions.HasThis, null, new[] { prop.Type });
+        setter.SetCustomAttribute(CompilerGeneratedAttrib);
+
+        // workaround for https://github.com/dotnet/corefx/issues/7792
+        setter.DefineParameter(1, ParameterAttributes.In, "value");
+
+        ILGenerator ilgeneratorSetter= setter.GetILGenerator();
+        ilgeneratorSetter.Emit(OpCodes.Ldarg_0);
+        ilgeneratorSetter.Emit(OpCodes.Ldarg_1);
+        ilgeneratorSetter.Emit(OpCodes.Stfld, propField);
+        ilgeneratorSetter.Emit(OpCodes.Ret);
+        property.SetSetMethod(setter);
+
+        /* Apply custom property attributes:
+          */
+        if (null != prop.Attributes) foreach (var attr in prop.Attributes) {
+            property.SetCustomAttribute(
+              new CustomAttributeBuilder(attr.Type.GetConstructor(attr.Parameters.Select(o => o?.GetType()).ToArray()),
+                                        attr.Parameters)
+            );
+          }
+      }
     }
 
     // We recreate this by combining all property names and types, separated by a "|".
