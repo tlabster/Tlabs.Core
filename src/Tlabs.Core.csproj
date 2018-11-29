@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <VersionPrefix>1.0.0-alpha</VersionPrefix>
+    <VersionPrefix>1.0.0</VersionPrefix>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Library</OutputType>
     <RuntimeFrameworkVersion>2.1.0</RuntimeFrameworkVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
+    <Description>The common core utility classes of a Tlabs web-application.</Description>
     <Authors>Tlabs</Authors>
     <PackageLicenseUrl>https://bitbucket.org/tlabster/tlabs.core/src/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://bitbucket.org/tlabster/tlabs.core</PackageProjectUrl>
