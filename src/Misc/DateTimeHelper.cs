@@ -25,6 +25,9 @@ namespace Tlabs {
   public class DateTimeHelper : IAppTime {
     private TimeZoneInfo tzInfo;
 
+    /// <summary>Default Ctor creating a local <see cref="IAppTime"/>.</summary>
+    public DateTimeHelper() : this(TimeZoneInfo.Local) { }
+
     /// <summary>
     /// Constructor from TimeZoneInfo
     /// </summary>

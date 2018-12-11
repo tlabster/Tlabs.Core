@@ -145,8 +145,8 @@ namespace Tlabs {
     ///<summary>Application <see cref="TimeZoneInfo"/></summary>
     public static IAppTime TimeInfo {
       get {
-        if (null == appTime) throw new InvalidOperationException("Application time-zone info not set.");
-        return appTime;
+        //if (null == appTime) throw new InvalidOperationException("Application time-zone info not set.");
+        return appTime ?? new DateTimeHelper();
       }
       set {
         if (   null != appTime 

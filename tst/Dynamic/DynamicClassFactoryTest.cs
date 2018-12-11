@@ -8,8 +8,13 @@ using Xunit.Abstractions;
 
 namespace Tlabs.Dynamic.Tests {
   public class DynamicClassFactoryTests {
+    static readonly DateTime TST_DATE= new DateTime(2002, 2, 2);
 
     public class TestBaseClass : ICloneable {
+      public TestBaseClass() {
+        this.BaseDate= TST_DATE;
+      }
+      public DateTime BaseDate {get; set; }
       public object Clone() => this.MemberwiseClone();
     }
 
@@ -53,11 +58,15 @@ namespace Tlabs.Dynamic.Tests {
 
       Type fixedNameType= DynamicClassFactory.CreateType(props, typeof(object), "DYN-propType");
       Assert.NotSame(genericType, fixedNameType);
+      Assert.Equal(4, fixedNameType.GetProperties().Length);
       testDynamicType(fixedNameType);
 
       Type derivedGenericType= DynamicClassFactory.CreateType(props, typeof(TestBaseClass));
       dynamic obj= Activator.CreateInstance(derivedGenericType);
+      Assert.Equal(5, derivedGenericType.GetProperties().Length);
       Assert.IsAssignableFrom<TestBaseClass>(obj);
+      Assert.IsAssignableFrom<ICloneable>(obj);
+      Assert.Equal(TST_DATE, obj.BaseDate);
       Assert.NotSame(obj, obj.Clone());
       Assert.NotSame(genericType, derivedGenericType);
       testDynamicType(derivedGenericType);
@@ -65,7 +74,10 @@ namespace Tlabs.Dynamic.Tests {
 
       Type derivedFnType= DynamicClassFactory.CreateType(props, typeof(TestBaseClass), "DYN-propType");
       obj= Activator.CreateInstance(derivedGenericType);
+      Assert.Equal(5, derivedFnType.GetProperties().Length);
       Assert.IsAssignableFrom<TestBaseClass>(obj);
+      Assert.IsAssignableFrom<ICloneable>(obj);
+      Assert.Equal(TST_DATE, obj.BaseDate);
       Assert.NotSame(obj, obj.Clone());
       Assert.NotSame(fixedNameType, derivedFnType);
       testDynamicType(derivedFnType);
@@ -75,7 +87,6 @@ namespace Tlabs.Dynamic.Tests {
       tstout.WriteLine(dynType.Name);
       tstout.WriteLine(dynType.FullName);
       Assert.NotEmpty(dynType.FullName);
-      Assert.Equal(4, dynType.GetProperties().Length);
       Assert.NotNull(dynType.GetProperty("Num"));
       Assert.Null(dynType.GetProperty("x y z"));
 
