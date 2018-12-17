@@ -12,15 +12,15 @@ namespace Tlabs.Dynamic.Test {
     class Member {
       public string Name {get; set; }
     }
-    class BaseExpressionContext {
+    struct ExpressionContext {
       public SalesTransaction Sales { get; set; }
       public Member Member { get; set; }
-    }
-    class ExpressionContext : BaseExpressionContext {
       public XYZ__ProductBody Product { get; set; }
     }
 
-    class ConvertedExpressionContext : BaseExpressionContext {
+    struct ConvertedExpressionContext {
+      public SalesTransaction Sales { get; set; }
+      public Member Member { get; set; }
       public object Product { get; set; }
     }
 
@@ -71,7 +71,7 @@ namespace Tlabs.Dynamic.Test {
       Assert.NotNull(dynExpr);
       Assert.True(dynExpr.Evaluate(UNTYPED_CTX));
 
-      Assert.Throws<DynamicExpression<ConvertedExpressionContext, bool>.SyntaxException>(() => new DynamicExpression<ConvertedExpressionContext, bool>(
+      Assert.Throws<ExpressionSyntaxException>(() => new DynamicExpression<ConvertedExpressionContext, bool>(
         "it.Product != null && Product.ProdNumber.StartsWith(\"X\") && it.Sales.TXid.StartsWith(\"TX__\")",
         new Dictionary<string, Type> { ["Product"]= typeof(XYZ__ProductBody) }
       ));

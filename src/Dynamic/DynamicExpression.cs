@@ -24,26 +24,6 @@ namespace Tlabs.Dynamic {
   ///</typeparam>
   public class DynamicExpression<TCtx, TRes> {
     
-    /// <summary>Exception thrown on expression syntax error.</summary>
-    public class SyntaxException : AppConfigException {
-      /// <summary>Syntax errors.</summary>
-      public readonly IList<SyntaxException> SyntaxErrors;
-
-      /// <summary>Default ctor</summary>
-      public SyntaxException() : base() { }
-
-      /// <summary>Ctor from message</summary>
-      public SyntaxException(string message) : base(message) { }
-
-      /// <summary>Ctor from message and inner exception.</summary>
-      public SyntaxException(string message, Exception e) : base(message, e) { }
-
-      /// <summary>Ctor from message and inner exception.</summary>
-      public SyntaxException(IList<SyntaxException> syntaxErrors) : base($"Compilation failed after detection of {syntaxErrors.Count} expression syntax error(s).") {
-        this.SyntaxErrors= syntaxErrors;
-      }
-    }
-
     private string expression;
     private Func<TCtx, TRes> exprDelegate;
 
@@ -62,7 +42,7 @@ namespace Tlabs.Dynamic {
     /// </para>
     ///</remarks>
     public DynamicExpression(string expression, IDictionary<string, Type> ctxConverter = null) {
-      if (null == expression) throw new ArgumentNullException(nameof(expression));
+      if (null == (this.expression= expression)) throw new ArgumentNullException(nameof(expression));
 
       var lamda=   null == ctxConverter
                    ? (Expression<Func<TCtx, TRes>>) parsedExpression(expression)
@@ -108,7 +88,7 @@ namespace Tlabs.Dynamic {
         return DynamicExpressionParser.ParseLambda(false, typeof(TCtx), typeof(TRes), expression);  //, Formula.Function.Library);
       }
       catch (System.Linq.Dynamic.Core.Exceptions.ParseException e) {
-        throw new SyntaxException(expressionError(e));
+        throw new ExpressionSyntaxException(expressionError(e));
       }
     }
 
@@ -117,7 +97,7 @@ namespace Tlabs.Dynamic {
         return DynamicExpressionParser.ParseLambda(false, exprParams.ToArray(), typeof(TRes), expression);  //, Formula.Function.Library);
       }
       catch (System.Linq.Dynamic.Core.Exceptions.ParseException e) {
-        throw new SyntaxException(expressionError(e));
+        throw new ExpressionSyntaxException(expressionError(e));
       }
     }
 
