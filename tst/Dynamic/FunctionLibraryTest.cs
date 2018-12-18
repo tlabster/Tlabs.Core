@@ -2,7 +2,7 @@
 using System;
 using Xunit;
 
-namespace Tlabs.Dynamic.Internal.Tests {
+namespace Tlabs.Dynamic.Misc.Tests {
   [Collection("MemoryDB")]
   public class FunctionLibraryTest {
     [Fact]
@@ -47,25 +47,25 @@ namespace Tlabs.Dynamic.Internal.Tests {
 
     [Fact]
     void AtMostOneTest() {
-      var array = new bool[] { false, false }; 
+      var array = new bool[] { false, false };
       Assert.False(Function.AtMostOne(array));
 
-      array = new bool[] { true, false, false }; 
+      array = new bool[] { true, false, false };
       Assert.True(Function.AtMostOne(array));
 
-      array = new bool[] { true, true, false }; 
+      array = new bool[] { true, true, false };
       Assert.False(Function.AtMostOne(array));
     }
 
     [Fact]
     void ChooseTest() {
-      var array = new string[] { null, null, "A", "B" }; 
+      var array = new string[] { null, null, "A", "B" };
       Assert.Equal("A", Function.Choose(array));
 
-      array = new string[] { null, null }; 
+      array = new string[] { null, null };
       Assert.Null(Function.Choose(array));
 
-      array = new string[] { }; 
+      array = new string[] { };
       Assert.Null(Function.Choose(array));
     }
 

@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 
 
-namespace Tlabs.Dynamic.Internal  {
+namespace Tlabs.Dynamic.Misc  {
 
-  /** Validation helper function library
-   */
-  internal class Function {
+  ///<summary>Expression helper function library.</summary>
+  public class Function {
     private static readonly Expression<Func<bool, bool, bool>> OneOf2Exp= (b1, b2) => (b1^b2);
     private static readonly Expression<Func<bool, bool, bool, bool>> OneOf3Exp= (b1, b2, b3) => (b1^b2^b3);
     private static readonly Expression<Func<bool, bool, bool, bool, bool>> OneOf4Exp= (b1, b2, b3, b4) => (b1^b2^b3^b4);
@@ -122,7 +121,7 @@ namespace Tlabs.Dynamic.Internal  {
     internal static bool Is(object p) {
       return null != p && !False(p);
     }
-    internal static bool False(object p) { 
+    internal static bool False(object p) {
       var b= p as bool?;
       return b.HasValue && false == b.Value;
     }
@@ -137,7 +136,8 @@ namespace Tlabs.Dynamic.Internal  {
       return 0 != (flags & mask);
     }
 
-    internal static readonly IDictionary<string, object> Library= new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase) {
+    ///<summary>Helper function library.</summary>
+    public static readonly IDictionary<string, object> Library= new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase) {
       ["@OneOf2"]= OneOf2Exp,
       ["@OneOf3"]= OneOf3Exp,
       ["@OneOf4"]= OneOf4Exp,

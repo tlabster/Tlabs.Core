@@ -15,11 +15,11 @@ namespace Tlabs.Dynamic {
   /// A factory to create dynamic classes, based on <see href="http://stackoverflow.com/questions/29413942/c-sharp-anonymous-object-with-properties-from-dictionary" />.
   /// </summary>
   public static class DynamicClassFactory {
-    // EmptyTypes is used to indicate that we are looking for someting without any parameters. 
+    // EmptyTypes is used to indicate that we are looking for someting without any parameters.
     private static readonly Type[] EmptyTypes= new Type[0];
 
-    private static readonly Misc.BasicCache<string, Type> typeCache= new Misc.BasicCache<string, Type>();
-    
+    private static readonly Tlabs.Misc.BasicCache<string, Type> typeCache= new Tlabs.Misc.BasicCache<string, Type>();
+
     private static readonly ModuleBuilder ModuleBuilder;
 
     // Some objects we cache
@@ -64,7 +64,7 @@ namespace Tlabs.Dynamic {
     /// <summary>Dynamically creates a new class type with a given set of public properties.</summary>
     /// <returns><see cref="Type"/> of the newly created class.</returns>
     /// <remarks>
-    /// If a data class with an identical sequence of properties has already been created, the System.Type object for this already created class is returned.        
+    /// If a data class with an identical sequence of properties has already been created, the System.Type object for this already created class is returned.
     /// The generated classes
     /// <list>
     /// <item><description>implement private instance variables and read/write property accessors for the specified properties.</description></item>
@@ -98,7 +98,7 @@ namespace Tlabs.Dynamic {
       string typeKey=   string.IsNullOrEmpty(typeName)
                       ? generateTypeKey(properties, parentType)
                       : typeName + "~" + parentType.Name;
-      
+
       Func<Type> createNew= () => createNewType(properties, parentType, typeName);
 
       return typeCache[typeKey, createNew];
@@ -183,7 +183,7 @@ namespace Tlabs.Dynamic {
         // Equals()
         MethodInfo equalityComparerTDefault=   genericType
                                               ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerDefault)
-                                              : equalityComparerT.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public);                                              
+                                              : equalityComparerT.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public);
         MethodInfo equalityComparerTEquals=   genericType
                                               ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerEquals)
                                               : equalityComparerT.GetMethod("Equals", new[] { prop.Type, prop.Type });

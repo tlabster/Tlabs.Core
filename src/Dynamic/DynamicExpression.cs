@@ -23,7 +23,7 @@ namespace Tlabs.Dynamic {
   /// This must be the type that the given expression results to, i.e. a comparision expression like <code>"Value == 123"</code> would have the result type <see cref="bool"/>.
   ///</typeparam>
   public class DynamicExpression<TCtx, TRes> {
-    
+
     private string expression;
     private Func<TCtx, TRes> exprDelegate;
 
@@ -43,7 +43,7 @@ namespace Tlabs.Dynamic {
     ///</remarks>
     public DynamicExpression(string expression, IDictionary<string, Type> ctxConverter= null, IDictionary<string, object> funcLib = null) {
       if (null == (this.expression= expression)) throw new ArgumentNullException(nameof(expression));
-      funcLib= funcLib ?? Internal.Function.Library;
+      funcLib= funcLib ?? Misc.Function.Library;
 
       var lamda=   null == ctxConverter
                    ? (Expression<Func<TCtx, TRes>>) parsedExpression(expression, funcLib)
