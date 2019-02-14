@@ -35,10 +35,10 @@ namespace Tlabs.Misc {
     public T this[K key, T newVal] {
       get {
         T val;
-        lck.ExitUpgradeableReadLock();
+        lck.EnterUpgradeableReadLock();
         try {
           if (cache.TryGetValue(key, out val)) return val;
-          this[key]= newVal;
+          return this[key]= newVal;
         }
         finally { lck.ExitUpgradeableReadLock(); }
       }
@@ -49,10 +49,10 @@ namespace Tlabs.Misc {
     public T this[K key, Func<T> getValue] {
       get {
         T val;
-        lck.ExitUpgradeableReadLock();
+        lck.EnterUpgradeableReadLock();
         try {
           if (cache.TryGetValue(key, out val)) return val;
-          this[key]= getValue();
+          return this[key]= getValue();
         }
         finally { lck.ExitUpgradeableReadLock(); }
       }
@@ -62,15 +62,16 @@ namespace Tlabs.Misc {
     ///<returns>Evicted entry or null if no value cached for <paramref name="key"/>.</returns>
     public T Evict(K key) {
       T val;
-      lck.ExitUpgradeableReadLock();
+      lck.EnterUpgradeableReadLock();
       try {
         if (cache.TryGetValue(key, out val)) {
           lck.EnterWriteLock();
           try {
-            return cache[key]= getValue();
+            cache.Remove(key);
           }
           finally { lck.ExitWriteLock(); }
         }
+        return val;
       }
       finally { lck.ExitUpgradeableReadLock(); }
     }
