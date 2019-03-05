@@ -1,25 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Tlabs.Misc {
 
   ///<summary>Simple lookup cache.</summary>
   public class BasicCache<K, T> {
     private Dictionary<K, T> cache= new Dictionary<K, T>();
+    private ReaderWriterLockSlim lck= new ReaderWriterLockSlim();
 
     ///<summary>Get or set value with <paramref name="key"/>.</summary>
     ///<returns>Cached entry or null if no value cached for <paramref name="key"/>.</returns>
     public T this[K key] {
       get {
         T val;
-        lock (cache) {
+        lck.EnterReadLock();
+        try {
           cache.TryGetValue(key, out val);
           return val;
         }
+        finally { lck.ExitReadLock(); }
       }
       set {
-        lock (cache)
+        lck.EnterWriteLock();
+        try {
           cache[key]= value;
+        }
+        finally { lck.ExitWriteLock(); }
       }
     }
 
@@ -28,10 +35,12 @@ namespace Tlabs.Misc {
     public T this[K key, T newVal] {
       get {
         T val;
-        lock (cache) {
+        lck.EnterUpgradeableReadLock();
+        try {
           if (cache.TryGetValue(key, out val)) return val;
-          return cache[key]= newVal;
+          return this[key]= newVal;
         }
+        finally { lck.ExitUpgradeableReadLock(); }
       }
     }
 
@@ -40,10 +49,12 @@ namespace Tlabs.Misc {
     public T this[K key, Func<T> getValue] {
       get {
         T val;
-        lock (cache) {
+        lck.EnterUpgradeableReadLock();
+        try {
           if (cache.TryGetValue(key, out val)) return val;
-          return cache[key]= getValue();
+          return this[key]= getValue();
         }
+        finally { lck.ExitUpgradeableReadLock(); }
       }
     }
 
@@ -51,11 +62,19 @@ namespace Tlabs.Misc {
     ///<returns>Evicted entry or null if no value cached for <paramref name="key"/>.</returns>
     public T Evict(K key) {
       T val;
-      lock (cache) {
-        if (cache.TryGetValue(key, out val))
-          cache.Remove(key);
+      lck.EnterUpgradeableReadLock();
+      try {
+        if (cache.TryGetValue(key, out val)) {
+          lck.EnterWriteLock();
+          try {
+            cache.Remove(key);
+          }
+          finally { lck.ExitWriteLock(); }
+        }
         return val;
       }
+      finally { lck.ExitUpgradeableReadLock(); }
     }
+
   }
 }

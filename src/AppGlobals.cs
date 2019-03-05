@@ -38,6 +38,7 @@ namespace Tlabs {
     static readonly Lazy<IConfigurationRoot> cfgSettings;
     static IWebHost host;
     static ILoggerFactory logFactory;
+    static ILoggerFactory tmpLogFactory;
     static readonly IApplicationLifetime notYetALife= new NotYetALifeApplication();
     static IApplicationLifetime appLifetime= notYetALife;
     static IServiceProvider svcProv;
@@ -88,22 +89,26 @@ namespace Tlabs {
     ///NOTE: To obtain a singleton instance of <see cref="ILogger{T}"/> for type T it is best to call <see cref="App.Logger{T}()"/>
     ///</remarks>
     public static ILoggerFactory LogFactory {
-      get => getOrInitLogFact(CreateSimpleDefaultLogFactory);
+      get => getOrInitLogFact(CreateDefaultLogFactory);
       set => getOrInitLogFact(() => value, true);
     }
 
-    private static ILoggerFactory getOrInitLogFact(Func<ILoggerFactory> loggerFact, bool throwOnSet= false) {
-      if (null == logFactory)
-        throwOnSet= (null != Interlocked.CompareExchange<ILoggerFactory>(ref logFactory, loggerFact(), null) && throwOnSet);
-      if (throwOnSet) throw new InvalidOperationException($"{nameof(LogFactory)} is already set.");
+    private static ILoggerFactory getOrInitLogFact(Func<ILoggerFactory> loggerFact, bool setOnce= false) {
+      if (setOnce || null == logFactory) {
+        var old= Interlocked.CompareExchange<ILoggerFactory>(ref logFactory, loggerFact(), null);
+        if (   setOnce
+            && null != old
+            && tmpLogFactory != Interlocked.CompareExchange<ILoggerFactory>(ref logFactory, loggerFact(), tmpLogFactory)
+        ) throw new InvalidOperationException($"{nameof(LogFactory)} is already set.");
+      }
       return logFactory;
     }
 
-    static ILoggerFactory CreateSimpleDefaultLogFactory() {
-      Console.WriteLine($"Using simple default {nameof(LoggerFactory)}");
-      return new LoggerFactory()
-        .AddConsole() // Settings.GetSection("logging"))
-        .AddDebug(LogLevel.Trace);
+    static ILoggerFactory CreateDefaultLogFactory() {
+      // Console.WriteLine($"Using temporary default {nameof(LoggerFactory)}");
+      return tmpLogFactory= new LoggerFactory()
+        .AddConsole(Settings.GetSection("logging"));
+        // .AddDebug(LogLevel.Trace);
     }
 
     ///<summary>Returns a <see cref="ILogger{T}"/> for <typeparamref name="T"/></summary>
