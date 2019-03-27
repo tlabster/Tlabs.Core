@@ -30,7 +30,7 @@ namespace Tlabs.Config {
         }
 
         var qualifiedTypeName= objDsc.type ?? "?";
-        var parts= qualifiedTypeName.Split('|');
+        var parts= qualifiedTypeName.Split('&');  //split type parameters by '&'
 
         var configDesc= $"{secName}:{tpair.Key ?? "?"}:type: ";
         Type tp= loadPossiblyGenericType(parts, configDesc);
