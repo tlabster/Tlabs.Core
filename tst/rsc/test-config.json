@@ -109,6 +109,9 @@
       "config": {
         "test": "x"
       }
+    },
+    "generic-test": {
+      "type": "Tlabs.Config.Tests.ConfigTest+TstGenric`1, Tlabs.Core.Tests & Tlabs.Config.Tests.ConfigTest, Tlabs.Core.Tests"
     }
   }
 }
