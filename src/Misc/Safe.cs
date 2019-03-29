@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Tlabs.Misc {
 
@@ -121,16 +122,32 @@ namespace Tlabs.Misc {
         Environment.FailFast(e.Message, e);
     }
 
-    /// <summary>Loads a type specified as <paramref name="qualifiedName"/>.</summary>
+    /// <summary>Loads a type specified as <paramref name="qualifiedTypeName"/>.</summary>
     ///<exception cref="AppConfigException">When type loading failed. Using <paramref name="typeDesc"/> in error...</exception>
-    public static Type LoadType(string qualifiedName, string typeDesc) {
+    public static Type LoadType(string qualifiedTypeName, string typeDesc) {
+      if (string.IsNullOrEmpty(qualifiedTypeName)) throw new ArgumentException(nameof(qualifiedTypeName));
+
+      var typeNameParts= qualifiedTypeName.Split('&');  //split type parameters by '&'
+
       try {
-        return Type.GetType(qualifiedName, true);
+        if (1 == typeNameParts.Length)  //simple non generic type?
+          return Type.GetType(qualifiedTypeName= typeNameParts[0].Trim(), true);
+        /* Load generic type with parameters:
+         */
+        var types= new Type[typeNameParts.Length];
+        for (int l = 0; l < types.Length; ++l)
+          types[l]= Type.GetType(qualifiedTypeName= typeNameParts[l].Trim(), true);
+        try {
+          return types[0].MakeGenericType(types.Skip(1).ToArray());
+        }
+        catch (ArgumentNullException e) {
+          throw new AppConfigException($"Invalid generic type parameters in {typeDesc} for generic type: {typeNameParts[0]}", e);
+        }
       }
       // Detailed exception mapping:
-      catch (ArgumentException argX) { throw new AppConfigException($"Invalid type name {qualifiedName}.", argX); }
-      catch (TypeLoadException tlX) { throw new AppConfigException($"Type not found {qualifiedName}.", tlX); }
-      catch (System.IO.FileNotFoundException fnfX) { throw new AppConfigException($"Assembly (or dependend assembly) not found for {typeDesc}.", fnfX); }
+      catch (ArgumentException argX) { throw new AppConfigException($"Invalid type name {qualifiedTypeName} ({typeDesc}).", argX); }
+      catch (TypeLoadException tlX) { throw new AppConfigException($"Type not found {qualifiedTypeName} ({typeDesc}).", tlX); }
+      catch (System.IO.FileNotFoundException fnfX) { throw new AppConfigException($"Assembly (or dependend assembly) not found for {qualifiedTypeName} ({typeDesc}).", fnfX); }
       catch (Exception eX) { throw new AppConfigException($"Failed to load {typeDesc}.", eX); }
     }
 
