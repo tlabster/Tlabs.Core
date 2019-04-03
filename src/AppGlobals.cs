@@ -153,17 +153,7 @@ namespace Tlabs {
     ///<para>NOTE: If <typeparamref name="TSvc"/> is <see cref="IDisposable"/> it gets disposed after <paramref name="runSvc"/> was invoked.</para>
     ///</remarks>
     public static Task<TRes> RunBackgroundService<TSvc, TRes>(Func<TSvc, TRes> runSvc) where TRes : class {
-      return Task<TRes>.Run(() => {
-        TRes res= null;
-        WithServiceScope(svcProv => {
-          TSvc svc= default(TSvc);
-          try {
-            svc= ActivatorUtilities.CreateInstance<TSvc>(svcProv);
-            res= runSvc(svc);
-          } finally { (svc as IDisposable)?.Dispose();}   //try to dispose
-        });
-        return res;
-      });
+      return RunBackgroundService<TSvc, TRes>(typeof(TSvc), runSvc);
     }
 
     ///<summary>Runs an asynchronous background service by calling <paramref name="runSvc"/>.</summary>
