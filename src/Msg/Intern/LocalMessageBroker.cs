@@ -5,59 +5,93 @@ namespace Tlabs.Msg.Intern {
 
   ///<inherit/>
   public class LocalMessageBroker : IMessageBroker {
-    private Dictionary<string, Delegate> subsciptions= new Dictionary<string, Delegate>();
+    /* NOTE: Currently we do not support subsciptions on wild-card subjects...
+     */
+    private Dictionary<string, SubscriptionHandler> subsciptions= new Dictionary<string, SubscriptionHandler>();
     ///<inherit/>
-    public void Publish(string subject, object msg) => findSubscriptionHandler<object>(subject)?.Invoke(msg);
+    public void Publish(string subject, object msg) => findSubscriptionHandler(subject)?.Invoke(msg);
 
     ///<inherit/>
-    public void Publish<T>(string subject, IMessage<T> msg) where T : class => findSubscriptionHandler<IMessage<object>>(subject)?.Invoke(msg);
+    public void Publish<T>(string subject, T msg) where T : class => findSubscriptionHandler(subject)?.Invoke(msg);
 
-    private Action<T> findSubscriptionHandler<T>(string subject) {
-      Delegate handler;
+    private Action<object> findSubscriptionHandler(string subject) {
+      SubscriptionHandler handler;
       lock(subsciptions) {
         subsciptions.TryGetValue(subject, out handler);
-        return handler as Action<T>;
+        return handler?.MsgDelegate;
       }
     }
 
     ///<inherit/>
     public void Subscribe(string subject, Action<object> subHandler) {
-      Delegate handler;
+      SubscriptionHandler handler;
       lock (subsciptions) {
         if (subsciptions.TryGetValue(subject, out handler))
-          subsciptions[subject]= Delegate.Combine(handler, subHandler);
-        else subsciptions[subject]= subHandler;
+          handler.Add<object>(subHandler);
+        else subsciptions[subject]= SubscriptionHandler.Create<object>(subHandler);
       }
     }
 
     ///<inherit/>
-    public void Subscribe<T>(string subject, Action<IMessage<T>> subHandler) {
-      Delegate handler;
-      var subHndl= (Action<IMessage<object>>) subHandler;
+    public void Subscribe<T>(string subject, Action<T> subHandler) where T : class {
+      SubscriptionHandler handler;
       lock (subsciptions) {
         if (subsciptions.TryGetValue(subject, out handler))
-          subsciptions[subject]= Delegate.Combine(handler, subHndl);
-        else subsciptions[subject]= subHndl;
+          handler.Add<T>(subHandler);
+        else subsciptions[subject]= SubscriptionHandler.Create<T>(subHandler);
       }
     }
 
     ///<inherit/>
-    public bool Unsubscribe(Delegate handler) {
-      bool fnd= false;
+    public void Unsubscribe(Delegate handler) {
       lock(subsciptions) {
         var keys= new List<string>(subsciptions.Keys);
         foreach(var k in keys) {
-          var subHandler= subsciptions[k];
-          handler= Delegate.Remove(subHandler, handler);
-          if (null == handler) subsciptions.Remove(k);
-          else if(object.ReferenceEquals(handler, subHandler)) {
-            fnd= true;
-            subsciptions[k]= handler;
-          }
+          var handlerDel= subsciptions[k];
+          if (null == handlerDel.Remove(handler)) subsciptions.Remove(k);
         }
-        return fnd;
       }
     }
 
+    /* Internal class to manage any subscription handler(s) of a subject with a MulticastDelegate.
+     * Handlers that expect a specific message of type <T> get proxied in a 'checkedHandler' that
+     * only delegates to the subscription-handler if the message type is matching.
+     * For the purpose of unsubscribing the original subscription-handler is kept as key into orgSubHandlers...
+     */
+    private class SubscriptionHandler {
+      public static SubscriptionHandler Create<T>(Delegate subHandler) where T : class {
+        var hdel= new SubscriptionHandler(subHandler);
+        hdel.Add<T>(subHandler);
+        return hdel;
+      }
+      private Dictionary<Delegate, Delegate> orgSubHandlers= new Dictionary<Delegate, Delegate>();
+      private SubscriptionHandler(Delegate subHandler) {
+        this.MsgDelegate= null;
+        this.SubscrDelegate= subHandler;
+      }
+      public Delegate SubscrDelegate { get; }
+      public Action<object> MsgDelegate { get; private set; }
+      public void Add<T>(Delegate subHandler) where T: class {
+        Action<object> checkedDel= (o) => {
+          var msg= o as T;
+          if (null != msg)
+            ((Action<T>)SubscrDelegate).Invoke(msg);
+        };
+        var msgDel=   typeof(T).Equals(typeof(object))
+                    ? subHandler
+                    : orgSubHandlers[subHandler]= checkedDel;
+        MsgDelegate= (Action<object>)(  null == MsgDelegate
+                                      ? msgDel
+                                      : Delegate.Combine(MsgDelegate, msgDel));
+      }
+
+      public Delegate Remove(Delegate subHandler) {
+        if (null == subHandler) return MsgDelegate;
+        var msgHandler= subHandler;
+        if (orgSubHandlers.TryGetValue(subHandler, out msgHandler))
+          orgSubHandlers.Remove(subHandler);
+        return MsgDelegate= (Action<object>)Delegate.Remove(MsgDelegate, msgHandler ?? subHandler as Action<object>);
+      }
+    }
   }
 }

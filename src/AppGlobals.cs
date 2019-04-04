@@ -144,6 +144,9 @@ namespace Tlabs {
       }
     }
 
+    ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor resolved from the <see cref="ServiceProv"/>.</summary>
+    public static object CreateResolvedInstance(Type instanceType) => ActivatorUtilities.CreateInstance(svcProv, instanceType);
+
     ///<summary>Runs an asynchronous background service by calling <paramref name="runSvc"/>.</summary>
     ///<typeparam name="TSvc">Type of the service being created.</typeparam>
     ///<typeparam name="TRes">Type of the service result (returned from <paramref name="runSvc"/>).</typeparam>
