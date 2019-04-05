@@ -8,6 +8,7 @@ namespace Tlabs.Msg.Intern {
     /* NOTE: Currently we do not support subsciptions on wild-card subjects...
      */
     private Dictionary<string, SubscriptionHandler> subsciptions= new Dictionary<string, SubscriptionHandler>();
+    private Dictionary<Delegate, string> subscribedSubjects= new Dictionary<Delegate, string>();
     ///<inherit/>
     public void Publish(string subject, object msg) => findSubscriptionHandler(subject)?.Invoke(msg);
 
@@ -26,6 +27,7 @@ namespace Tlabs.Msg.Intern {
     public void Subscribe(string subject, Action<object> subHandler) {
       SubscriptionHandler handler;
       lock (subsciptions) {
+        subscribedSubjects[subHandler]= subject;
         if (subsciptions.TryGetValue(subject, out handler))
           handler.Add<object>(subHandler);
         else subsciptions[subject]= SubscriptionHandler.Create<object>(subHandler);
@@ -36,6 +38,7 @@ namespace Tlabs.Msg.Intern {
     public void Subscribe<T>(string subject, Action<T> subHandler) where T : class {
       SubscriptionHandler handler;
       lock (subsciptions) {
+        subscribedSubjects[subHandler]= subject;
         if (subsciptions.TryGetValue(subject, out handler))
           handler.Add<T>(subHandler);
         else subsciptions[subject]= SubscriptionHandler.Create<T>(subHandler);
@@ -45,11 +48,12 @@ namespace Tlabs.Msg.Intern {
     ///<inherit/>
     public void Unsubscribe(Delegate handler) {
       lock(subsciptions) {
-        var keys= new List<string>(subsciptions.Keys);
-        foreach(var k in keys) {
-          var handlerDel= subsciptions[k];
-          if (null == handlerDel.Remove(handler)) subsciptions.Remove(k);
-        }
+        string subject;
+        if (null == handler || !subscribedSubjects.TryGetValue(handler, out subject)) return; //unknown handler
+        subscribedSubjects.Remove(handler);
+        SubscriptionHandler handlerDel;
+        if (! subsciptions.TryGetValue(subject, out handlerDel)) return;
+        if (null == handlerDel.Remove(handler)) subsciptions.Remove(subject);   //no subscription left on this subject
       }
     }
 
@@ -60,22 +64,17 @@ namespace Tlabs.Msg.Intern {
      */
     private class SubscriptionHandler {
       public static SubscriptionHandler Create<T>(Delegate subHandler) where T : class {
-        var hdel= new SubscriptionHandler(subHandler);
+        var hdel= new SubscriptionHandler();
         hdel.Add<T>(subHandler);
         return hdel;
       }
       private Dictionary<Delegate, Delegate> orgSubHandlers= new Dictionary<Delegate, Delegate>();
-      private SubscriptionHandler(Delegate subHandler) {
-        this.MsgDelegate= null;
-        this.SubscrDelegate= subHandler;
-      }
-      public Delegate SubscrDelegate { get; }
       public Action<object> MsgDelegate { get; private set; }
       public void Add<T>(Delegate subHandler) where T: class {
         Action<object> checkedDel= (o) => {
           var msg= o as T;
           if (null != msg)
-            ((Action<T>)SubscrDelegate).Invoke(msg);
+            ((Action<T>)subHandler).Invoke(msg);
         };
         var msgDel=   typeof(T).Equals(typeof(object))
                     ? subHandler
