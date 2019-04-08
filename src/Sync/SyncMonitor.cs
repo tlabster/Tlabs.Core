@@ -7,10 +7,10 @@ namespace Tlabs.Sync {
   /// <remarks>
   /// Instances of this class can be used to monitor/signal concurrently applied changes to the state
   /// of an object or value of type T.
-  /// <para>While it is based on <see cref=" Monitor"/>, it does not suffer the short coming of its <see cref=" Monitor.Pulse(object)"/>
+  /// <para>While it is based on <see cref="Monitor"/>, it does not suffer the shortcoming of its <see cref=" Monitor.Pulse(object)"/>
   /// method - i.e. this <see cref="SyncMonitor{T}"/> maintains the internal signaled state even if no one
   /// is currently waiting....</para>
-  /// <para>For the purpose of synchronization between managed threads, this class would be an alternative to
+  /// <para>For the purpose of synchronization between managed threads, this class would be a lightweight alternative to
   /// <see cref="EventWaitHandle"/> based objects.</para>
   /// <para>Note also that, since the type T is not limited to hold only binary values (like set and reset), there is
   /// no need for <see cref="WaitHandle.WaitAny(WaitHandle[])"/> constructs and alike.</para>

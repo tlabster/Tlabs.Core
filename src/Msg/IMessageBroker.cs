@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Threading.Tasks;
 
 namespace Tlabs.Msg {
 
@@ -30,17 +30,17 @@ namespace Tlabs.Msg {
   ///</remarks>
   public interface IMessageBroker {
 
-    ///<summary>Publish a <paramref name="message"/> on <paramref name="subject"/> with unspecific format.</summary>
+    ///<summary>Publish a <paramref name="message"/> on <paramref name="subject"/>.</summary>
     void Publish(string subject, object message);
 
-    ///<summary>Publish a <paramref name="message"/> of type <typeparamref name="T"/> on <paramref name="subject"/>.</summary>
-    void Publish<T>(string subject, T message) where T : class;
-
-    ///<summary>Subscribe on <paramref name="subject"/> to receive messages with unspecific format.</summary>
-    void Subscribe(string subject, Action<object> subHandler);
+    ///<summary>Publish a request <paramref name="message"/> on <paramref name="subject"/> to asynchronously return <typeparamref name="TRet"/>.</summary>
+    Task<TRet> PublishRequest<TRet>(string subject, object message) where TRet : class;
 
     ///<summary>Subscribe on <paramref name="subject"/> to receive messages of type type <typeparamref name="T"/>.</summary>
     void Subscribe<T>(string subject, Action<T> subHandler) where T : class;
+
+    ///<summary>Subscribe for a request on <paramref name="subject"/> to receive messages of type type <typeparamref name="TMsg"/> and to return <typeparamref name="TRet"/>.</summary>
+    void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class;
 
     ///<summary>Unsubscribe <paramref name="handler"/> from any subscriptions.</summary>
     ///<returns>true if successfull unsubscribed.</returns>

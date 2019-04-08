@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Tlabs.Msg.Intern {
 
@@ -7,90 +9,100 @@ namespace Tlabs.Msg.Intern {
   public class LocalMessageBroker : IMessageBroker {
     /* NOTE: Currently we do not support subsciptions on wild-card subjects...
      */
-    private Dictionary<string, SubscriptionHandler> subsciptions= new Dictionary<string, SubscriptionHandler>();
-    private Dictionary<Delegate, string> subscribedSubjects= new Dictionary<Delegate, string>();
-    ///<inherit/>
-    public void Publish(string subject, object msg) => findSubscriptionHandler(subject)?.Invoke(msg);
+
+    const string RESPONSE_PFX= "_>$response.";
+    private Dictionary<string, Func<object, Task>> msgHandlers= new Dictionary<string, Func<object, Task>>();     //msgHandler by subject
+    private Dictionary<Delegate, SubscriptionInfo> subscriptions= new Dictionary<Delegate, SubscriptionInfo>();   //subscriptionInfo by (original) subHandler
 
     ///<inherit/>
-    public void Publish<T>(string subject, T msg) where T : class => findSubscriptionHandler(subject)?.Invoke(msg);
+    public void Publish(string subject, object msg) => findMessageHandler(subject)?.Invoke(msg);
 
-    private Action<object> findSubscriptionHandler(string subject) {
-      SubscriptionHandler handler;
-      lock(subsciptions) {
-        subsciptions.TryGetValue(subject, out handler);
-        return handler?.MsgDelegate;
+    private Func<object, Task> findMessageHandler(string subject) {
+      Func<object, Task> msgHandler;
+      lock(msgHandlers) {
+        msgHandlers.TryGetValue(subject, out msgHandler);
+        return msgHandler;
       }
     }
 
     ///<inherit/>
-    public void Subscribe(string subject, Action<object> subHandler) {
-      SubscriptionHandler handler;
-      lock (subsciptions) {
-        subscribedSubjects[subHandler]= subject;
-        if (subsciptions.TryGetValue(subject, out handler))
-          handler.Add<object>(subHandler);
-        else subsciptions[subject]= SubscriptionHandler.Create<object>(subHandler);
-      }
+    public Task<TRes> PublishRequest<TRes>(string subject, object message) where TRes : class {
+      var compl= new TaskCompletionSource<TRes>();
+      Action<TRes> completer= null;
+      completer= response => {
+        Unsubscribe(completer);
+        compl.SetResult(response);
+      };
+      Subscribe<TRes>(RESPONSE_PFX + subject, completer);   //subscribe for request response
+      Publish(subject, message);  // publish the request message
+      return compl.Task;
     }
 
     ///<inherit/>
     public void Subscribe<T>(string subject, Action<T> subHandler) where T : class {
-      SubscriptionHandler handler;
-      lock (subsciptions) {
-        subscribedSubjects[subHandler]= subject;
-        if (subsciptions.TryGetValue(subject, out handler))
-          handler.Add<T>(subHandler);
-        else subsciptions[subject]= SubscriptionHandler.Create<T>(subHandler);
+      Func<object, Task> msgHandler;
+      lock (msgHandlers) {
+        var proxy= createAsyncProxy<T>(subHandler);
+        subscriptions[subHandler]= new SubscriptionInfo(subject, proxy);
+        if (msgHandlers.TryGetValue(subject, out msgHandler))
+          msgHandlers[subject]= (Func<object, Task>)Delegate.Combine(msgHandler, proxy);
+        else msgHandlers[subject]= proxy;
+      }
+    }
+
+    ///<inherit/>
+    public void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class {
+      Func<object, Task> msgHandler;
+      lock (msgHandlers) {
+        var proxy= createAsyncReqProxy<TMsg, TRet>(requestHandler, RESPONSE_PFX + subject);
+        subscriptions[requestHandler]= new SubscriptionInfo(subject, proxy);
+        if (msgHandlers.TryGetValue(subject, out msgHandler))
+          msgHandlers[subject]= (Func<object, Task>)Delegate.Combine(msgHandler, proxy);
+        else msgHandlers[subject]= proxy;
       }
     }
 
     ///<inherit/>
     public void Unsubscribe(Delegate handler) {
-      lock(subsciptions) {
-        string subject;
-        if (null == handler || !subscribedSubjects.TryGetValue(handler, out subject)) return; //unknown handler
-        subscribedSubjects.Remove(handler);
-        SubscriptionHandler handlerDel;
-        if (! subsciptions.TryGetValue(subject, out handlerDel)) return;
-        if (null == handlerDel.Remove(handler)) subsciptions.Remove(subject);   //no subscription left on this subject
+      if (null == handler) return;
+      lock(msgHandlers) {
+        SubscriptionInfo subscription;
+        if (! subscriptions.TryGetValue(handler, out subscription)) return; //unknown handler
+        subscriptions.Remove(handler);
+        Func<object, Task> handlerDel;
+        if (! msgHandlers.TryGetValue(subscription.Subject, out handlerDel)) return;
+        if (null == Delegate.Remove(handlerDel, subscription.MsgHandler)) msgHandlers.Remove(subscription.Subject);   //no subscription left on this subject
       }
     }
 
-    /* Internal class to manage any subscription handler(s) of a subject with a MulticastDelegate.
-     * Handlers that expect a specific message of type <T> get proxied in a 'checkedHandler' that
-     * only delegates to the subscription-handler if the message type is matching.
-     * For the purpose of unsubscribing the original subscription-handler is kept as key into orgSubHandlers...
-     */
-    private class SubscriptionHandler {
-      public static SubscriptionHandler Create<T>(Delegate subHandler) where T : class {
-        var hdel= new SubscriptionHandler();
-        hdel.Add<T>(subHandler);
-        return hdel;
-      }
-      private Dictionary<Delegate, Delegate> orgSubHandlers= new Dictionary<Delegate, Delegate>();
-      public Action<object> MsgDelegate { get; private set; }
-      public void Add<T>(Delegate subHandler) where T: class {
-        Action<object> checkedDel= (o) => {
-          var msg= o as T;
-          if (null != msg)
-            ((Action<T>)subHandler).Invoke(msg);
-        };
-        var msgDel=   typeof(T).Equals(typeof(object))
-                    ? subHandler
-                    : orgSubHandlers[subHandler]= checkedDel;
-        MsgDelegate= (Action<object>)(  null == MsgDelegate
-                                      ? msgDel
-                                      : Delegate.Combine(MsgDelegate, msgDel));
-      }
+    private Func<object, Task> createAsyncProxy<T>(Delegate subHandler) where T : class {
+      return async (o) => {
+        var msg= o as T;
+        if (null != msg) {
+          await Task.Yield();
+          ((Action<T>)subHandler).Invoke(msg);
+        }
+      };
+    }
+    private Func<object, Task> createAsyncReqProxy<TMsg, TRet>(Delegate subHandler, string response) where TMsg : class {
+      return async (o) => {
+        var msg= o as TMsg;
+        if (null != msg) {
+          await Task.Yield();
+          Publish(response, ((Func<TMsg, TRet>)subHandler).Invoke(msg));
+        }
+      };
+    }
 
-      public Delegate Remove(Delegate subHandler) {
-        if (null == subHandler) return MsgDelegate;
-        var msgHandler= subHandler;
-        if (orgSubHandlers.TryGetValue(subHandler, out msgHandler))
-          orgSubHandlers.Remove(subHandler);
-        return MsgDelegate= (Action<object>)Delegate.Remove(MsgDelegate, msgHandler ?? subHandler as Action<object>);
+    private struct SubscriptionInfo {
+      public string Subject;
+      public Delegate MsgHandler;
+
+      public SubscriptionInfo(string subject, Delegate handler) {
+        this.Subject= subject;
+        this.MsgHandler= handler;
       }
     }
+
   }
 }
