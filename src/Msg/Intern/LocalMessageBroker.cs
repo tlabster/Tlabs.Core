@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+using Tlabs.Config;
+
 namespace Tlabs.Msg.Intern {
 
   ///<inherit/>
@@ -101,6 +106,13 @@ namespace Tlabs.Msg.Intern {
       public SubscriptionInfo(string subject, Delegate handler) {
         this.Subject= subject;
         this.MsgHandler= handler;
+      }
+    }
+    ///<summary>Service configurator.</summary>
+    public class Configurator : IConfigurator<IServiceCollection> {
+      ///<inherit/>
+      public void AddTo(IServiceCollection svcColl, IConfiguration cfg) {
+        svcColl.AddSingleton<IMessageBroker, LocalMessageBroker>();
       }
     }
 
