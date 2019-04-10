@@ -78,6 +78,27 @@ namespace Tlabs.Misc.Tests {
       Assert.False(props.TryResolveValue("some.more.prop", out val, out key));
 
     }
-  }
 
+    [Fact]
+    public void LoadTypeTest() {
+      var type= Safe.LoadType("Tlabs.Misc.Tests.MiscTest, Tlabs.Core.Tests", "test type");
+      Assert.IsAssignableFrom<Type>(type);
+
+      type= Safe.LoadType("Tlabs.Misc.Tests.MiscTest+GenericTest`1, Tlabs.Core.Tests & Tlabs.Misc.Tests.MiscTest, Tlabs.Core.Tests", "test type");
+      Assert.IsAssignableFrom<Type>(type);
+
+      Assert.Throws<AppConfigException>(() =>
+        Safe.LoadType("Tlabs.Misc.Tests.MiscTest+GenericTest`1, Tlabs.Core.Tests & Tlabs.Misc.Tests.MiscTest+Dummy, Tlabs.Core.Tests", "test type")
+      );
+
+      Assert.Throws<AppConfigException>(() =>
+        Safe.LoadType("Tlabs.Misc.Tests.XYZ, Tlabs.Core.Tests", "test type")
+      );
+    }
+
+    public class GenericTest<T> where T : MiscTest {
+
+    }
+    public class Dummy { }
+  }
 }

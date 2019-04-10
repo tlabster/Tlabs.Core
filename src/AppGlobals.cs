@@ -2,6 +2,8 @@
 using System.IO;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
@@ -142,9 +144,43 @@ namespace Tlabs {
       }
     }
 
-    ///<summary>Exceutes the <paramref name="scopedAction"/> with a service instance of <typeparamref name="T"/> from a new scope.</summary>
-    public static void WithScopedObject<T>(Action<T> scopedAction) {
-      WithServiceScope(svcProv => scopedAction(ActivatorUtilities.CreateInstance<T>(svcProv)));
+    ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor resolved from the <see cref="ServiceProv"/>.</summary>
+    public static object CreateResolvedInstance(Type instanceType) => ActivatorUtilities.CreateInstance(svcProv, instanceType);
+
+    ///<summary>Runs an asynchronous background service by calling <paramref name="runSvc"/>.</summary>
+    ///<typeparam name="TSvc">Type of the service being created.</typeparam>
+    ///<typeparam name="TRes">Type of the service result (returned from <paramref name="runSvc"/>).</typeparam>
+    ///<remarks>
+    ///An instance of the service of type <typeparamref name="TSvc"/> is created using a ctor whose parameters are getting resolved via dependency injection from <see cref="App.ServiceProv"/>.
+    ///(It is also okay if <typeparamref name="TSvc"/> only has a default ctor.)
+    ///<para>NOTE: If <typeparamref name="TSvc"/> is <see cref="IDisposable"/> it gets disposed after <paramref name="runSvc"/> was invoked.</para>
+    ///</remarks>
+    public static Task<TRes> RunBackgroundService<TSvc, TRes>(Func<TSvc, TRes> runSvc) where TRes : class {
+      return RunBackgroundService<TSvc, TRes>(typeof(TSvc), runSvc);
+    }
+
+    ///<summary>Runs an asynchronous background service by calling <paramref name="runSvc"/>.</summary>
+    ///<typeparam name="TSvc">Type of the service being created.</typeparam>
+    ///<typeparam name="TRes">Type of the service result (returned from <paramref name="runSvc"/>).</typeparam>
+    ///<remarks>
+    ///An instance of the service of type <paramref name="svcType"/> is created using a ctor whose parameters are getting resolved via dependency injection from <see cref="App.ServiceProv"/>.
+    ///<para>This overload of the method is to be used in cases where <paramref name="svcType"/> is not known at compile time, but must be assignable to <typeparamref name="TSvc"/>.</para>
+    ///(It is also okay if <paramref name="svcType"/> only has a default ctor.)
+    ///<para>NOTE: If <paramref name="svcType"/> is <see cref="IDisposable"/> it gets disposed after <paramref name="runSvc"/> was invoked.</para>
+    ///</remarks>
+    public static Task<TRes> RunBackgroundService<TSvc, TRes>(Type svcType, Func<TSvc, TRes> runSvc) where TRes : class {
+      return Task<TRes>.Run(() => {
+        TRes res= null;
+        WithServiceScope(svcProv => {
+          TSvc svc= default(TSvc);
+          try {
+            svc= (TSvc)ActivatorUtilities.CreateInstance(svcProv, svcType);
+            res= runSvc(svc);
+          }
+          finally { (svc as IDisposable)?.Dispose(); }   //try to dispose
+        });
+        return res;
+      });
     }
 
     ///<summary>Application <see cref="TimeZoneInfo"/></summary>

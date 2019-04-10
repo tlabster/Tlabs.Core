@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Primitives;
 
 namespace Tlabs.Config {
@@ -73,6 +72,15 @@ namespace Tlabs.Config {
       return builder;
     }
 
+  }
+
+
+  /// <summary>Base class to configure ist-self als enumerable of <typeparamref name="T"/>.</summary>
+  public abstract class SelfEnumConfigurator<T> : IConfigurator<IServiceCollection> {
+    ///<inherit/>
+    public void AddTo(IServiceCollection services, IConfiguration cfg) {
+      services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(T), GetType()));  //add self
+    }
   }
 
 

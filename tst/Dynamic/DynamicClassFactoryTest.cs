@@ -32,7 +32,7 @@ namespace Tlabs.Dynamic.Tests {
       var emptyType= DynamicClassFactory.CreateType(emptyProps);
       Assert.IsAssignableFrom<Type>(emptyType);
       Assert.False(emptyType.IsGenericTypeDefinition);
-      Assert.True(emptyType.Name.EndsWith("`0")); //no explicit name, zero properties
+      Assert.EndsWith("`0", emptyType.Name);
       Assert.Same(emptyType, DynamicClassFactory.CreateType(emptyProps));
       tstout.WriteLine(emptyType.Name);
 

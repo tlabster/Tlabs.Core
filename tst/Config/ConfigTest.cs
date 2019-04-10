@@ -14,6 +14,12 @@ namespace Tlabs.Config.Tests {
       }
     }
 
+    public class TstGenric<A> : IConfigurator<ConfigTest> {
+      public void AddTo(ConfigTest target, IConfiguration cfg) {
+        ++target.appliedConfigCount;
+      }
+    }
+
     private int appliedConfigCount= 0;
 
     private readonly ITestOutputHelper tstout;
@@ -41,7 +47,7 @@ namespace Tlabs.Config.Tests {
         tstout.WriteLine($"[{entry.Key}]= '{entry.Value}'");
 
       this.ApplyConfigurators(config, "tstSection");
-      Assert.Equal(1, this.appliedConfigCount);
+      Assert.Equal(2, this.appliedConfigCount);
 
     }
 

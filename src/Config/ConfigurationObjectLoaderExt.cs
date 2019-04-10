@@ -28,12 +28,8 @@ namespace Tlabs.Config {
           Console.WriteLine($"Invalid {nameof(ObjectDescriptor)} - {{0}} instance NOT LOADED (from section {{1}}.{{2}}).", typeName, secName, tpair.Key ?? "?");
           continue;
         }
-
-        var qualifiedTypeName= objDsc.type ?? "?";
-        var parts= qualifiedTypeName.Split('|');
-
-        var configDesc= $"{secName}:{tpair.Key ?? "?"}:type: ";
-        Type tp= loadPossiblyGenericType(parts, configDesc);
+        var configDesc= $"{secName}:{tpair.Key ?? "?"}:type: {objDsc.type}";
+        Type tp= Misc.Safe.LoadType(objDsc.type, configDesc);
         T obj= null;
         try {
           try { // frist from ctor taking a config dictionary
@@ -43,24 +39,9 @@ namespace Tlabs.Config {
             obj= (T)Activator.CreateInstance(tp); //try with default ctor
           }
         }
-        catch (Exception e) { throw new AppConfigException($"Failed to create {typeName} instance of {configDesc}{qualifiedTypeName}", e); }
+        catch (Exception e) { throw new AppConfigException($"Failed to create {typeName} instance for {configDesc}", e); }
         if (null != obj)
           yield return obj;
-      }
-    }
-
-    private static Type loadPossiblyGenericType(string[] typeNameParts, string configDesc) {
-      if (1 == typeNameParts.Length)  //simple non generic type?
-        return Misc.Safe.LoadType(typeNameParts[0].Trim(), configDesc + typeNameParts[0]);
-
-      var types= new Type[typeNameParts.Length];
-      for (int l= 0; l < types.Length; ++l)
-        types[l]= Misc.Safe.LoadType(typeNameParts[1].Trim(), configDesc + typeNameParts[1]);
-      try {
-        return types[0].MakeGenericType(types.Skip(1).ToArray());
-      }
-      catch (ArgumentNullException e) {
-        throw new AppConfigException("Invalid generic type parameters in " + configDesc + typeNameParts[0], e);
       }
     }
 
