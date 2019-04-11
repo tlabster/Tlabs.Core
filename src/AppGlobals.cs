@@ -174,7 +174,7 @@ namespace Tlabs {
         WithServiceScope(svcProv => {
           TSvc svc= default(TSvc);
           try {
-            svc= (TSvc)ActivatorUtilities.CreateInstance(svcProv, svcType);
+            svc= (TSvc)CreateResolvedInstance(svcType);
             res= runSvc(svc);
           }
           finally { (svc as IDisposable)?.Dispose(); }   //try to dispose
