@@ -14,8 +14,13 @@ namespace Tlabs.Config {
       public Dictionary<string, string> config { get; set; }
     }
 
-    ///<summary>Returns an enumeration of <see cref="IConfigurator{T}"/>(s) instances loaded from a <see cref="IConfiguration"/>.</summary>
-    public static IEnumerable<T> LoadObject<T>(this IConfiguration cfg) where T : class {
+    public struct CfgObject<T> {
+      public string SectionName;
+      public T Object;
+    }
+
+    ///<summary>Returns an enumeration of <see cref="CfgObject{T}"/>(s) with <see cref="CfgObject{T}.Object"/> instances loaded from a <see cref="IConfiguration"/>.</summary>
+    public static IEnumerable<CfgObject<T>> LoadObject<T>(this IConfiguration cfg) where T : class {
       var secName= (cfg as IConfigurationSection)?.Key ?? "?";
       var typeName= typeof(T).Name;
       var types= new Dictionary<string, ObjectDescriptor>();
@@ -41,7 +46,10 @@ namespace Tlabs.Config {
         }
         catch (Exception e) { throw new AppConfigException($"Failed to create {typeName} instance for {configDesc}", e); }
         if (null != obj)
-          yield return obj;
+          yield return new CfgObject<T> {
+            SectionName= tpair.Key,
+            Object= obj
+          };
       }
     }
 
