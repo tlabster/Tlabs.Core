@@ -14,8 +14,11 @@ namespace Tlabs.Config {
       public Dictionary<string, string> config { get; set; }
     }
 
+    ///<summary>Configuration object with section key.</summary>
     public struct CfgObject<T> {
+      ///<summary>Section key.</summary>
       public string SectionName;
+      ///<summary>Configuration object instance.</summary>
       public T Object;
     }
 
