@@ -29,7 +29,7 @@ namespace Tlabs.Config {
     public static T ApplyConfigurators<T>(this T target, IConfiguration config, string subSectionName= null) {
       IConfiguration section= (string.IsNullOrEmpty(subSectionName) ? null : config.GetSection(subSectionName)) ?? config;
       foreach(var conf in section.LoadObject<IConfigurator<T>>()) {
-        conf.AddTo(target, config);
+        conf.Object.AddTo(target, section.GetSection(conf.SectionName));
       }
       return target;
     }
