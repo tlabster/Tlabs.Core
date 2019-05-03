@@ -43,7 +43,7 @@ namespace Tlabs {
     static ILoggerFactory tmpLogFactory;
     static readonly IApplicationLifetime notYetALife= new NotYetALifeApplication();
     static IApplicationLifetime appLifetime= notYetALife;
-    static IServiceProvider svcProv;
+    static IServiceProvider appSvcProv;
 
     static IAppTime appTime;
 
@@ -129,23 +129,25 @@ namespace Tlabs {
     /// This should be set (once) during application startup.
     ///</remarks>
     public static IServiceProvider ServiceProv {
-      get { return svcProv; }
+      get { return appSvcProv; }
       set {
-        if (null != svcProv || null != Interlocked.CompareExchange<IServiceProvider>(ref svcProv, value, null)) throw new InvalidOperationException($"{nameof(ServiceProv)} is already set.");
-        Interlocked.CompareExchange<IApplicationLifetime>(ref appLifetime, svcProv.GetService(typeof(IApplicationLifetime)) as IApplicationLifetime, notYetALife);
+        if (null != appSvcProv || null != Interlocked.CompareExchange<IServiceProvider>(ref appSvcProv, value, null)) throw new InvalidOperationException($"{nameof(ServiceProv)} is already set.");
+        Interlocked.CompareExchange<IApplicationLifetime>(ref appLifetime, appSvcProv.GetService(typeof(IApplicationLifetime)) as IApplicationLifetime, notYetALife);
       }
     }
 
     ///<summary>Exceutes the <paramref name="scopedAction"/> with a (new) scoped <see cref="IServiceProvider"/>.</summary>
     public static void WithServiceScope(Action<IServiceProvider> scopedAction) {
-      var scopeFac= svcProv.GetService(typeof(IServiceScopeFactory)) as IServiceScopeFactory;
+      var scopeFac= ServiceProv.GetService(typeof(IServiceScopeFactory)) as IServiceScopeFactory;
       using(var svcScope= scopeFac?.CreateScope()) {
         scopedAction(svcScope.ServiceProvider);
       }
     }
 
-    ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor resolved from the <see cref="ServiceProv"/>.</summary>
-    public static object CreateResolvedInstance(Type instanceType) => ActivatorUtilities.CreateInstance(svcProv, instanceType);
+    ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor
+    ///resolved from the optional <paramref name="svcProv"/> (defaults to <see cref="ServiceProv"/>).
+    ///</summary>
+    public static object CreateResolvedInstance(Type instanceType, IServiceProvider svcProv= null) => ActivatorUtilities.CreateInstance(svcProv ?? ServiceProv, instanceType);
 
     ///<summary>Runs an asynchronous background service by calling <paramref name="runSvc"/>.</summary>
     ///<typeparam name="TSvc">Type of the service being created.</typeparam>
@@ -174,7 +176,7 @@ namespace Tlabs {
         WithServiceScope(svcProv => {
           TSvc svc= default(TSvc);
           try {
-            svc= (TSvc)CreateResolvedInstance(svcType);
+            svc= (TSvc)CreateResolvedInstance(svcType, svcProv);
             res= runSvc(svc);
           }
           finally { (svc as IDisposable)?.Dispose(); }   //try to dispose
