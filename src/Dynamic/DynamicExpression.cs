@@ -34,20 +34,20 @@ namespace Tlabs.Dynamic {
     /// <list>
     /// <item><term>In <typeparamref name="TCtx"/> define these properties with type <see cref="object"/>.
     /// </term></item>
-    /// <item><term>In <typeparamref name="TCtx"/>Provide a <paramref name="ctxConverter"/> dictionary with the name and the actual dynamic <see cref="Type"/> of the property.
+    /// <item><term>Provide a <paramref name="ctxConverter"/> dictionary with the name and the actual dynamic <see cref="Type"/> of the property.
     /// </term></item>
     /// </list>
     /// The property exposed to the expression scope will now get the actual dynamic type given by the <paramref name="ctxConverter"/>.
     /// <para>
     /// </para>
     ///</remarks>
-    public DynamicExpression(string expression, IDictionary<string, Type> ctxConverter= null, IDictionary<string, object> funcLib = null) {
+    public DynamicExpression(string expression, IDictionary<string, Type> ctxConverter= null, IDictionary<string, object> funcLib= null) {
       if (null == (this.expression= expression)) throw new ArgumentNullException(nameof(expression));
       funcLib= funcLib ?? Misc.Function.Library;
 
       var lamda=   null == ctxConverter
-                   ? (Expression<Func<TCtx, TRes>>) parsedExpression(expression, funcLib)
-                   : buildExpression(expression, funcLib, ctxConverter);
+                   ? (Expression<Func<TCtx, TRes>>) DynXHelper.ParsedExpression<TCtx>(expression, typeof(TRes), funcLib)
+                   : DynXHelper.BuildLambdaExpression<TCtx, TRes>(expression, funcLib, ctxConverter);
 
       this.exprDelegate= lamda.Compile();
     }
@@ -61,50 +61,6 @@ namespace Tlabs.Dynamic {
 
     /// <summary>Expression source.</summary>
     public string Source => this.expression;
-
-    private Expression<Func<TCtx, TRes>> buildExpression(string expression, IDictionary<string, object> funcLib, IDictionary<string, Type> ctxConverter) {
-      var ctxProps= typeof(TCtx).GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(p => p.CanRead).ToList();
-      var exprParams= ctxProps.Select(p => {
-        Type paramType;
-        if (!ctxConverter.TryGetValue(p.Name, out paramType))
-          paramType= p.PropertyType;
-        return Expression.Parameter(paramType, p.Name);
-      });
-      var parsedExpr= parsedExpression(expression, exprParams, funcLib);
-      var ctxObj= Expression.Parameter(typeof(TCtx));
-      var ctxParams= ctxProps.Select(p => {
-        Expression paramVal= Expression.MakeMemberAccess(ctxObj, p);
-        Type convertionType;
-        if (ctxConverter.TryGetValue(p.Name, out convertionType))
-          paramVal= Expression.Convert(paramVal, convertionType);   //perform a type convertion
-        return paramVal;
-      });
-
-      return Expression.Lambda<Func<TCtx, TRes>>(Expression.Invoke(parsedExpr, ctxParams), ctxObj);
-    }
-
-    private LambdaExpression parsedExpression(string expression, IDictionary<string, object> funcLib) {
-      if (null == expression) throw new ArgumentNullException(nameof(expression));
-      try {
-        return DynamicExpressionParser.ParseLambda(false, typeof(TCtx), typeof(TRes), expression, funcLib);
-      }
-      catch (System.Linq.Dynamic.Core.Exceptions.ParseException e) {
-        throw new ExpressionSyntaxException(expressionError(e));
-      }
-    }
-
-    private LambdaExpression parsedExpression(string expression, IEnumerable<ParameterExpression> exprParams, IDictionary<string, object> funcLib) {
-      try {
-        return DynamicExpressionParser.ParseLambda(false, exprParams.ToArray(), typeof(TRes), expression, funcLib);
-      }
-      catch (System.Linq.Dynamic.Core.Exceptions.ParseException e) {
-        throw new ExpressionSyntaxException(expressionError(e));
-      }
-    }
-
-    private static string expressionError(System.Linq.Dynamic.Core.Exceptions.ParseException e, string msg= "Expression syntax error") {
-      return $"{msg} @{e.Position} ({e.Message})";
-    }
   }
 
 }
