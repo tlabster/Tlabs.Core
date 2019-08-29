@@ -60,6 +60,10 @@ namespace Tlabs.Dynamic.Test {
       dynExpr= new DynamicExpression<ExpressionContext, bool>("it.Product != null && Product.ProdNumber.StartsWith(\"X\") && it.Sales.TxId.StartsWith(\"TX__\")");
       Assert.NotNull(dynExpr);
       Assert.True(dynExpr.Evaluate(TYPED_CTX));
+
+      var ctx= new ExpressionContext();
+      ctx.Sales= TYPED_CTX.Sales;
+      Assert.False(dynExpr.Evaluate(ctx));  //Product == null, check conditional short-circuiting &&
     }
 
     [Fact]

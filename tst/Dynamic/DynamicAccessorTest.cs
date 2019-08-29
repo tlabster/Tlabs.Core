@@ -8,7 +8,7 @@ namespace Tlabs.Dynamic.Tests {
       public int propInt { get; set; }
       public string propStr { get; set; }
       public bool propBool { get; set; }
-      public decimal propDec { get; set; }
+      public decimal? propDec { get; set; }
     }
 
     [Fact]
@@ -84,6 +84,9 @@ namespace Tlabs.Dynamic.Tests {
 
       props["propDec"]= 9.99m;
       Assert.Equal(9.99m, propAcc["propDec"].Get(obj));
+
+      props["propDec"]= null;
+      Assert.Equal(0M, propAcc["propDec"].Get(obj));
 
     }
   }
