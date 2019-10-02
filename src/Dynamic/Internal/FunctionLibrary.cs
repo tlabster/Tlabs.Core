@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-
+using System.Globalization;
 
 namespace Tlabs.Dynamic.Misc  {
 
@@ -25,6 +25,7 @@ namespace Tlabs.Dynamic.Misc  {
     private static readonly Expression<Func<object, object, decimal>> YearsDiffExp= (d1, d2) => YearsDiff(d1, d2);
     private static readonly Expression<Func<object, object, decimal>> MonthsDiffExp= (d1, d2) => MonthsDiff(d1, d2);
     private static readonly Expression<Func<object, object, decimal>> DaysDiffExp= (d1, d2) => DaysDiff(d1, d2);
+    private static readonly Expression<Func<object, decimal>> YearWeekExp= (o1) => YearWeek(o1);
     private static readonly Expression<Func<object, object, DateTime?>> AfterDaysExp= (d1, d2) => AfterDays(d1, d2);
     private static readonly Expression<Func<object, object, DateTime?>> RecentExp= (d1, d2) => Recent(d1, d2);
     private static readonly Expression<Func<object, object, DateTime?>> FormerExp= (d1, d2) => Former(d1, d2);
@@ -68,6 +69,10 @@ namespace Tlabs.Dynamic.Misc  {
       var totalDays= tspan.TotalDays;
       var daySpan=  totalDays > 0 ? Math.Floor(totalDays) : Math.Ceiling(totalDays);
       return (decimal)Math.Abs(daySpan);
+    }
+    internal static decimal YearWeek(object o1) {
+      var d= (o1 as DateTime?).GetValueOrDefault();
+      return (decimal)d.Year + (CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(d, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday) / 100.0M);
     }
     internal static DateTime? AfterDays(object o1, object od) {
       var nd= o1 as DateTime?;
@@ -156,6 +161,7 @@ namespace Tlabs.Dynamic.Misc  {
       ["@YearsDiff"]= YearsDiffExp,
       ["@MonthsDiff"]= MonthsDiffExp,
       ["@DaysDiff"]= DaysDiffExp,
+      ["@YearWeek"]= YearWeekExp,
       ["@AfterDays"]= AfterDaysExp,
       ["@Recent"]= RecentExp,
       ["@Former"]= FormerExp,
