@@ -67,8 +67,11 @@ namespace Tlabs.Timing {
     /// <summary>Add a new time schedule.</summary>
     public void Add(ITimePlan time, Action dueTimeCallee) {
       lock (schedule) {
-        Add(new ScheduleInfo(time, dueTimeCallee), App.TimeInfo.Now);
-        UpdateTimer();
+        var fromNow= App.TimeInfo.Now;
+        var schedule= new ScheduleInfo(time, dueTimeCallee);
+        Add(schedule, fromNow);
+        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"New time schedule, due at: {string.Format("{0:" + TimeScheduler.TIME_FORMAT + "}", schedule.DueDate)}");
+        UpdateTimer(fromNow);
       }
     }
 
@@ -94,13 +97,12 @@ namespace Tlabs.Timing {
     }
 
     private void Add(ScheduleInfo schInfo, DateTime fromNow) {
-      if (null == this.timer) this.timer= new Timer(HandleDueTime, this, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+      if (null == this.timer) this.timer= new Timer(HandleDueTime);
 
       schInfo.Update(fromNow);
       for (var nd= schedule.First; null != nd; nd= nd.Next) {
         if (schInfo.DueDate < nd.Value.DueDate) {
           schedule.AddBefore(nd, schInfo);
-          if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"New time schedule, due at: {string.Format("{0:" + TimeScheduler.TIME_FORMAT + "}", schInfo.DueDate)}");
           return;
         }
       }
@@ -124,23 +126,28 @@ namespace Tlabs.Timing {
           schedule.RemoveFirst();
           Add(schInfo, fromNow);
         }
-        UpdateTimer();
+        UpdateTimer(fromNow);
       }
     }
 
-    private void UpdateTimer() {
+    private void UpdateTimer(DateTime fromNow) {
       /* Set timer to wait for next due-time:
        */
-      int nextDueTime= Timeout.Infinite;
+      long nextTimerDelay= Timeout.Infinite;
       LinkedListNode<ScheduleInfo> firstNode;
       if (null != (firstNode= schedule.First) && DateTime.MaxValue != firstNode.Value.DueDate) {
-        nextDueTime= (int)(firstNode.Value.DueDate - App.TimeInfo.Now).TotalMilliseconds;
-        if (nextDueTime < 0) nextDueTime= 0;  //start immediately if overdue
-        else if (nextDueTime > Int32.MaxValue) nextDueTime= Int32.MaxValue;
+        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"Update timer with due date: {firstNode.Value.DueDate:s}");
+        nextTimerDelay= (long)(firstNode.Value.DueDate - fromNow).TotalMilliseconds;
+        if (nextTimerDelay < 0) {
+          if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"Next schedule is over due: {firstNode.Value.DueDate:s} from now {fromNow:s} ({(long)(firstNode.Value.DueDate - fromNow).TotalMilliseconds})");
+          nextTimerDelay= 0;  //start immediately if overdue
+        }
+        else if (nextTimerDelay > Int32.MaxValue) nextTimerDelay= Int32.MaxValue;
       }
-      if (null != timer)
-        timer.Change(nextDueTime, Timeout.Infinite);
-      Log.LogDebug("Set timer wake-up in {T}ms", nextDueTime);
+      if (null != timer) {
+        timer.Change(nextTimerDelay, Timeout.Infinite);
+        Log.LogDebug("Set timer wake-up in {T}ms", nextTimerDelay);
+      }
     }
 
     class ScheduleInfo {
@@ -156,6 +163,7 @@ namespace Tlabs.Timing {
 
       public void Update(DateTime fromNow) {
         DueDate= ScheduleTime.DueDate(fromNow);
+        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"Next due time (at {fromNow:s}): {DueDate:s}");
       }
     }
 
