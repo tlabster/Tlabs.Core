@@ -44,7 +44,8 @@ namespace Tlabs {
 
     /// <inherit/>
     public DateTime ToAppTime(DateTime dt) {
-      return TimeZoneInfo.ConvertTime(dt, TimeZoneInfo.Utc, TZinfo);    //explicitly specify source and dest. time zones !!!
+      var srcTZ= dt.Kind == DateTimeKind.Local ? TimeZoneInfo.Local : TimeZoneInfo.Utc;
+      return TimeZoneInfo.ConvertTime(dt, srcTZ, TZinfo);    //explicitly specify source and dest. time zones !!!
     }
 
     /// <inherit/>
