@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Tlabs.Dynamic.Tests {
@@ -9,6 +12,7 @@ namespace Tlabs.Dynamic.Tests {
       public string propStr { get; set; }
       public bool propBool { get; set; }
       public decimal? propDec { get; set; }
+      public List<string> propList { get; set; }
     }
 
     [Fact]
@@ -17,7 +21,8 @@ namespace Tlabs.Dynamic.Tests {
         propInt= 123,
         propStr= "test",
         propBool= true,
-        propDec= 1.23m
+        propDec= 1.23m,
+        propList= new List<string> { "test" }
       };
 
       var propAcc= new DynamicAccessor(obj.GetType());
@@ -31,6 +36,9 @@ namespace Tlabs.Dynamic.Tests {
       Assert.Equal(obj.propInt, propAcc["propInt"].Get(obj));
 
       Assert.Null(propAcc["xxx"].Get(obj));  //prop not defined
+
+      var list= (List<string>) propAcc["propList"].Get(obj);
+      Assert.Equal("test", list.First());
     }
 
     [Fact]
@@ -55,6 +63,20 @@ namespace Tlabs.Dynamic.Tests {
 
       propAcc["propDec"].Set(obj, 9.99m);
       Assert.Equal(9.99m, propAcc["propDec"].Get(obj));
+
+      propAcc["propList"].Set(obj, new List<string> { "test2" });
+      var list= (List<string>) propAcc["propList"].Get(obj);
+      Assert.Equal("test2", list.First());
+
+      // Assigning an object of a type that does not implement IConvertible fails
+      string json = @"[
+        'Small',
+        'Medium',
+        'Large'
+      ]";
+
+      JArray a = JArray.Parse(json);
+      propAcc["propList"].Set(obj, a);
     }
 
     [Fact]
