@@ -18,8 +18,7 @@ namespace Tlabs.Dynamic {
 
     ///<summary>Ctor from <paramref name="targetType"/>.</summary>
     public DynamicAccessor(Type targetType) {
-      var cngTypeMethod= typeof(Convert).GetMethod("ChangeType", new Type[] {typeof(object), typeof(Type)});
-      var nullTypeMethod= typeof(Nullable).GetMethod("GetUnderlyingType");
+      var coerceMethod= GetType().GetMethod("coerceIntoTargetValue", BindingFlags.Static | BindingFlags.NonPublic);
 
       foreach (var pi in targetType.GetProperties()) {
         /* Create accessor delegates:
@@ -28,11 +27,11 @@ namespace Tlabs.Dynamic {
          */
         var targetParam= Expression.Parameter(typeof(object));
         var valParam= Expression.Parameter(typeof(object));
-        var convType= Expression.Coalesce(Expression.Call(nullTypeMethod, Expression.Constant(pi.PropertyType)), Expression.Constant(pi.PropertyType));
         // var propParam= Expression.Parameter(pi.PropertyType);
         var getterBody= Expression.Convert(Expression.Call(Expression.Convert(targetParam, targetType), pi.GetMethod), typeof(object));
         var setterBody=   null != pi.SetMethod
-                        ? (Expression)Expression.Call(Expression.Convert(targetParam, targetType), pi.SetMethod, Expression.Convert(Expression.Call(cngTypeMethod, valParam, convType), pi.PropertyType))
+                        // ? (Expression)Expression.Call(Expression.Convert(targetParam, targetType), pi.SetMethod, Expression.Convert(Expression.Call(cngTypeMethod, valParam, convType), pi.PropertyType))
+                        ? (Expression)Expression.Call(Expression.Convert(targetParam, targetType), pi.SetMethod, Expression.Convert(Expression.Call(coerceMethod, valParam, Expression.Constant(pi.PropertyType)), pi.PropertyType))
                         : (Expression)Expression.Empty(); //NoOp if read-only
         accessorMap[pi.Name]= new Property {
           Get= Expression.Lambda<Func<object, object>>(getterBody, targetParam).Compile(),
@@ -40,6 +39,14 @@ namespace Tlabs.Dynamic {
         };
       }
 
+    }
+
+    private static object coerceIntoTargetValue(object val, Type targetType) {
+      if (null == val) return val;
+      targetType= Nullable.GetUnderlyingType(targetType) ?? targetType;
+      return   targetType is IConvertible
+             ? Convert.ChangeType(val, targetType)
+             : val;
     }
 
     ///<summary>Indexer to return <see cref="Property"/> for <paramref name="name"/>.</summary>

@@ -1,14 +1,19 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Tlabs.Dynamic.Tests {
 
   public class DynamicAccessorTest {
+
+    static readonly decimal[] DECLST= new decimal[] { 3.141m, 2.71828m };
     public class TstType {
       public int propInt { get; set; }
       public string propStr { get; set; }
       public bool propBool { get; set; }
       public decimal? propDec { get; set; }
+      public IList<decimal> decList { get; set;}
     }
 
     [Fact]
@@ -17,7 +22,8 @@ namespace Tlabs.Dynamic.Tests {
         propInt= 123,
         propStr= "test",
         propBool= true,
-        propDec= 1.23m
+        propDec= 1.23m,
+        decList= DECLST
       };
 
       var propAcc= new DynamicAccessor(obj.GetType());
@@ -26,6 +32,8 @@ namespace Tlabs.Dynamic.Tests {
       Assert.Equal(obj.propStr, propAcc["propStr"].Get(obj));
       Assert.Equal(obj.propBool, propAcc["propBool"].Get(obj));
       Assert.Equal(obj.propDec, propAcc["propDec"].Get(obj));
+      Assert.Equal(obj.decList[0], ((decimal[])propAcc["decList"].Get(obj))[0]);
+      Assert.Equal(obj.decList[1], ((decimal[])propAcc["decList"].Get(obj))[1]);
 
       propAcc["propInt"].Set(obj, 0);  //prop is read-only, this is NoOp.
       Assert.Equal(obj.propInt, propAcc["propInt"].Get(obj));
@@ -55,6 +63,16 @@ namespace Tlabs.Dynamic.Tests {
 
       propAcc["propDec"].Set(obj, 9.99m);
       Assert.Equal(9.99m, propAcc["propDec"].Get(obj));
+      propAcc["propDec"].Set(obj, null);
+      Assert.Equal(null, propAcc["propDec"].Get(obj));
+
+      var lst2= DECLST.ToArray();
+      Assert.False(lst2.GetType() is IConvertible, "non IConvertible needed for this test");
+      lst2[0]= 55;
+      propAcc["decList"].Set(obj, lst2);
+      Assert.Equal(lst2[0], ((decimal[])propAcc["decList"].Get(obj))[0]);
+      Assert.Equal(lst2[1], ((decimal[])propAcc["decList"].Get(obj))[1]);
+
     }
 
     [Fact]
@@ -63,7 +81,8 @@ namespace Tlabs.Dynamic.Tests {
         propInt= 123,
         propStr= "test",
         propBool= true,
-        propDec= 1.23m
+        propDec= 1.23m,
+        decList= DECLST
       };
 
       var propAcc= new DynamicAccessor(typeof(TstType));
@@ -84,10 +103,21 @@ namespace Tlabs.Dynamic.Tests {
 
       props["propDec"]= 9.99m;
       Assert.Equal(9.99m, propAcc["propDec"].Get(obj));
-
       props["propDec"]= null;
-      Assert.Equal(0M, propAcc["propDec"].Get(obj));
+      Assert.Equal(null, propAcc["propDec"].Get(obj));
+      Assert.Equal(null, obj.propDec);
 
+      props["decList"]= null;
+      Assert.Equal(null, propAcc["decList"].Get(obj));
+      Assert.Equal(null, obj.decList);
+
+      var lst2= DECLST.ToArray();
+      Assert.False(lst2.GetType() is IConvertible, "non IConvertible needed for this test");
+      lst2[0]= 55;
+      Assert.Equal(lst2[0], ((decimal[])propAcc["decList"].Get(obj))[0]);
+      Assert.Equal(lst2[0], obj.decList[0]);
+      Assert.Equal(lst2[1], ((decimal[])propAcc["decList"].Get(obj))[1]);
+      Assert.Equal(lst2[1], obj.decList[1]);
     }
   }
 }
