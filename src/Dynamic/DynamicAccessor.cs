@@ -18,8 +18,7 @@ namespace Tlabs.Dynamic {
 
     ///<summary>Ctor from <paramref name="targetType"/>.</summary>
     public DynamicAccessor(Type targetType) {
-      var cngTypeMethod= typeof(Convert).GetMethod("ChangeType", new Type[] {typeof(object), typeof(Type)});
-      var nullTypeMethod= typeof(Nullable).GetMethod("GetUnderlyingType");
+      var coerceMethod= GetType().GetMethod("coerceIntoTargetValue", BindingFlags.Static | BindingFlags.NonPublic);
 
       foreach (var pi in targetType.GetProperties()) {
         /* Create accessor delegates:
@@ -28,11 +27,11 @@ namespace Tlabs.Dynamic {
          */
         var targetParam= Expression.Parameter(typeof(object));
         var valParam= Expression.Parameter(typeof(object));
-        var convType= Expression.Coalesce(Expression.Call(nullTypeMethod, Expression.Constant(pi.PropertyType)), Expression.Constant(pi.PropertyType));
         // var propParam= Expression.Parameter(pi.PropertyType);
         var getterBody= Expression.Convert(Expression.Call(Expression.Convert(targetParam, targetType), pi.GetMethod), typeof(object));
         var setterBody=   null != pi.SetMethod
-                        ? (Expression)Expression.Call(Expression.Convert(targetParam, targetType), pi.SetMethod, Expression.Convert(Expression.Call(cngTypeMethod, valParam, convType), pi.PropertyType))
+                        // ? (Expression)Expression.Call(Expression.Convert(targetParam, targetType), pi.SetMethod, Expression.Convert(Expression.Call(cngTypeMethod, valParam, convType), pi.PropertyType))
+                        ? (Expression)Expression.Call(Expression.Convert(targetParam, targetType), pi.SetMethod, Expression.Convert(Expression.Call(coerceMethod, valParam, Expression.Constant(pi.PropertyType)), pi.PropertyType))
                         : (Expression)Expression.Empty(); //NoOp if read-only
         accessorMap[pi.Name]= new Property {
           Get= Expression.Lambda<Func<object, object>>(getterBody, targetParam).Compile(),
@@ -40,6 +39,32 @@ namespace Tlabs.Dynamic {
         };
       }
 
+    }
+
+    private static object coerceIntoTargetValue(object val, Type targetType) {
+      IEnumerable valEnum;
+      if (null == val) return val;
+      List<string> x;
+      targetType= Nullable.GetUnderlyingType(targetType) ?? targetType;
+      if (targetType.IsAssignableFrom(val.GetType()))
+        return val;                                       //no convertion neccessary
+      if (targetType is IConvertible)
+        return Convert.ChangeType(val, targetType);       ////convert by IConvertable
+
+      if (targetType.IsGenericType && null != (valEnum= val as IEnumerable)) {
+        /*  Support convertion of types that only implement IEnumerable (like with strange stuff like Newtonsoft.Json.Linq.JArray...))
+         *  into a target type implementing IList<>.
+        */
+        var itemType= targetType.GenericTypeArguments[0];
+        Type targetListType= typeof(List<>).MakeGenericType(itemType);
+        if (targetType.IsAssignableFrom(targetListType)) {
+          IList lst= (IList)Activator.CreateInstance(targetListType);
+          foreach (var itm in valEnum)
+            lst.Add(Convert.ChangeType(itm, itemType));
+          val= lst;
+        }
+      }
+      return val;
     }
 
     ///<summary>Indexer to return <see cref="Property"/> for <paramref name="name"/>.</summary>
