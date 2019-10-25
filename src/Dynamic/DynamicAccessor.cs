@@ -42,11 +42,29 @@ namespace Tlabs.Dynamic {
     }
 
     private static object coerceIntoTargetValue(object val, Type targetType) {
+      IEnumerable valEnum;
       if (null == val) return val;
+      List<string> x;
       targetType= Nullable.GetUnderlyingType(targetType) ?? targetType;
-      return   targetType is IConvertible
-             ? Convert.ChangeType(val, targetType)
-             : val;
+      if (targetType.IsAssignableFrom(val.GetType()))
+        return val;                                       //no convertion neccessary
+      if (targetType is IConvertible)
+        return Convert.ChangeType(val, targetType);       ////convert by IConvertable
+
+      if (targetType.IsGenericType && null != (valEnum= val as IEnumerable)) {
+        /*  Support convertion of types that only implement IEnumerable (like with strange stuff like Newtonsoft.Json.Linq.JArray...))
+         *  into a target type implementing IList<>.
+        */
+        var itemType= targetType.GenericTypeArguments[0];
+        Type targetListType= typeof(List<>).MakeGenericType(itemType);
+        if (targetType.IsAssignableFrom(targetListType)) {
+          IList lst= (IList)Activator.CreateInstance(targetListType);
+          foreach (var itm in valEnum)
+            lst.Add(Convert.ChangeType(itm, itemType));
+          val= lst;
+        }
+      }
+      return val;
     }
 
     ///<summary>Indexer to return <see cref="Property"/> for <paramref name="name"/>.</summary>

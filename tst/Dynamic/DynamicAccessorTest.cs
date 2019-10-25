@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Collections.Generic;
 using Xunit;
+using System.Collections;
 
 namespace Tlabs.Dynamic.Tests {
 
@@ -13,6 +14,7 @@ namespace Tlabs.Dynamic.Tests {
       public string propStr { get; set; }
       public bool propBool { get; set; }
       public decimal? propDec { get; set; }
+      public List<string> propList { get; set; }
       public IList<decimal> decList { get; set;}
     }
 
@@ -32,8 +34,8 @@ namespace Tlabs.Dynamic.Tests {
       Assert.Equal(obj.propStr, propAcc["propStr"].Get(obj));
       Assert.Equal(obj.propBool, propAcc["propBool"].Get(obj));
       Assert.Equal(obj.propDec, propAcc["propDec"].Get(obj));
-      Assert.Equal(obj.decList[0], ((decimal[])propAcc["decList"].Get(obj))[0]);
-      Assert.Equal(obj.decList[1], ((decimal[])propAcc["decList"].Get(obj))[1]);
+      Assert.Equal(obj.decList[0], ((IList<decimal>)propAcc["decList"].Get(obj))[0]);
+      Assert.Equal(obj.decList[1], ((IList<decimal>)propAcc["decList"].Get(obj))[1]);
 
       propAcc["propInt"].Set(obj, 0);  //prop is read-only, this is NoOp.
       Assert.Equal(obj.propInt, propAcc["propInt"].Get(obj));
@@ -70,9 +72,22 @@ namespace Tlabs.Dynamic.Tests {
       Assert.False(lst2.GetType() is IConvertible, "non IConvertible needed for this test");
       lst2[0]= 55;
       propAcc["decList"].Set(obj, lst2);
-      Assert.Equal(lst2[0], ((decimal[])propAcc["decList"].Get(obj))[0]);
-      Assert.Equal(lst2[1], ((decimal[])propAcc["decList"].Get(obj))[1]);
+      Assert.Equal(lst2[0], ((IList<decimal>)propAcc["decList"].Get(obj))[0]);
+      Assert.Equal(lst2[1], ((IList<decimal>)propAcc["decList"].Get(obj))[1]);
 
+      propAcc["propList"].Set(obj, new List<string> { "test2" });
+      var list= (List<string>) propAcc["propList"].Get(obj);
+      Assert.Equal("test2", list.First());
+
+      // Assigning an object of a type that does not implement IConvertible fails
+      string json = @"[
+        'Small',
+        'Medium',
+        'Large'
+      ]";
+
+      Newtonsoft.Json.Linq.JArray a= Newtonsoft.Json.Linq.JArray.Parse(json);
+      propAcc["propList"].Set(obj, a);
     }
 
     [Fact]
@@ -114,10 +129,32 @@ namespace Tlabs.Dynamic.Tests {
       var lst2= DECLST.ToArray();
       Assert.False(lst2.GetType() is IConvertible, "non IConvertible needed for this test");
       lst2[0]= 55;
-      Assert.Equal(lst2[0], ((decimal[])propAcc["decList"].Get(obj))[0]);
+      props["decList"]= lst2;
+      Assert.Equal(lst2[0], ((IList<decimal>)propAcc["decList"].Get(obj))[0]);
       Assert.Equal(lst2[0], obj.decList[0]);
-      Assert.Equal(lst2[1], ((decimal[])propAcc["decList"].Get(obj))[1]);
+      Assert.Equal(lst2[1], ((IList<decimal>)propAcc["decList"].Get(obj))[1]);
       Assert.Equal(lst2[1], obj.decList[1]);
+
+
+      var enm= new TestEnumerable(lst2);
+      Assert.False(enm.GetType() is IConvertible, "non IConvertible needed for this test");
+      props["decList"]= enm;
+      Assert.Equal(lst2[0], ((IList<decimal>)propAcc["decList"].Get(obj))[0]);
+      Assert.Equal(lst2[0], obj.decList[0]);
+      Assert.Equal(lst2[1], ((IList<decimal>)propAcc["decList"].Get(obj))[1]);
+      Assert.Equal(lst2[1], obj.decList[1]);
+    }
+  }
+
+  class TestEnumerable : IEnumerable {
+    IEnumerable enm;
+
+    public TestEnumerable(IEnumerable enm) {
+      this.enm= enm;
+    }
+    public IEnumerator GetEnumerator() {
+      foreach(var e in enm)
+        yield return e;
     }
   }
 }
