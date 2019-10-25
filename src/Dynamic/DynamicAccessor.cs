@@ -44,7 +44,6 @@ namespace Tlabs.Dynamic {
     private static object coerceIntoTargetValue(object val, Type targetType) {
       IEnumerable valEnum;
       if (null == val) return val;
-      List<string> x;
       targetType= Nullable.GetUnderlyingType(targetType) ?? targetType;
       if (targetType.IsAssignableFrom(val.GetType()))
         return val;                                       //no convertion neccessary
