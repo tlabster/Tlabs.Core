@@ -25,28 +25,32 @@ namespace Tlabs.Dynamic.Test {
     }
 
     class XYZ__ProductBody {
+      public XYZ__ProductBody() {
+        ProdNumber= "X0009871";
+        Properties= new Dictionary<string, object> {
+          ["prop01"]= "test text",
+          ["prop02"]= new decimal?(123.45M)
+        };
+      }
       public string ProdNumber { get; set; }
       public string Name { get; set; }
       public string HeadCatagory { get; set; }
       public string Category { get; set; }
       public string SubCategory { get; set; }
+      public IDictionary<string, object> Properties { get; set; }
     }
 
     static readonly ExpressionContext TYPED_CTX= new ExpressionContext {
       Sales= new SalesTransaction {
         TxId= "TX__00001"
       },
-      Product= new XYZ__ProductBody {
-        ProdNumber= "X0009871"
-      }
+      Product= new XYZ__ProductBody()
     };
     static readonly ConvertedExpressionContext UNTYPED_CTX= new ConvertedExpressionContext {
       Sales= new SalesTransaction {
         TxId= "TX__00001"
       },
-      Product= new XYZ__ProductBody {
-        ProdNumber= "X0009871"
-      }
+      Product= new XYZ__ProductBody()
     };
 
 
@@ -58,6 +62,13 @@ namespace Tlabs.Dynamic.Test {
 
 
       dynExpr= new DynamicExpression<ExpressionContext, bool>("it.Product != null && Product.ProdNumber.StartsWith(\"X\") && it.Sales.TxId.StartsWith(\"TX__\")");
+      Assert.NotNull(dynExpr);
+      Assert.True(dynExpr.Evaluate(TYPED_CTX));
+
+      dynExpr= new DynamicExpression<ExpressionContext, bool>(@"
+           it.Product != null
+        && ""test text"" == Product.Properties[""prop01""].ToString()
+        && Product.Properties[""prop01""].Equals(""test text"")");
       Assert.NotNull(dynExpr);
       Assert.True(dynExpr.Evaluate(TYPED_CTX));
 
