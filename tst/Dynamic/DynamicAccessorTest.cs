@@ -41,6 +41,9 @@ namespace Tlabs.Dynamic.Tests {
       Assert.Equal(obj.propInt, propAcc["propInt"].Get(obj));
 
       Assert.Null(propAcc["xxx"].Get(obj));  //prop not defined
+
+      var list= (List<string>) propAcc["propList"].Get(obj);
+      Assert.Equal("test", list.First());
     }
 
     [Fact]
