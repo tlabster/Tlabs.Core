@@ -47,8 +47,10 @@ namespace Tlabs.Dynamic {
       targetType= Nullable.GetUnderlyingType(targetType) ?? targetType;
       if (targetType.IsAssignableFrom(val.GetType()))
         return val;                                       //no convertion neccessary
-      if (targetType is IConvertible)
-        return Convert.ChangeType(val, targetType);       ////convert by IConvertable
+      
+      var cv= val as IConvertible;
+      if (null != cv)                                     // is convertible?
+        return Convert.ChangeType(cv, Nullable.GetUnderlyingType(targetType) ?? targetType);   //convert to underlying or targetType
 
       if (targetType.IsGenericType && null != (valEnum= val as IEnumerable)) {
         /*  Support convertion of types that only implement IEnumerable (like with strange stuff like Newtonsoft.Json.Linq.JArray...))

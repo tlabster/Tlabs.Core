@@ -9,6 +9,7 @@ namespace Tlabs.Dynamic.Tests {
   public class DynamicAccessorTest {
 
     static readonly decimal[] DECLST= new decimal[] { 3.141m, 2.71828m };
+    static readonly string[] STRLST= new string[] { "test", "test2" };
     public class TstType {
       public int propInt { get; set; }
       public string propStr { get; set; }
@@ -25,6 +26,7 @@ namespace Tlabs.Dynamic.Tests {
         propStr= "test",
         propBool= true,
         propDec= 1.23m,
+        propList= STRLST,
         decList= DECLST
       };
 
@@ -42,7 +44,7 @@ namespace Tlabs.Dynamic.Tests {
 
       Assert.Null(propAcc["xxx"].Get(obj));  //prop not defined
 
-      var list= (List<string>) propAcc["propList"].Get(obj);
+      var list= (IList<string>) propAcc["propList"].Get(obj);
       Assert.Equal("test", list.First());
     }
 
@@ -68,6 +70,8 @@ namespace Tlabs.Dynamic.Tests {
 
       propAcc["propDec"].Set(obj, 9.99m);
       Assert.Equal(9.99m, propAcc["propDec"].Get(obj));
+      propAcc["propDec"].Set(obj, 123);
+      Assert.Equal(123m, propAcc["propDec"].Get(obj));
       propAcc["propDec"].Set(obj, null);
       Assert.Equal(null, propAcc["propDec"].Get(obj));
 
