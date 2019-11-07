@@ -133,6 +133,14 @@ namespace Tlabs.Dynamic.Misc.Tests {
       Assert.Equal(0, Function.Num("test"));
     }
 
+    [Fact]
+    void DateTest() {
+      Assert.Equal(default(DateTime), Function.Date(null));
+      Assert.Equal(default(DateTime), Function.Date("2018-01-01"));
+      var dt = DateTime.Now;
+      Assert.Equal(dt, Function.Date(dt));
+    }
+
 
 
     // [Fact]

@@ -34,6 +34,7 @@ namespace Tlabs.Dynamic.Misc  {
     private static readonly Expression<Func<object, bool>> FalseExp= (p) => False(p);
     private static readonly Expression<Func<object, decimal>> NumExp= (o) => Num(o);
     private static readonly Expression<Func<object, object, bool>> HasFlagsExp= (o1, o2) => HasFlags(o1, o2);
+    private static readonly Expression<Func<object, DateTime>> DateExp= (o) => Date(o);
 
     internal static int AgeAt(object o, DateTime? at) {
       var date= o as DateTime?;
@@ -140,6 +141,11 @@ namespace Tlabs.Dynamic.Misc  {
       int mask= (o2 as int?) ?? 0;
       return 0 != (flags & mask);
     }
+    
+    internal static DateTime Date(object o) {
+      var date= o as DateTime?;
+      return date ?? default(DateTime);
+    }
 
     ///<summary>Helper function library.</summary>
     public static readonly IDictionary<string, object> Library= new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase) {
@@ -169,7 +175,8 @@ namespace Tlabs.Dynamic.Misc  {
       ["@Is"]= IsExp,
       ["@False"]= FalseExp,
       ["@Num"]= NumExp,
-      ["@HasFlags"]= HasFlagsExp
+      ["@HasFlags"]= HasFlagsExp,
+      ["@Date"]= DateExp
     };
   }
 }
