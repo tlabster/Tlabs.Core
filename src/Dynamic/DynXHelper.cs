@@ -47,7 +47,7 @@ namespace Tlabs.Dynamic {
     /// </para>
     ///</remarks>
     public static ContextExpression BuildExpression(string expression, ParameterExpression ctxType, Type retType, IDictionary<string, object> funcLib, IDictionary<string, Type> ctxConverter) {
-      var ctxProps= ctxType.Type.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(p => p.CanRead).ToList();
+      var ctxProps= ctxType.Type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy).Where(p => p.CanRead).ToList();
       var exprParams= ctxProps.Select(p => {
         Type paramType;
         if (!ctxConverter.TryGetValue(p.Name, out paramType))

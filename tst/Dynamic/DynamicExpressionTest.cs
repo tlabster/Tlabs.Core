@@ -12,15 +12,17 @@ namespace Tlabs.Dynamic.Test {
     class Member {
       public string Name {get; set; }
     }
-    struct ExpressionContext {
+
+    class BaseContext {
       public SalesTransaction Sales { get; set; }
       public Member Member { get; set; }
+    }
+
+    class ExpressionContext : BaseContext {
       public XYZ__ProductBody Product { get; set; }
     }
 
-    struct ConvertedExpressionContext {
-      public SalesTransaction Sales { get; set; }
-      public Member Member { get; set; }
+    class ConvertedExpressionContext : BaseContext {
       public object Product { get; set; }
     }
 
