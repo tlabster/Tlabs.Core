@@ -73,7 +73,7 @@ namespace Tlabs.Dynamic.Tests {
       propAcc["propDec"].Set(obj, 123);
       Assert.Equal(123m, propAcc["propDec"].Get(obj));
       propAcc["propDec"].Set(obj, null);
-      Assert.Equal(null, propAcc["propDec"].Get(obj));
+      Assert.Null(propAcc["propDec"].Get(obj));
 
       var lst2= DECLST.ToArray();
       Assert.False(lst2.GetType() is IConvertible, "non IConvertible needed for this test");
@@ -126,12 +126,12 @@ namespace Tlabs.Dynamic.Tests {
       props["propDec"]= 9.99m;
       Assert.Equal(9.99m, propAcc["propDec"].Get(obj));
       props["propDec"]= null;
-      Assert.Equal(null, propAcc["propDec"].Get(obj));
-      Assert.Equal(null, obj.propDec);
+      Assert.Null(propAcc["propDec"].Get(obj));
+      Assert.Null(obj.propDec);
 
       props["decList"]= null;
-      Assert.Equal(null, propAcc["decList"].Get(obj));
-      Assert.Equal(null, obj.decList);
+      Assert.Null(propAcc["decList"].Get(obj));
+      Assert.Null(obj.decList);
 
       var lst2= DECLST.ToArray();
       Assert.False(lst2.GetType() is IConvertible, "non IConvertible needed for this test");

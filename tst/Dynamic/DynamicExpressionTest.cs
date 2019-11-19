@@ -6,27 +6,38 @@ using Xunit;
 namespace Tlabs.Dynamic.Test {
 
   public class DynamicExpressionTest {
-    class SalesTransaction {
+    public class SalesTransaction {
       public string TxId { get; set; }
     }
-    class Member {
+    public class Member {
       public string Name {get; set; }
     }
 
-    class BaseContext {
+    public interface IBaseContext {
+      SalesTransaction Sales { get; set; }
+    }
+
+    public interface IExpressionContext : IBaseContext {
+      XYZ__ProductBody Product { get; set; }
+    }
+
+    interface IConvertedExpressionContext : IBaseContext {
+      object Product { get; set; }
+    }
+
+    public class ExpressionContext : IExpressionContext {
+      public XYZ__ProductBody Product { get; set; }
       public SalesTransaction Sales { get; set; }
       public Member Member { get; set; }
     }
 
-    class ExpressionContext : BaseContext {
-      public XYZ__ProductBody Product { get; set; }
-    }
-
-    class ConvertedExpressionContext : BaseContext {
+    class ConvertedExpressionContext : IConvertedExpressionContext {
       public object Product { get; set; }
+      public SalesTransaction Sales { get; set; }
+      public Member Member { get; set; }
     }
 
-    class XYZ__ProductBody {
+    public class XYZ__ProductBody {
       public XYZ__ProductBody() {
         ProdNumber= "X0009871";
         Properties= new Dictionary<string, object> {
@@ -58,16 +69,16 @@ namespace Tlabs.Dynamic.Test {
 
     [Fact]
     public void DynExprTest() {
-      var dynExpr= new DynamicExpression<ExpressionContext, bool>("Product != null && Product.ProdNumber.StartsWith(\"X\") && Sales.TxId.StartsWith(\"TX__\")");
+      var dynExpr= new DynamicExpression<IExpressionContext, bool>("Product != null && Product.ProdNumber.StartsWith(\"X\") && Sales.TxId.StartsWith(\"TX__\")");
       Assert.NotNull(dynExpr);
       Assert.True(dynExpr.Evaluate(TYPED_CTX));
 
 
-      dynExpr= new DynamicExpression<ExpressionContext, bool>("it.Product != null && Product.ProdNumber.StartsWith(\"X\") && it.Sales.TxId.StartsWith(\"TX__\")");
+      dynExpr= new DynamicExpression<IExpressionContext, bool>("it.Product != null && Product.ProdNumber.StartsWith(\"X\") && it.Sales.TxId.StartsWith(\"TX__\")");
       Assert.NotNull(dynExpr);
       Assert.True(dynExpr.Evaluate(TYPED_CTX));
 
-      dynExpr= new DynamicExpression<ExpressionContext, bool>(@"
+      dynExpr= new DynamicExpression<IExpressionContext, bool>(@"
            it.Product != null
         && ""test text"" == Product.Properties[""prop01""].ToString()
         && Product.Properties[""prop01""].Equals(""test text"")");
@@ -81,14 +92,21 @@ namespace Tlabs.Dynamic.Test {
 
     [Fact]
     public void ConvertedDynRulesTest() {
-      var dynExpr= new DynamicExpression<ConvertedExpressionContext, bool>(
+      var dynExpr= new DynamicExpression<IConvertedExpressionContext, bool>(
         "Product != null && Product.ProdNumber.StartsWith(\"X\") && Sales.TXid.StartsWith(\"TX__\")",
         new Dictionary<string, Type> { ["Product"]= typeof(XYZ__ProductBody) }
       );
       Assert.NotNull(dynExpr);
       Assert.True(dynExpr.Evaluate(UNTYPED_CTX));
 
-      Assert.Throws<ExpressionSyntaxException>(() => new DynamicExpression<ConvertedExpressionContext, bool>(
+      var dynExpr2= new DynamicExpression<ConvertedExpressionContext, bool>(
+        "Product != null && Product.ProdNumber.StartsWith(\"X\") && Sales.TXid.StartsWith(\"TX__\")",
+        new Dictionary<string, Type> { ["Product"]= typeof(XYZ__ProductBody) }
+      );
+      Assert.NotNull(dynExpr2);
+      Assert.True(dynExpr2.Evaluate(UNTYPED_CTX));
+
+      Assert.Throws<ExpressionSyntaxException>(() => new DynamicExpression<IConvertedExpressionContext, bool>(
         "it.Product != null && Product.ProdNumber.StartsWith(\"X\") && it.Sales.TXid.StartsWith(\"TX__\")",
         new Dictionary<string, Type> { ["Product"]= typeof(XYZ__ProductBody) }
       ));
