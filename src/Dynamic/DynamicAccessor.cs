@@ -82,6 +82,10 @@ namespace Tlabs.Dynamic {
     ///<summary>Returns a <c>IDictionary</c> to access all properties of <paramref name="target"/>.</summary>
     public IDictionary<string, object> ToDictionary(object target) => new AccessDictionary(this, target);
 
+    ///<summary>Returns a <c>IDictionary</c> to access all property values of <paramref name="target"/>.</summary>
+    ///<remarks>Any changes to the values of the returned dictionary will not be reflected in the <paramref name="target"/> object.</remarks>
+    public IDictionary<string, object> ToValueDictionary(object target) => new AccessDictionary(this, target).ToDictionary(p => p.Key, p => p.Value); 
+
     ///<summary>Getter / Setter accessor.</summary>
     public struct Property {
       ///<summary>Getter delegate.</summary>
