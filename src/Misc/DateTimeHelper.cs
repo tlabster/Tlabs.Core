@@ -44,13 +44,16 @@ namespace Tlabs {
 
     /// <inherit/>
     public DateTime ToAppTime(DateTime dt) {
+      if(dt.Kind == DateTimeKind.Unspecified) { return dt; }
       var srcTZ= (dt.Kind == DateTimeKind.Local || dt.Kind == DateTimeKind.Unspecified) ? TimeZoneInfo.Local : TimeZoneInfo.Utc;
       return TimeZoneInfo.ConvertTime(dt, srcTZ, TZinfo);    //explicitly specify source and dest. time zones !!!
     }
 
     /// <inherit/>
     public DateTime ToUtc(DateTime dt) {
-      return TimeZoneInfo.ConvertTime(dt, TZinfo, TimeZoneInfo.Utc);    //explicitly specify source and dest. time zones !!!
+      if(dt.Kind == DateTimeKind.Utc) { return dt; }
+      var srcTZ= (dt.Kind == DateTimeKind.Local) ? TimeZoneInfo.Local : TZinfo;
+      return TimeZoneInfo.ConvertTime(dt, srcTZ, TimeZoneInfo.Utc);    //explicitly specify source and dest. time zones !!!
     }
   }
 
