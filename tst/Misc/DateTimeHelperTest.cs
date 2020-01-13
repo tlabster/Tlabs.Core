@@ -20,14 +20,10 @@ namespace Tlabs.Misc.Tests {
       Assert.NotEqual(default(TimeSpan), diff);
       Assert.Equal(18, tInfo.ToUtc(time0).Hour);
 
-      DateTime local=  DateTime.SpecifyKind(time0, DateTimeKind.Local);
-      Assert.Equal(18, tInfo.ToUtc(local).Hour);
-      Assert.Equal(19, tInfo.ToAppTime(local).Hour);
-
-      //Assumes unspecified kind as local and converts it to apptime correctly
-      DateTime time=  DateTime.SpecifyKind(time0, DateTimeKind.Unspecified);
-      Assert.Equal(18, tInfo.ToUtc(time).Hour);
-      Assert.Equal(19, tInfo.ToAppTime(time).Hour);
+      // DateTime local=  DateTime.SpecifyKind(time0, DateTimeKind.Local);
+      Assert.Equal(DateTimeKind.Local, time0.Kind);
+      Assert.Equal(18, tInfo.ToUtc(time0).Hour);
+      Assert.Equal(19, tInfo.ToAppTime(time0).Hour);
 
       DateTime utc= DateTime.UtcNow;
       Assert.Equal(tInfo.ToUtc(utc).Hour, utc.Hour);
