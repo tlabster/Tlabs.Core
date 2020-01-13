@@ -30,7 +30,7 @@ namespace Tlabs.Msg.Intern.Tests {
       msgBroker.Unsubscribe(handler);
       msgBroker.Publish("test", "Ignored test message");
 
-      Assert.Equal(2, counter.WaitForSignal(10));
+      Assert.Equal(2, counter.WaitForSignal(50));
     }
 
     [Fact]
