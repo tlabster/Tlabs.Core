@@ -7,7 +7,11 @@ namespace Tlabs.Misc.Tests {
 
     [Fact]
     public void CurrentTimeTest() {
-      var timeZoneInfo= TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+      var tzid=   System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
+               ? "W. Europe Standard Time"  //windows
+               : "Europe/Berlin";           //non windows
+
+      var timeZoneInfo= TimeZoneInfo.FindSystemTimeZoneById(tzid);
       var tInfo= new DateTimeHelper(timeZoneInfo);
 
       DateTime time0=  DateTime.Parse("1996-12-19T16:39:57.000000-02:00", null, System.Globalization.DateTimeStyles.RoundtripKind);
