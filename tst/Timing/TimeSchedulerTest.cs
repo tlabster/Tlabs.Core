@@ -57,10 +57,10 @@ namespace Tlabs.Timing.Test {
       tmScheduler.Add(schTime1, dueTimeTestHandler1);
       Assert.Equal(expectedTime, tmScheduler.NextDueTime);
       schTime1.ScheduleTime= schTime1.ScheduleTime.AddMilliseconds(delay);//reschedule
-      Sync.Wait(1, delay+10, tstout);
+      Sync.Wait(1, delay+50, tstout);
       Assert.Equal(1, testHandlerCnt1);
       Assert.Equal(schTime1.ScheduleTime, tmScheduler.NextDueTime);
-      Sync.Wait(1, delay+10, tstout);
+      Sync.Wait(1, delay+50, tstout);
       Assert.Equal(2, testHandlerCnt1);
       Assert.Equal(DateTime.MaxValue, tmScheduler.NextDueTime);
 

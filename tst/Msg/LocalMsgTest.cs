@@ -57,7 +57,7 @@ namespace Tlabs.Msg.Intern.Tests {
       msgBroker.Publish("test", "Test message");
       msgBroker.Publish("test", "Test another message");
 
-      Assert.Equal(3, counter.WaitForSignal(10));
+      Assert.Equal(3, counter.WaitForSignal(50));
       Assert.Equal(1, tstMsgCnt);
       Assert.Equal(2, strMsgCnt);
     }
@@ -87,7 +87,7 @@ namespace Tlabs.Msg.Intern.Tests {
       msgBroker.Publish("test", "Test another message");
       msgBroker.Publish("test", msg);
 
-      Assert.Equal(4, counter.WaitForSignal(10));
+      Assert.Equal(4, counter.WaitForSignal(50));
       Assert.Equal(1, tstMsgCnt);
       Assert.Equal(3, strMsgCnt);
     }
