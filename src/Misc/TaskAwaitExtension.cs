@@ -25,6 +25,12 @@ namespace Tlabs.Misc {
       return await tsk;  // Very important in order to propagate exceptions
     }
 
+    ///<summary>Convert this <see cref="CancellationToken"/> into a <see cref="Task"/> that could be awaited for cancellation.</summary>
+    public static Task AsTask(this CancellationToken cancellationToken) {
+      var tcs= new TaskCompletionSource<object>();
+      cancellationToken.Register(() => tcs.TrySetCanceled(), false);
+      return tcs.Task;
+    }
   }
 
 

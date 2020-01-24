@@ -36,7 +36,7 @@ namespace Tlabs.Misc {
     ///<inheritdoc/>
     public void Add(K key, T value) {
       List<T> lst;
-      if (!dict.TryGetValue(key, out lst)) lst= new List<T>();
+      if (!dict.TryGetValue(key, out lst)) dict.Add(key, lst= new List<T>());
       lst.Add(value);
     }
 

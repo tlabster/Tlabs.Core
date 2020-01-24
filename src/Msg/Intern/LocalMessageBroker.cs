@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +16,7 @@ namespace Tlabs.Msg.Intern {
     /* NOTE: Currently we do not support subsciptions on wild-card subjects...
      */
 
+    static readonly ILogger log= Tlabs.App.Logger<LocalMessageBroker>();
     const string RESPONSE_PFX= "_>$response.";
     private Dictionary<string, Func<object, Task>> msgHandlers= new Dictionary<string, Func<object, Task>>();     //msgHandler by subject
     private Dictionary<Delegate, SubscriptionInfo> subscriptions= new Dictionary<Delegate, SubscriptionInfo>();   //subscriptionInfo by (original) subHandler
@@ -30,16 +33,28 @@ namespace Tlabs.Msg.Intern {
     }
 
     ///<inherit/>
-    public Task<TRes> PublishRequest<TRes>(string subject, object message) where TRes : class {
+    public Task<TRes> PublishRequest<TRes>(string subject, object message, int timeout) where TRes : class {
+      CancellationTokenSource ctokSrc= null;
+      var reqSubj= RESPONSE_PFX + subject;
       var compl= new TaskCompletionSource<TRes>();
       Action<TRes> completer= null;
       completer= response => {
+        log.LogDebug("Returning request result from subject '{subj}'.", reqSubj);
         Unsubscribe(completer);
-        compl.SetResult(response);
+        ctokSrc?.Dispose();
+        compl.TrySetResult(response);
       };
-      Subscribe<TRes>(RESPONSE_PFX + subject, completer);   //subscribe for request response
+      Subscribe<TRes>(reqSubj, completer);   //subscribe for request response
       Publish(subject, message);  // publish the request message
-      return compl.Task;
+      var tsk= compl.Task;
+      if (timeout > 0) {
+        ctokSrc= new CancellationTokenSource(timeout);
+        ctokSrc.Token.Register(()=> {
+          log.LogDebug("Response on request subject '{subj}' timed out after {time}ms.", reqSubj, timeout);
+          compl.TrySetCanceled();
+        }, false);
+      }
+      return tsk;
     }
 
     ///<inherit/>

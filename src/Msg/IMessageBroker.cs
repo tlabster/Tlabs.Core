@@ -33,8 +33,8 @@ namespace Tlabs.Msg {
     ///<summary>Publish a <paramref name="message"/> on <paramref name="subject"/>.</summary>
     void Publish(string subject, object message);
 
-    ///<summary>Publish a request <paramref name="message"/> on <paramref name="subject"/> to asynchronously return <typeparamref name="TRet"/>.</summary>
-    Task<TRet> PublishRequest<TRet>(string subject, object message) where TRet : class;
+    ///<summary>Publish a request <paramref name="message"/> on <paramref name="subject"/> to asynchronously return <typeparamref name="TRet"/> with optional <paramref name="timeout"/>).</summary>
+    Task<TRet> PublishRequest<TRet>(string subject, object message, int timeout= 0) where TRet : class;
 
     ///<summary>Subscribe on <paramref name="subject"/> to receive messages of type type <typeparamref name="T"/>.</summary>
     void Subscribe<T>(string subject, Action<T> subHandler) where T : class;
