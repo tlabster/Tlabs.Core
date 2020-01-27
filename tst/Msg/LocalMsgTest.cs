@@ -108,7 +108,7 @@ namespace Tlabs.Msg.Intern.Tests {
     public void PublishRequestTest() {
       msgBroker.SubscribeRequest<IntMsg, string>("request", m => "Return " + m?.i.ToString());
 
-      var tsk= msgBroker.PublishRequest<string>("request", new IntMsg { i= 42 });
+      var tsk= msgBroker.PublishRequest<string>("request", new IntMsg { i= 42 }, 0);
 
       tsk.Wait(10);
       Assert.Equal("Return 42", tsk.Result);

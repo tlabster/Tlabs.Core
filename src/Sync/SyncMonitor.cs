@@ -19,7 +19,7 @@ namespace Tlabs.Sync {
   public class SyncMonitor<T> {
     private enum SignalState { None, OneShot, Permanent }
     private object syncRoot;
-    private SignalState pendingSignal;
+    private volatile SignalState pendingSignal;
     private T val;
 
     /// <summary>Default ctor.</summary>
@@ -132,6 +132,9 @@ namespace Tlabs.Sync {
         return this.val;
       }
     }
+
+    ///<summary>True if signaled.</summary>
+    public bool IsSignaled => SignalState.None != pendingSignal;
 
     /// <summary>Reference to the lock/monitor object used for synchronization.</summary>
     public object Sync {
