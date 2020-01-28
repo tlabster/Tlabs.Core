@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -76,5 +77,15 @@ namespace Tlabs.Misc {
       finally { lck.ExitUpgradeableReadLock(); }
     }
 
+    ///<summary>Cached entries.</summary>
+    ///<returns>Snapshot of the currently cached entries.</returns>
+    IEnumerable<KeyValuePair<K, T>> Entries { get {
+      lck.EnterReadLock();
+      try {
+        return new List<KeyValuePair<K, T>>(cache);
+      }
+      finally { lck.ExitReadLock(); }
+    }}
+  
   }
 }
