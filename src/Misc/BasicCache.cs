@@ -79,7 +79,7 @@ namespace Tlabs.Misc {
 
     ///<summary>Cached entries.</summary>
     ///<returns>Snapshot of the currently cached entries.</returns>
-    IEnumerable<KeyValuePair<K, T>> Entries { get {
+    public IEnumerable<KeyValuePair<K, T>> Entries { get {
       lck.EnterReadLock();
       try {
         return new List<KeyValuePair<K, T>>(cache);
