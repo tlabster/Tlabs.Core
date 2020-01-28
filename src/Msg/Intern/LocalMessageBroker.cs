@@ -50,7 +50,7 @@ namespace Tlabs.Msg.Intern {
       if (timeout > 0) {
         ctokSrc= new CancellationTokenSource(timeout);
         ctokSrc.Token.Register(()=> {
-          log.LogDebug("Response on request subject '{subj}' timed out after {time}ms.", reqSubj, timeout);
+          log.LogDebug("Response on request subject '{subj}' timed-out after {time}ms.", reqSubj, timeout);
           compl.TrySetCanceled();
         }, false);
       }
@@ -71,6 +71,7 @@ namespace Tlabs.Msg.Intern {
 
     ///<inherit/>
     public void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class {
+      log.LogDebug("SubscribeRequest on '{subj}'.", subject);
       Func<object, Task> msgHandler;
       lock (msgHandlers) {
         var proxy= createAsyncReqProxy<TMsg, TRet>(requestHandler, RESPONSE_PFX + subject);
@@ -108,6 +109,7 @@ namespace Tlabs.Msg.Intern {
         var msg= o as TMsg;
         if (null != msg) {
           await Task.Yield();
+          log.LogDebug("Publishing request response on '{subj}'.", response);
           Publish(response, ((Func<TMsg, TRet>)subHandler).Invoke(msg));
         }
       };
