@@ -32,6 +32,9 @@ namespace Tlabs.Misc {
       var dt= Stopwatch.GetTimestamp() - startTime;
       return new TimeSpan((long)(TICKS * dt));
     }
+
+    ///<summary>Returns the elapsed milliseconds since <see cref="TimingWatch.StartTiming()"/>.</summary>
+    public double GetElapsedMilliseconds() => GetElapsedTime().TotalMilliseconds;
   }
 
 }

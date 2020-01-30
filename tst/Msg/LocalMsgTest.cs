@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
+using Tlabs.Misc;
+
 using Xunit;
 using Xunit.Abstractions;
 
@@ -8,6 +12,11 @@ namespace Tlabs.Msg.Intern.Tests {
 
   public class LocalMsgTest {
     LocalMessageBroker msgBroker= new LocalMessageBroker();
+    ITestOutputHelper tstout;
+
+    public LocalMsgTest(ITestOutputHelper tstout) {
+      this.tstout= tstout;
+    }
 
     [Fact]
     public void BasicTest() {
@@ -104,18 +113,44 @@ namespace Tlabs.Msg.Intern.Tests {
       public string Property { get; set; }
     }
 
+
     [Fact]
     public void PublishRequestTest() {
-      msgBroker.SubscribeRequest<IntMsg, string>("request", m => "Return " + m?.i.ToString());
+      var msg= new IntMsg { i= 42 };
 
-      var tsk= msgBroker.PublishRequest<string>("request", new IntMsg { i= 42 }, 0);
+      msgBroker.SubscribeRequest<IntMsg, string>("req", m => m.ToString());
+      var tsk= msgBroker.PublishRequest<string>("req", msg, 50);
 
-      tsk.Wait(10);
-      Assert.Equal("Return 42", tsk.Result);
+      Assert.Equal(msg.ToString(), tsk.Result);
     }
 
-    private class IntMsg {
+    [Fact]
+    public void ParallelPublishRequestTest() {
+      msgBroker.SubscribeRequest<IntMsg, string>("request", m => m.ToString());
+      const int n= 50;
+      var tskMap= new Dictionary<IntMsg, Task<string>>(n);
+      var timer= TimingWatch.StartTiming();
+      for (var l= 0; l < n; ++l) {
+        var msg= new IntMsg { i= l };
+        tskMap[msg]= msgBroker.PublishRequest<string>("request", msg, 50);
+      }
+      //Task.WaitAll(tskMap.Values.ToArray(), 100); //obsolete
+
+      foreach (var pair in tskMap)
+        Assert.Equal(pair.Key.ToString(), pair.Value.Result);
+
+      tstout.WriteLine($"{timer.GetElapsedMilliseconds()}ms for {n} PublisRequest()s");
+    }
+
+    public class IntMsg {
       public int i;
+      public override string ToString() => $"Return {this.i}";
+      public override int GetHashCode() => i;
+      public override bool Equals(object obj) {
+        var msg= obj as IntMsg;
+        if (null == msg) return false;
+        return i == msg.i;
+      }
     }
   }
 }
