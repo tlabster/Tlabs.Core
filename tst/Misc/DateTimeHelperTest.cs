@@ -7,7 +7,11 @@ namespace Tlabs.Misc.Tests {
 
     [Fact]
     public void CurrentTimeTest() {
-      var timeZoneInfo= TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+      var tzid=   System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
+               ? "W. Europe Standard Time"  //windows
+               : "Europe/Berlin";           //non windows
+
+      var timeZoneInfo= TimeZoneInfo.FindSystemTimeZoneById(tzid);
       var tInfo= new DateTimeHelper(timeZoneInfo);
 
       DateTime time0=  DateTime.Parse("1996-12-19T16:39:57.000000-02:00", null, System.Globalization.DateTimeStyles.RoundtripKind);
@@ -16,14 +20,10 @@ namespace Tlabs.Misc.Tests {
       Assert.NotEqual(default(TimeSpan), diff);
       Assert.Equal(18, tInfo.ToUtc(time0).Hour);
 
-      DateTime local=  DateTime.SpecifyKind(time0, DateTimeKind.Local);
-      Assert.Equal(18, tInfo.ToUtc(local).Hour);
-      Assert.Equal(19, tInfo.ToAppTime(local).Hour);
-
-      //Assumes unspecified kind as local and converts it to apptime correctly
-      DateTime time=  DateTime.SpecifyKind(time0, DateTimeKind.Unspecified);
-      Assert.Equal(18, tInfo.ToUtc(time).Hour);
-      Assert.Equal(19, tInfo.ToAppTime(time).Hour);
+      // DateTime local=  DateTime.SpecifyKind(time0, DateTimeKind.Local);
+      Assert.Equal(DateTimeKind.Local, time0.Kind);
+      Assert.Equal(18, tInfo.ToUtc(time0).Hour);
+      Assert.Equal(19, tInfo.ToAppTime(time0).Hour);
 
       DateTime utc= DateTime.UtcNow;
       Assert.Equal(tInfo.ToUtc(utc).Hour, utc.Hour);

@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,7 +16,7 @@ namespace Tlabs.Msg.Intern {
     /* NOTE: Currently we do not support subsciptions on wild-card subjects...
      */
 
-    const string RESPONSE_PFX= "_>$response.";
+    static readonly ILogger log= Tlabs.App.Logger<LocalMessageBroker>();
     private Dictionary<string, Func<object, Task>> msgHandlers= new Dictionary<string, Func<object, Task>>();     //msgHandler by subject
     private Dictionary<Delegate, SubscriptionInfo> subscriptions= new Dictionary<Delegate, SubscriptionInfo>();   //subscriptionInfo by (original) subHandler
 
@@ -30,16 +32,28 @@ namespace Tlabs.Msg.Intern {
     }
 
     ///<inherit/>
-    public Task<TRes> PublishRequest<TRes>(string subject, object message) where TRes : class {
+    public Task<TRes> PublishRequest<TRes>(string subject, object message, int timeout) where TRes : class {
+      var reqMsg= new RequestMsg(subject, message);
+      CancellationTokenSource ctokSrc= null;
       var compl= new TaskCompletionSource<TRes>();
       Action<TRes> completer= null;
       completer= response => {
+        log.LogDebug("Returning request result from subject '{subj}'.", reqMsg.ResponseSubj);
         Unsubscribe(completer);
-        compl.SetResult(response);
+        ctokSrc?.Dispose();
+        compl.TrySetResult(response);
       };
-      Subscribe<TRes>(RESPONSE_PFX + subject, completer);   //subscribe for request response
-      Publish(subject, message);  // publish the request message
-      return compl.Task;
+      Subscribe<TRes>(reqMsg.ResponseSubj, completer);   //subscribe for request response
+      Publish(subject, reqMsg);  // publish the request message
+
+      if (timeout > 0) {
+        ctokSrc= new CancellationTokenSource(timeout);
+        ctokSrc.Token.Register(()=> {
+          log.LogDebug("Response on request subject '{subj}' timed-out after {time}ms.", reqMsg.ResponseSubj, timeout);
+          compl.TrySetCanceled();
+        }, false);
+      }
+      return compl.Task;;
     }
 
     ///<inherit/>
@@ -56,9 +70,10 @@ namespace Tlabs.Msg.Intern {
 
     ///<inherit/>
     public void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class {
+      log.LogDebug("SubscribeRequest on '{subj}'.", subject);
       Func<object, Task> msgHandler;
       lock (msgHandlers) {
-        var proxy= createAsyncReqProxy<TMsg, TRet>(requestHandler, RESPONSE_PFX + subject);
+        var proxy= createAsyncReqProxy<TMsg, TRet>(requestHandler);
         subscriptions[requestHandler]= new SubscriptionInfo(subject, proxy);
         if (msgHandlers.TryGetValue(subject, out msgHandler))
           msgHandlers[subject]= (Func<object, Task>)Delegate.Combine(msgHandler, proxy);
@@ -88,12 +103,14 @@ namespace Tlabs.Msg.Intern {
         }
       };
     }
-    private Func<object, Task> createAsyncReqProxy<TMsg, TRet>(Delegate subHandler, string response) where TMsg : class {
+    private Func<object, Task> createAsyncReqProxy<TMsg, TRet>(Delegate subHandler) where TMsg : class {
       return async (o) => {
-        var msg= o as TMsg;
+        var reqMsg= (RequestMsg)o;
+        var msg= reqMsg.Msg as TMsg;
         if (null != msg) {
           await Task.Yield();
-          Publish(response, ((Func<TMsg, TRet>)subHandler).Invoke(msg));
+          log.LogDebug("Publishing request response on '{subj}'.", reqMsg.ResponseSubj);
+          Publish(reqMsg.ResponseSubj, ((Func<TMsg, TRet>)subHandler).Invoke(msg));
         }
       };
     }
@@ -107,6 +124,17 @@ namespace Tlabs.Msg.Intern {
         this.MsgHandler= handler;
       }
     }
+
+    private class RequestMsg {
+      static int seq;
+      public RequestMsg(string subj, object msg) {
+        this.Msg= msg;
+        this.ResponseSubj= $"R{System.Threading.Interlocked.Increment(ref seq) & 0xEFFFFFFF}_>{subj}";
+      }
+      public object Msg { get; }
+      public string ResponseSubj { get; }
+    }
+
     ///<summary>Service configurator.</summary>
     public class Configurator : IConfigurator<IServiceCollection> {
       ///<inherit/>

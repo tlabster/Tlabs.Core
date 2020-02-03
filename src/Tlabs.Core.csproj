@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <VersionPrefix>1.2.13</VersionPrefix>
+    <VersionPrefix>1.2.14</VersionPrefix>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Library</OutputType>
     <RuntimeFrameworkVersion>2.1.0</RuntimeFrameworkVersion>
@@ -27,6 +27,7 @@
 
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.1.*" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.*" />
+    <PackageReference Include="System.Reactive.Core" Version="4.3.*" />
 
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.0.9.*" />
   </ItemGroup>

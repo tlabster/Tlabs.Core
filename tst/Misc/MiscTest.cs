@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -96,6 +97,42 @@ namespace Tlabs.Misc.Tests {
       );
     }
 
+    [Fact]
+    public void DictionaryListTest() {
+      const int ONE= 1;
+      const int N= 9;
+      const int SUM= (N * (N+1)) / 2;
+      var dlist= new DictionaryList<string, int>();
+
+      Assert.Empty(dlist);
+      Assert.Empty(dlist.Keys);
+      Assert.Throws<KeyNotFoundException>(()=> dlist["x"]);
+
+      dlist.Add(nameof(ONE), 1);
+      Assert.NotEmpty(dlist);
+      Assert.Equal(1, dlist.Keys.Count);
+      Assert.NotEmpty(dlist[nameof(ONE)]);
+      Assert.Equal(1, dlist[nameof(ONE)].First());
+
+      for (var l= 1; l <= N; ++l)
+        dlist.Add(nameof(SUM), l);
+      Assert.Equal(2, dlist.Keys.Count);
+      Assert.Equal(N, dlist[nameof(SUM)].Count());
+      Assert.Equal(dlist.Count(), dlist[nameof(SUM)].Count() + dlist[nameof(ONE)].Count());
+      //Assert.Equal(SUM, dlist[nameof(SUM)].Sum());
+      IEnumerable<int> lst;
+      Assert.True(dlist.TryGetValue(nameof(SUM), out lst));
+      Assert.Equal(SUM, lst.Sum());
+
+      dlist.Remove(nameof(ONE));
+      Assert.Equal(N, dlist.Count());
+      Assert.False(dlist.TryGetValue(nameof(ONE), out lst));
+      Assert.Null(lst);
+
+      dlist.Clear();
+      Assert.Empty(dlist);
+
+    }
     public class GenericTest<T> where T : MiscTest {
 
     }

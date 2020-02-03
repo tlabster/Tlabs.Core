@@ -7,10 +7,14 @@ namespace Tlabs.Dynamic.Misc.Tests {
   public class FunctionLibraryTest {
     [Fact]
     void AgeAtTest() {
-      var date= new DateTime(1990, 05, 01);
+      var now= DateTime.Now;
+      var dateAt= new DateTime(2018, 10, 5);
+      var date= now.AddYears(-28);
       Assert.Equal(28, Function.AgeAt(date, null));
+      date= new DateTime(1990, 05, 01);
+      Assert.Equal(28, Function.AgeAt(date, dateAt));
       Assert.Equal(0, Function.AgeAt(null, DateTime.Now));
-      Assert.Equal(38, Function.AgeAt(date, DateTime.Now.AddYears(10)));
+      Assert.Equal(38, Function.AgeAt(date, dateAt.AddYears(10)));
     }
 
     [Fact]

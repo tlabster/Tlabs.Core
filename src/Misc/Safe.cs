@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 
 namespace Tlabs.Misc {
 
@@ -92,6 +93,18 @@ namespace Tlabs.Misc {
       T tmp= obj;
       obj= null;
       return tmp;
+    }
+
+    ///<summary>Compares <paramref name="location"/> with <paramref name="comparand"/> (of reference type <typeparamref name="T"/> for reference equality and,
+    ///if they are equal, replaces <paramref name="location"/> with the value returned from <paramref name="creator"/>.</summary>
+    ///<returns>The original value in <paramref name="location"/></returns>
+    public static T CompareExchange<T>(ref T location, T comparand, Func<T> creator) where T : class {
+      T orgVal;
+      if (comparand != (orgVal= location)) return orgVal;
+      var newVal= creator();
+      if (comparand != (orgVal= Interlocked.CompareExchange<T>(ref location, newVal, comparand)))
+        (newVal as IDisposable)?.Dispose();
+      return orgVal;
     }
 
     /// <summary>List of exceptions that are considered disastrous.</summary>

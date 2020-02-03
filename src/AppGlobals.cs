@@ -107,7 +107,7 @@ namespace Tlabs {
     }
 
     static ILoggerFactory CreateDefaultLogFactory() {
-      // Console.WriteLine($"Using temporary default {nameof(LoggerFactory)}");
+      Console.WriteLine($"++ Using temporary default {nameof(LoggerFactory)}");
       return tmpLogFactory= new LoggerFactory()
         .AddConsole(LogLevel.Trace);  //Settings.GetSection("logging"));
         // .AddDebug(LogLevel.Trace);
