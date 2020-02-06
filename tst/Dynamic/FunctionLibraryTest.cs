@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Tlabs.Dynamic.Misc.Tests {
@@ -145,7 +146,18 @@ namespace Tlabs.Dynamic.Misc.Tests {
       Assert.Equal(dt, Function.Date(dt));
     }
 
-
+    [Fact]
+    void ListTest() {
+      Assert.Null(Function.List(null));
+      Assert.Null(Function.List("not a list"));
+      var list= new List<string> { "test1", "test2" };
+      Assert.Equal(2, Function.List(list).Count);
+      Assert.Contains("test2", Function.List(list));
+      var list2= new List<int> { 1, 3, 4 };
+      Assert.Equal(3, Function.List(list2).Count);
+      var list3= new List<DateTime> { App.TimeInfo.Now };
+      Assert.Equal(1, Function.List(list3).Count);
+    }
 
     // [Fact]
     // void AterDaysTest() {

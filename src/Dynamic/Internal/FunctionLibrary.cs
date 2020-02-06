@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Globalization;
+using System.Collections;
+using System.Linq;
 
 namespace Tlabs.Dynamic.Misc  {
 
@@ -35,6 +37,7 @@ namespace Tlabs.Dynamic.Misc  {
     private static readonly Expression<Func<object, decimal>> NumExp= (o) => Num(o);
     private static readonly Expression<Func<object, object, bool>> HasFlagsExp= (o1, o2) => HasFlags(o1, o2);
     private static readonly Expression<Func<object, DateTime>> DateExp= (o) => Date(o);
+    private static readonly Expression<Func<object, List<object>>> ListExp= (o) => List(o);
 
     internal static int AgeAt(object o, DateTime? at) {
       var date= o as DateTime?;
@@ -136,12 +139,25 @@ namespace Tlabs.Dynamic.Misc  {
       return num ?? 0;
     }
 
+    internal static List<object> List(object o)
+    {
+      var stList= o as List<string>;
+      if(stList != null) return stList.Cast<object>().ToList();
+      var decList= o as List<decimal>;
+      if(decList != null) return decList.Cast<object>().ToList();
+      var intList= o as List<int>;
+      if(intList != null) return intList.Cast<object>().ToList();
+      var dList= o as List<DateTime>;
+      if(dList != null) return dList.Cast<object>().ToList();
+      return null;
+    }
+
     internal static bool HasFlags(object o1, object o2) {
       int flags= (o1 as int?) ?? 0;
       int mask= (o2 as int?) ?? 0;
       return 0 != (flags & mask);
     }
-    
+
     internal static DateTime Date(object o) {
       var date= o as DateTime?;
       return date ?? default(DateTime);
@@ -176,7 +192,8 @@ namespace Tlabs.Dynamic.Misc  {
       ["@False"]= FalseExp,
       ["@Num"]= NumExp,
       ["@HasFlags"]= HasFlagsExp,
-      ["@Date"]= DateExp
+      ["@Date"]= DateExp,
+      ["@List"]= ListExp
     };
   }
 }
