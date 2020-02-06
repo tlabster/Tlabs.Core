@@ -58,9 +58,17 @@ namespace Tlabs.Msg.Intern {
 
     ///<inherit/>
     public void Subscribe<T>(string subject, Action<T> subHandler) where T : class {
+      subscribe(subject, subHandler, createAsyncProxy(subHandler));
+    }
+
+    ///<inherit/>
+    public void Subscribe<T>(string subject, Func<T, Task> subHandler) where T : class {
+      subscribe(subject, subHandler, createProxy(subHandler));
+    }
+
+    private void subscribe(string subject, Delegate subHandler, Func<object, Task> proxy) {
       Func<object, Task> msgHandler;
       lock (msgHandlers) {
-        var proxy= createAsyncProxy<T>(subHandler);
         subscriptions[subHandler]= new SubscriptionInfo(subject, proxy);
         if (msgHandlers.TryGetValue(subject, out msgHandler))
           msgHandlers[subject]= (Func<object, Task>)Delegate.Combine(msgHandler, proxy);
@@ -94,23 +102,49 @@ namespace Tlabs.Msg.Intern {
       }
     }
 
-    private Func<object, Task> createAsyncProxy<T>(Delegate subHandler) where T : class {
+    private Func<object, Task> createProxy<T>(Func<T, Task> subHandler) where T : class {
+      // return (o) => {
+      //   var msg= o as T;
+      //   if (null == msg) return Task.CompletedTask;
+      //   return subHandler(msg);
+      // };
+      // subHandler() might throw:
+      return async (o) => {
+        var msg= o as T;
+        if (null != msg)
+          await subHandler(msg);
+      };
+    }
+
+    private Func<object, Task> createAsyncProxy<T>(Action<T> subHandler) where T : class {
       return async (o) => {
         var msg= o as T;
         if (null != msg) {
           await Task.Yield();
-          ((Action<T>)subHandler).Invoke(msg);
+          subHandler(msg);
         }
       };
     }
-    private Func<object, Task> createAsyncReqProxy<TMsg, TRet>(Delegate subHandler) where TMsg : class {
+
+    private Func<object, Task> createReqProxy<TMsg, TRet>(Func<TMsg, Task<TRet>> subHandler) where TMsg : class {
+      return async (o) => {
+        var reqMsg= (RequestMsg)o;
+        var msg= reqMsg.Msg as TMsg;
+        if (null != msg) {
+          log.LogDebug("Publishing request response on '{subj}'.", reqMsg.ResponseSubj);
+          Publish(reqMsg.ResponseSubj, await subHandler(msg));
+        }
+      };
+    }
+
+    private Func<object, Task> createAsyncReqProxy<TMsg, TRet>(Func<TMsg, TRet> subHandler) where TMsg : class {
       return async (o) => {
         var reqMsg= (RequestMsg)o;
         var msg= reqMsg.Msg as TMsg;
         if (null != msg) {
           await Task.Yield();
           log.LogDebug("Publishing request response on '{subj}'.", reqMsg.ResponseSubj);
-          Publish(reqMsg.ResponseSubj, ((Func<TMsg, TRet>)subHandler).Invoke(msg));
+          Publish(reqMsg.ResponseSubj, subHandler(msg));
         }
       };
     }

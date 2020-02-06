@@ -39,6 +39,9 @@ namespace Tlabs.Msg {
     ///<summary>Subscribe on <paramref name="subject"/> to receive messages of type type <typeparamref name="T"/>.</summary>
     void Subscribe<T>(string subject, Action<T> subHandler) where T : class;
 
+    ///<summary>Subscribe on <paramref name="subject"/> to receive messages of type type <typeparamref name="T"/>.</summary>
+    void Subscribe<T>(string subject, Func<T, Task> subHandler) where T : class;
+
     ///<summary>Subscribe for a request on <paramref name="subject"/> to receive messages of type type <typeparamref name="TMsg"/> and to return <typeparamref name="TRet"/>.</summary>
     void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class;
 
