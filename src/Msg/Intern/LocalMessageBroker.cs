@@ -68,6 +68,7 @@ namespace Tlabs.Msg.Intern {
 
     private void subscribe(string subject, Delegate subHandler, Func<object, Task> proxy) {
       Func<object, Task> msgHandler;
+      log.LogDebug("Subscribe on '{subj}'.", subject);
       lock (msgHandlers) {
         subscriptions[subHandler]= new SubscriptionInfo(subject, proxy);
         if (msgHandlers.TryGetValue(subject, out msgHandler))
