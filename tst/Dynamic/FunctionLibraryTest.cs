@@ -156,7 +156,7 @@ namespace Tlabs.Dynamic.Misc.Tests {
       var list2= new List<int> { 1, 3, 4 };
       Assert.Equal(3, Function.List(list2).Count);
       var list3= new List<DateTime> { App.TimeInfo.Now };
-      Assert.Equal(1, Function.List(list3).Count);
+      Assert.Single(Function.List(list3));
     }
 
     // [Fact]

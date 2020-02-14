@@ -6,7 +6,7 @@ using System.Linq;
 namespace Tlabs.Misc {
 
   ///<summary>Dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
-  public class DictionaryList<K, T> : IEnumerable<T> {
+  public class DictionaryList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> {
     Dictionary<K, List<T>> dict;
 
     ///<summary>Default ctor.</summary>
@@ -55,7 +55,7 @@ namespace Tlabs.Misc {
     public bool ContainsKey(K key) => dict.ContainsKey(key);
 
     ///<inheritdoc/>
-    public IEnumerator<T> GetEnumerator() => Values.GetEnumerator();
+    public IEnumerator<KeyValuePair<K, IEnumerable<T>>> GetEnumerator() => dict.Select(p => new KeyValuePair<K, IEnumerable<T>>(p.Key, p.Value)).GetEnumerator();
 
     ///<inheritdoc/>
     public bool Remove(K key) => dict.Remove(key);
@@ -73,5 +73,6 @@ namespace Tlabs.Misc {
 
     ///<inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
   }
 }

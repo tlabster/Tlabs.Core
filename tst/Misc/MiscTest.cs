@@ -118,14 +118,14 @@ namespace Tlabs.Misc.Tests {
         dlist.Add(nameof(SUM), l);
       Assert.Equal(2, dlist.Keys.Count);
       Assert.Equal(N, dlist[nameof(SUM)].Count());
-      Assert.Equal(dlist.Count(), dlist[nameof(SUM)].Count() + dlist[nameof(ONE)].Count());
+      Assert.Equal(dlist.Values.Count(), dlist[nameof(SUM)].Count() + dlist[nameof(ONE)].Count());
       //Assert.Equal(SUM, dlist[nameof(SUM)].Sum());
       IEnumerable<int> lst;
       Assert.True(dlist.TryGetValue(nameof(SUM), out lst));
       Assert.Equal(SUM, lst.Sum());
 
       dlist.Remove(nameof(ONE));
-      Assert.Equal(N, dlist.Count());
+      Assert.Equal(1, dlist.Count());
       Assert.False(dlist.TryGetValue(nameof(ONE), out lst));
       Assert.Null(lst);
 
