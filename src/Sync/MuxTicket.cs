@@ -3,20 +3,24 @@ using System.Threading;
 
 namespace Tlabs.Sync {
 
-  /// <summary>Key of <typeparamref name="T"/> based mutex ticket.</summary>
-  public sealed class MuxTicket<T> : IDisposable {
-    static readonly SyncTable<T> syncMap= new SyncTable<T>(k => new object());
+  /// <summary>Key based mutex ticket.</summary>
+  ///<remarks>For each givent key given with the ctor <see cref="MuxTicket"/> maintains a internal sync object that is being
+  /// acquired before ctor returns....
+  ///</remarks>
+  public sealed class MuxTicket : IDisposable {
+    static readonly SyncTable syncMap= new SyncTable(k => new object());
     /// <summary>Ctor from <paramref name="key"/> and optional <paramref name="timeOut"/>.</summary>
-    public MuxTicket(T key, int timeOut = System.Threading.Timeout.Infinite) {
+    public MuxTicket(object key, int timeOut = System.Threading.Timeout.Infinite) {
       object sync, acquiredSync= null;
-      
+      this.Key= key;
+
       while (true) {
         /* Retry until sync was acquied and placed in syncMap:
          */
         lock (syncMap) sync= syncMap[Key];
         if (acquiredSync == sync) return;
         if (null != acquiredSync && Monitor.IsEntered(acquiredSync)) Monitor.Exit(acquiredSync); //not from syncMap: release
-        if (!Monitor.TryEnter(sync, timeOut)) throw new TimeoutException($"Failed to accquire {nameof(MuxTicket<T>)} within {timeOut} msec.");
+        if (!Monitor.TryEnter(sync, timeOut)) throw new TimeoutException($"Failed to accquire {nameof(MuxTicket)} within {timeOut} msec.");
         acquiredSync= sync;
       }
     }
@@ -25,7 +29,7 @@ namespace Tlabs.Sync {
     ~MuxTicket() => Dispose();
 
     /// <summary>Ticket key.</summary>
-    public T Key { get; set; }
+    public object Key { get; set; }
 
     /// <summary>Release acquirement (and signal next waiter).</summary>
     public void Dispose() {
@@ -37,9 +41,9 @@ namespace Tlabs.Sync {
       GC.SuppressFinalize(this);
     }
 
-    private class SyncTable<K> : Misc.LookupTable<K, object> {
-      public SyncTable(Func<K, object> create) : base(create) { }
-      public object Evict(K key) {
+    private class SyncTable : Misc.LookupTable<object, object> {
+      public SyncTable(Func<object, object> create) : base(create) { }
+      public object Evict(object key) {
         object sync;
         if (table.TryGetValue(key, out sync))
           table.Remove(key);
