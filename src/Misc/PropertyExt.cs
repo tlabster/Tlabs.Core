@@ -139,6 +139,13 @@ namespace Tlabs.Misc {
       throw new IndexOutOfRangeException(propKeyPath);  //must not happen
     }
 
+    /// <summary>Convert <see cref="IReadOnlyDictionary{K, T}"/> into read-only <see cref="IDictionary{K, T}"/>.</summary>
+    public static IReadOnlyDictionary<string, object> ToReadonly(this Properties prop) {
+      var rdProp= prop as IReadOnlyDictionary<string, object>;
+      if (null != rdProp) return rdProp;
+      return new Dictionary<string, object>(prop);
+    }
+
   }
 
 }
