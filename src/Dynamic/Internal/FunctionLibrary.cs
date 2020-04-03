@@ -38,6 +38,10 @@ namespace Tlabs.Dynamic.Misc  {
     private static readonly Expression<Func<object, object, bool>> HasFlagsExp= (o1, o2) => HasFlags(o1, o2);
     private static readonly Expression<Func<object, DateTime>> DateExp= (o) => Date(o);
     private static readonly Expression<Func<object, List<object>>> ListExp= (o) => List(o);
+    private static readonly Expression<Func<object, object, bool>> AnyStrInExp= (a, b) => AnyIn<string>(a, b);
+    private static readonly Expression<Func<object, object, bool>> AnyStrExExp= (a, b) => AnyEx<string>(a, b);
+    private static readonly Expression<Func<object, object, bool>> AllStrInExp= (a, b) => AllIn<string>(a, b);
+    private static readonly Expression<Func<object, object, bool>> AllStrExExp= (a, b) => AllEx<string>(a, b);
 
     internal static int AgeAt(object o, DateTime? at) {
       var date= o as DateTime?;
@@ -139,18 +143,35 @@ namespace Tlabs.Dynamic.Misc  {
       return num ?? 0;
     }
 
-    internal static List<object> List(object o)
-    {
+    internal static List<object> List(object o) {
       var stList= o as List<string>;
-      if(stList != null) return stList.Cast<object>().ToList();
+      if (stList != null) return stList.Cast<object>().ToList();
       var decList= o as List<decimal>;
-      if(decList != null) return decList.Cast<object>().ToList();
+      if (decList != null) return decList.Cast<object>().ToList();
       var intList= o as List<int>;
-      if(intList != null) return intList.Cast<object>().ToList();
+      if (intList != null) return intList.Cast<object>().ToList();
       var dList= o as List<DateTime>;
-      if(dList != null) return dList.Cast<object>().ToList();
+      if (dList != null) return dList.Cast<object>().ToList();
       return null;
     }
+
+    internal static bool AnyIn<T>(object o1, object o2) {
+      var sub= o1 as IEnumerable<T>;
+      var set= o2 as IEnumerable<T>;
+      return null != sub && null != set && sub.Any(itm => set.Contains(itm));
+    }
+
+    internal static bool AllIn<T>(object o1, object o2) {
+      var sub= o1 as IEnumerable<T>;
+      var set= o2 as IEnumerable<T>;
+      return null != sub && null != set && sub.All(itm => set.Contains(itm));
+    }
+
+    internal static bool AnyEx<T>(object o1, object o2)
+      => !AllIn<T>(o1, o2);
+
+    internal static bool AllEx<T>(object o1, object o2)
+      => !AnyIn<T>(o1, o2);
 
     internal static bool HasFlags(object o1, object o2) {
       int flags= (o1 as int?) ?? 0;
@@ -193,7 +214,11 @@ namespace Tlabs.Dynamic.Misc  {
       ["@Num"]= NumExp,
       ["@HasFlags"]= HasFlagsExp,
       ["@Date"]= DateExp,
-      ["@List"]= ListExp
+      ["@List"]= ListExp,
+      ["@AnyItemIn"]= AnyStrInExp,
+      ["@AllItemIn"]= AllStrInExp,
+      ["@AnyItemEx"]= AnyStrExExp,
+      ["@AllItemEx"]= AllStrExExp
     };
   }
 }

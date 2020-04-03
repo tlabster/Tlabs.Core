@@ -159,12 +159,17 @@ namespace Tlabs.Dynamic.Misc.Tests {
       Assert.Single(Function.List(list3));
     }
 
-    // [Fact]
-    // void AterDaysTest() {
-    //   var date1= new DateTime(1985, 12, 21);
-    //   var date2= new DateTime(1990, 12, 20);
-    //   Assert.Equal(1, Function.DaysDiff(date1, date2));
-    //   Assert.Equal(1, Function.DaysDiff(date2, date1));
-    // }
-  }
+    [Fact]
+    void AnyAllTest() {
+      Assert.True(Function.AnyIn<string>(new string[] {"ONE"}, new string[] {"ONE", "TWO", "THREE"}));
+    }
+
+      // [Fact]
+      // void AterDaysTest() {
+      //   var date1= new DateTime(1985, 12, 21);
+      //   var date2= new DateTime(1990, 12, 20);
+      //   Assert.Equal(1, Function.DaysDiff(date1, date2));
+      //   Assert.Equal(1, Function.DaysDiff(date2, date1));
+      // }
+    }
 }

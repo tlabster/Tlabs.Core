@@ -125,7 +125,7 @@ namespace Tlabs.Misc.Tests {
       Assert.Equal(SUM, lst.Sum());
 
       dlist.Remove(nameof(ONE));
-      Assert.Equal(1, dlist.Count());
+      Assert.Single(dlist);
       Assert.False(dlist.TryGetValue(nameof(ONE), out lst));
       Assert.Null(lst);
 
