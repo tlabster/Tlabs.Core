@@ -161,7 +161,10 @@ namespace Tlabs.Dynamic.Misc.Tests {
 
     [Fact]
     void AnyAllTest() {
-      Assert.True(Function.AnyIn<string>(new string[] {"ONE"}, new string[] {"ONE", "TWO", "THREE"}));
+      Assert.True(Function.AnyIn<string>("ONE", new string[] {"ONE", "TWO", "THREE"}));
+      Assert.True(Function.AnyIn<string>(new string[] { "ONE" }, new string[] { "ONE", "TWO", "THREE" }));
+      Assert.False(Function.AllEx<string>(new string[] {"Alcohol", "Lottery"}, "Alcohol"));
+      Assert.False(Function.AllEx<string>(new string[] { "Alcohol", "Lottery" }, new string[] { "Alcohol" }));
     }
 
       // [Fact]

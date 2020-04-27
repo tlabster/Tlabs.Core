@@ -18,6 +18,7 @@ namespace Tlabs.Dynamic {
 
     ///<summary>Ctor from <paramref name="targetType"/>.</summary>
     public DynamicAccessor(Type targetType) {
+      if (null == (TargetType= targetType)) throw new ArgumentNullException(nameof(targetType));
       var coerceMethod= GetType().GetMethod("coerceIntoTargetValue", BindingFlags.Static | BindingFlags.NonPublic);
 
       foreach (var pi in targetType.GetProperties()) {
@@ -68,6 +69,9 @@ namespace Tlabs.Dynamic {
       return val;
     }
 
+    ///<summary>Accessor's target type.</summary>
+    public Type TargetType { get; }
+
     ///<summary>Indexer to return <see cref="Property"/> for <paramref name="name"/>.</summary>
     public Property this[string name] {
       get {
@@ -102,6 +106,8 @@ namespace Tlabs.Dynamic {
       public AccessDictionary(DynamicAccessor accessor, object target) {
         this.acc= accessor;
         this.obj= target;
+        var targetType= target.GetType();
+        if (!acc.TargetType.IsAssignableFrom(targetType)) throw new ArgumentException($"Type of target object {targetType} does not match accessor.TargetType: {accessor.TargetType}");
       }
 
       public object this[string key] {

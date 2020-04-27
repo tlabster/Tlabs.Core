@@ -155,22 +155,22 @@ namespace Tlabs.Dynamic.Misc  {
       return null;
     }
 
-    internal static bool AnyIn<T>(object o1, object o2) {
-      var sub= o1 as IEnumerable<T>;
-      var set= o2 as IEnumerable<T>;
+    internal static bool AnyIn<T>(object o1, object o2) where T : class {
+      var sub= o1 as IEnumerable<T> ?? new T[] {o1 as T};
+      var set= o2 as IEnumerable<T> ?? new T[] {o2 as T};
       return null != sub && null != set && sub.Any(itm => set.Contains(itm));
     }
 
-    internal static bool AllIn<T>(object o1, object o2) {
-      var sub= o1 as IEnumerable<T>;
-      var set= o2 as IEnumerable<T>;
+    internal static bool AllIn<T>(object o1, object o2) where T : class {
+      var sub= o1 as IEnumerable<T> ?? new T[] {o1 as T};
+      var set= o2 as IEnumerable<T> ?? new T[] {o2 as T};
       return null != sub && null != set && sub.All(itm => set.Contains(itm));
     }
 
-    internal static bool AnyEx<T>(object o1, object o2)
+    internal static bool AnyEx<T>(object o1, object o2) where T : class
       => !AllIn<T>(o1, o2);
 
-    internal static bool AllEx<T>(object o1, object o2)
+    internal static bool AllEx<T>(object o1, object o2) where T : class
       => !AnyIn<T>(o1, o2);
 
     internal static bool HasFlags(object o1, object o2) {

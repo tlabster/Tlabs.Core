@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -10,46 +8,51 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 
+using Microsoft.Extensions.Logging;
+
 namespace Tlabs.Dynamic {
   /// <summary>
   /// A factory to create dynamic classes, based on <see href="http://stackoverflow.com/questions/29413942/c-sharp-anonymous-object-with-properties-from-dictionary" />.
   /// </summary>
   public static class DynamicClassFactory {
+    class Log { }
+    static readonly ILogger<DynamicClassFactory.Log> log= App.Logger<DynamicClassFactory.Log>();
+
     // EmptyTypes is used to indicate that we are looking for someting without any parameters.
-    private static readonly Type[] EmptyTypes= new Type[0];
+    static readonly Type[] EmptyTypes= new Type[0];
 
-    private static readonly Tlabs.Misc.BasicCache<string, Type> typeCache= new Tlabs.Misc.BasicCache<string, Type>();
+    static readonly Tlabs.Misc.BasicCache<string, Type> typeCache= new Tlabs.Misc.BasicCache<string, Type>();
 
-    private static readonly ModuleBuilder ModuleBuilder;
+    static readonly ModuleBuilder ModuleBuilder;
 
     // Some objects we cache
-    private static readonly CustomAttributeBuilder CompilerGeneratedAttrib= new CustomAttributeBuilder(typeof(CompilerGeneratedAttribute).GetConstructor(EmptyTypes), new object[0]);
-    private static readonly CustomAttributeBuilder DebuggerBrowsableAttrib= new CustomAttributeBuilder(typeof(DebuggerBrowsableAttribute).GetConstructor(new[] { typeof(DebuggerBrowsableState) }), new object[] { DebuggerBrowsableState.Never });
-    private static readonly CustomAttributeBuilder DebuggerHiddenAttrib= new CustomAttributeBuilder(typeof(DebuggerHiddenAttribute).GetConstructor(EmptyTypes), new object[0]);
+    static readonly CustomAttributeBuilder CompilerGeneratedAttrib= new CustomAttributeBuilder(typeof(CompilerGeneratedAttribute).GetConstructor(EmptyTypes), new object[0]);
+    static readonly CustomAttributeBuilder DebuggerBrowsableAttrib= new CustomAttributeBuilder(typeof(DebuggerBrowsableAttribute).GetConstructor(new[] { typeof(DebuggerBrowsableState) }), new object[] { DebuggerBrowsableState.Never });
+    static readonly CustomAttributeBuilder DebuggerHiddenAttrib= new CustomAttributeBuilder(typeof(DebuggerHiddenAttribute).GetConstructor(EmptyTypes), new object[0]);
 
-    private static readonly ConstructorInfo DefaultCtor= typeof(object).GetConstructor(EmptyTypes);
-    private static readonly MethodInfo ToStringMethod= typeof(object).GetMethod("ToString", BindingFlags.Instance | BindingFlags.Public);
+    static readonly ConstructorInfo DefaultCtor= typeof(object).GetConstructor(EmptyTypes);
+    static readonly MethodInfo ToStringMethod= typeof(object).GetMethod("ToString", BindingFlags.Instance | BindingFlags.Public);
 
-    private static readonly ConstructorInfo StringBuilderCtor= typeof(StringBuilder).GetConstructor(EmptyTypes);
-    private static readonly MethodInfo StringBuilderAppendString= typeof(StringBuilder).GetMethod("Append", new[] { typeof(string) });
-    private static readonly MethodInfo StringBuilderAppendObject= typeof(StringBuilder).GetMethod("Append", new[] { typeof(object) });
+    static readonly ConstructorInfo StringBuilderCtor= typeof(StringBuilder).GetConstructor(EmptyTypes);
+    static readonly MethodInfo StringBuilderAppendString= typeof(StringBuilder).GetMethod("Append", new[] { typeof(string) });
+    static readonly MethodInfo StringBuilderAppendObject= typeof(StringBuilder).GetMethod("Append", new[] { typeof(object) });
 
-    private static readonly Type EqualityComparer= typeof(EqualityComparer<>);
-    private static readonly Type EqualityComparerGenericArgument= EqualityComparer.GetGenericArguments()[0];
+    static readonly Type EqualityComparer= typeof(EqualityComparer<>);
+    static readonly Type EqualityComparerGenericArgument= EqualityComparer.GetGenericArguments()[0];
 
-    private static readonly MethodInfo EqualityComparerDefault= EqualityComparer.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public);
-    private static readonly MethodInfo EqualityComparerEquals= EqualityComparer.GetMethod("Equals", new[] { EqualityComparerGenericArgument, EqualityComparerGenericArgument });
-    private static readonly MethodInfo EqualityComparerGetHashCode= EqualityComparer.GetMethod("GetHashCode", new[] { EqualityComparerGenericArgument });
+    static readonly MethodInfo EqualityComparerDefault= EqualityComparer.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public);
+    static readonly MethodInfo EqualityComparerEquals= EqualityComparer.GetMethod("Equals", new[] { EqualityComparerGenericArgument, EqualityComparerGenericArgument });
+    static readonly MethodInfo EqualityComparerGetHashCode= EqualityComparer.GetMethod("GetHashCode", new[] { EqualityComparerGenericArgument });
 
-    private static readonly Type DefaultBaseType= typeof(object);
-    private static readonly string typeNamePrefix= "<>__" + nameof(DynamicClassFactory) + "__";
-    private static int sequence= 0;
-
+    static readonly Type DefaultBaseType= typeof(object);
+    static readonly string typeNamePrefix= "<>__" + nameof(DynamicClassFactory) + "__";
+    static int sequence= 0;
     class PropertyDef {
       public string Name;
       public Type Type;
       public IList<DynamicAttribute> Attributes;
       public FieldBuilder Field;
+      public override string ToString() => $"{Name}[{Type.Name}]";
     }
 
     /// <summary>
@@ -100,17 +103,24 @@ namespace Tlabs.Dynamic {
                       : typeName + "~" + parentType.Name;
 
       Func<Type> createNew= () => createNewType(properties, parentType, typeName);
-
+      if (log.IsEnabled(LogLevel.Trace)) {
+        var type= typeCache[typeKey];
+        if (null != type) {
+          log.LogTrace("Skipping creation of existing type with key: {k}", typeKey);
+          log.LogTrace("Returning existing type: {tp}", type.Name);
+        }
+      }
       return typeCache[typeKey, createNew];
     }
 
     private static Type createNewType(IList<DynamicProperty> properties, Type parentType, string typeName) {
       Type type;
-      string seq= $":{Interlocked.Increment(ref sequence)}";
+      string seq= $"_{Interlocked.Increment(ref sequence)}";
       var genericType= string.IsNullOrEmpty(typeName);
 
       string name=   typeNamePrefix
-                   + (genericType ? $"{seq}`{properties.Count}" : (typeName + seq.ToString()));
+                   + (genericType ? $"{seq}`{properties.Count}" : (typeName + seq));
+      log.LogTrace("Creating new dynamic type: '{type}'", name);
 
       TypeBuilder tb= ModuleBuilder.DefineType(name,
                                                  TypeAttributes.AnsiClass
@@ -123,6 +133,7 @@ namespace Tlabs.Dynamic {
 
 
       var propDefs= properties.Select(prop => new PropertyDef { Name= prop.Name, Type= prop.Type, Attributes= prop.Attributes }).ToList();
+      if (log.IsEnabled(LogLevel.Trace)) log.LogTrace("Properties of '{type}': {props}", name, string.Join(", ", propDefs));
 
       if (genericType) {
         var genericParams=   propDefs.Count > 0
@@ -258,6 +269,7 @@ namespace Tlabs.Dynamic {
       type= tb.CreateTypeInfo().AsType();
       if (type.IsGenericTypeDefinition)
         type= type.MakeGenericType(properties.Select(p => p.Type).ToArray());
+      if (log.IsEnabled(LogLevel.Trace)) log.LogTrace("New type '{type}' created.", type.FullName);
 
       return type;
     }
@@ -305,9 +317,7 @@ namespace Tlabs.Dynamic {
 
     // We recreate this by combining all property names and types, separated by a "|".
     private static string generateTypeKey(IEnumerable<DynamicProperty> props, Type parentType)
-      => $"{string.Join("|", props.Select(p => encodeName(p.Name) + ":" + p.Type.Name).ToArray())}~{parentType.Name}";
+      => $"{string.Join("|", props)}~{parentType.Name}";
 
-    // We escape the \ with \\, so that we can safely escape the "|" (that we use as a separator) with "\|"
-    private static string encodeName(string name) => name.Replace(@"\", @"\\").Replace(@"|", @"\|");
   }
 }

@@ -41,5 +41,9 @@ namespace Tlabs.Dynamic {
     /// The attributes from the property.
     /// </value>
     public IList<DynamicAttribute> Attributes { get; }
+
+    ///<inheritdoc/>
+    public override string ToString() => $"{encodeName(Name)}[{Type.Name}]";
+    private static string encodeName(string name) => name.Replace(@"\", @"\\").Replace(@"|", @"\|"); // We escape the \ with \\, so that we can safely escape the "|" (that we use as a separator) with "\|"
   }
 }
