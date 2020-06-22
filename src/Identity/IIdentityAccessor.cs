@@ -8,6 +8,8 @@ namespace Tlabs.Identity {
     ClaimsPrincipal Principal { get; }
     ///<summary>Current user name.</summary>
     string Name { get; }
+    ///<summary>Authentication type for current identity</summary>
+    string AuthenticationType { get; }
     ///<summary>Current user id or 0 if anonymous.</summary>
     int Id { get; }
     ///<summary>Current roles or null if anonymous.</summary>

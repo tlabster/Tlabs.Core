@@ -12,6 +12,8 @@ namespace Tlabs.Identity {
     ///<inherit/>
     public virtual string Name => SysIdentity.Instance.Name;
     ///<inherit/>
+    public virtual string AuthenticationType => SysIdentity.Instance.AuthenticationType;
+    ///<inherit/>
     public virtual int Id => 0;
     ///<inherit/>
     public virtual string[] Roles => null;
