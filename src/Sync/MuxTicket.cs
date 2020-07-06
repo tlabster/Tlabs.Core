@@ -29,7 +29,7 @@ namespace Tlabs.Sync {
     ~MuxTicket() => Dispose();
 
     /// <summary>Ticket key.</summary>
-    public object Key { get; set; }
+    public object Key { get; }
 
     /// <summary>Release acquirement (and signal next waiter).</summary>
     public void Dispose() {
