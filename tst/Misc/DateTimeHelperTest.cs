@@ -27,6 +27,10 @@ namespace Tlabs.Misc.Tests {
 
       DateTime utc= DateTime.UtcNow;
       Assert.Equal(tInfo.ToUtc(utc).Hour, utc.Hour);
+      IConvertible dateTimeSt= "1996-12-19T16:39:57.000000-02:00";
+
+      Assert.Equal(dateTimeSt.ToAppTime().Kind, DateTimeKind.Local);
+      Assert.Equal(dateTimeSt.ToAppTime().Hour, 19);
     }
   }
 }

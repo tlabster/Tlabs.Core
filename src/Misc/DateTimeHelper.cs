@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace Tlabs {
 
@@ -63,6 +64,11 @@ namespace Tlabs {
     /// <summary>Strip time from <paramref name="date"/>.</summary>
     public static DateTime StripTime(this DateTime date) {
       return new DateTime(date.Year, date.Month, date.Day);
+    }
+
+    /// <summary>Converts an IConvertible into an application DateTime</summary>
+    public static DateTime ToAppTime(this IConvertible cv) {
+      return App.TimeInfo.ToAppTime(cv.ToDateTime(DateTimeFormatInfo.InvariantInfo));
     }
   }
 }
