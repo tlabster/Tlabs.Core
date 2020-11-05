@@ -85,16 +85,22 @@ namespace Tlabs.Config {
 
 
   ///<summary>Empty <see cref="IConfiguration"/>.</summary>
-  public class Empty : IConfiguration {
+  public class Empty : IConfigurationSection {
     ///<summary>Empty Configuration</summary>
-    public static readonly IConfiguration Configuration= new Empty();
+    public static readonly IConfigurationSection Configuration= new Empty();
     ///<inherit/>
     public string this[string key] { get => null; set => throw new NotImplementedException(); }
     ///<inherit/>
-    public IEnumerable<IConfigurationSection> GetChildren() => null;
+    public string Key => String.Empty;
+    ///<inherit/>
+    public string Path => String.Empty;
+    ///<inherit/>
+    public string Value { get => null; set => throw new NotImplementedException(); }
+    ///<inherit/>
+    public IEnumerable<IConfigurationSection> GetChildren() => System.Linq.Enumerable.Empty<IConfigurationSection>();
     ///<inherit/>
     public IChangeToken GetReloadToken() => null;
     ///<inherit/>
-    public IConfigurationSection GetSection(string key) => null;
+    public IConfigurationSection GetSection(string key) => Configuration;
   }
 }
