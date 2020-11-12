@@ -88,7 +88,7 @@ namespace Tlabs.Dynamic {
         return DynamicExpressionParser.ParseLambda(false, typeof(TCtx), retType, expression, funcLib);
       }
       catch (System.Linq.Dynamic.Core.Exceptions.ParseException e) {
-        throw new ExpressionSyntaxException(expressionError(e));
+        throw EX.New<ExpressionSyntaxException>(EXP_ERR, e.Position, e.Message);
       }
     }
 
@@ -102,13 +102,11 @@ namespace Tlabs.Dynamic {
         return DynamicExpressionParser.ParseLambda(false, exprParams.ToArray(), retType, expression, funcLib);
       }
       catch (System.Linq.Dynamic.Core.Exceptions.ParseException e) {
-        throw new ExpressionSyntaxException(expressionError(e));
+        throw EX.New<ExpressionSyntaxException>(EXP_ERR, e.Position, e.Message);
       }
     }
 
-    private static string expressionError(System.Linq.Dynamic.Core.Exceptions.ParseException e, string msg= "Expression syntax error") {
-      return $"{msg} @{e.Position} ({e.Message})";
-    }
+    const string EXP_ERR= "Expression syntax error @{pos} ({syntax})";
   }
 
 }
