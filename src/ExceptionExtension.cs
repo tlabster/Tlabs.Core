@@ -41,7 +41,6 @@ namespace Tlabs {
 
     ///<summary>Set template (message) data.</summary>
     public static T SetTemplateData<T>(this T ex, string msgTemplate, params object[] args) where T : System.Exception {
-      if (null != ex.MsgTemplate()) return ex; //has template data set already
       ExceptionDataKey.ResolvedMsgParams(msgTemplate, out var data, args);
       return ex.SetMsgData(data);
     }
