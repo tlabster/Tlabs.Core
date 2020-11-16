@@ -72,6 +72,7 @@ namespace Tlabs {
 
   /// <summary><see cref="System.Exception.Data"/> key type.</summary>
   public class ExceptionDataKey {
+    const string NULL_STR= "null";
     /// <summary>Message template key.</summary>
     public readonly static ExceptionDataKey MSG_TMPL= new ExceptionDataKey(">msgTmpl");
 
@@ -103,11 +104,11 @@ namespace Tlabs {
     public static string ResolvedMsgParams(string msgTmpl, out IDictionary data, params object[] param) {
       var dataDict= data= new System.Collections.Specialized.ListDictionary();
       data[MSG_TMPL]= msgTmpl;
-      return resolveMsg(msgTmpl, (idx, pname) => (dataDict[pname]= param[idx]).ToString());
+      return resolveMsg(msgTmpl, (idx, pname) => (dataDict[pname]= param[idx] ?? NULL_STR).ToString());
     }
 
     /// <summary>Resolves the <paramref name="msgTmpl"/> with <paramref name="data"/>.</summary>
-    public static string ResolvedMsgTemplate(string msgTmpl, IDictionary data) => resolveMsg(msgTmpl, (idx, pname) => data[pname]?.ToString() ?? "null");
+    public static string ResolvedMsgTemplate(string msgTmpl, IDictionary data) => resolveMsg(msgTmpl, (idx, pname) => data[pname]?.ToString() ?? NULL_STR);
 
     static string resolveMsg(string msgTmpl, Func<int, ExceptionDataKey, string> paramVal) {
       int idx= 0;
