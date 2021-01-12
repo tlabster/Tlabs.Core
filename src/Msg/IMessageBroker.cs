@@ -45,6 +45,9 @@ namespace Tlabs.Msg {
     ///<summary>Subscribe for a request on <paramref name="subject"/> to receive messages of type type <typeparamref name="TMsg"/> and to return <typeparamref name="TRet"/>.</summary>
     void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class;
 
+    ///<summary>Subscribe for a request on <paramref name="subject"/> to receive async. messages of type type <typeparamref name="TMsg"/> and to return <typeparamref name="TRet"/>.</summary>
+    void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, Task<TRet>> requestHandler) where TMsg : class;
+
     ///<summary>Unsubscribe <paramref name="handler"/> from any subscriptions.</summary>
     ///<returns>true if successfull unsubscribed.</returns>
     void Unsubscribe(Delegate handler);
