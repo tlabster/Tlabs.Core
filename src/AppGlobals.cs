@@ -171,7 +171,8 @@ namespace Tlabs {
     ///<para>NOTE: If <paramref name="svcType"/> is <see cref="IDisposable"/> it gets disposed after <paramref name="runSvc"/> was invoked.</para>
     ///</remarks>
     public static Task<TRes> RunBackgroundService<TSvc, TRes>(Type svcType, Func<TSvc, TRes> runSvc) where TRes : class {
-      return Task<TRes>.Run(() => {
+      // return Task<TRes>.Run(() => {
+      Func<TRes> service= () => {
         TRes res= null;
         WithServiceScope(svcProv => {
           TSvc svc= default(TSvc);
@@ -182,7 +183,13 @@ namespace Tlabs {
           finally { (svc as IDisposable)?.Dispose(); }   //try to dispose
         });
         return res;
-      });
+      };
+      // return Task.Run(service);
+      return Task.Factory.StartNew(service,
+                                     TaskCreationOptions.DenyChildAttach    //default from Task.Run(service)
+                                   | TaskCreationOptions.PreferFairness     //prefer parallel exec. (by scheduling on the global queue insted of the thread local queue)
+      //                           | TaskCreationOptions.LongRunning        //hint to create a new thread w/o consuming a thread-pool thread
+      );
     }
 
     ///<summary>Application <see cref="TimeZoneInfo"/></summary>

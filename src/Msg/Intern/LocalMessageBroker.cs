@@ -51,7 +51,7 @@ namespace Tlabs.Msg.Intern {
         ctokSrc.Token.Register(()=> {
           log.LogDebug("Response on request subject '{subj}' timed-out after {time}ms.", reqMsg.ResponseSubj, timeout);
           compl.TrySetCanceled();
-        }, false);
+        });
       }
       return compl.Task;
     }
