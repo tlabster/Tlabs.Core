@@ -185,7 +185,7 @@ namespace Tlabs.Dynamic.Misc  {
     }
 
     ///<summary>Helper function library.</summary>
-    public static readonly IDictionary<string, object> Library= new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase) {
+    public static readonly IReadOnlyDictionary<string, object> Library= new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase) {
       ["@OneOf2"]= OneOf2Exp,
       ["@OneOf3"]= OneOf3Exp,
       ["@OneOf4"]= OneOf4Exp,

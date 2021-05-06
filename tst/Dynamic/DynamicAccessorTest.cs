@@ -17,6 +17,7 @@ namespace Tlabs.Dynamic.Tests {
       public decimal? propDec { get; set; }
       public List<string> propList { get; set; }
       public IList<decimal> decList { get; set;}
+      public IList<object> objList { get; set; }
     }
 
     [Fact]
@@ -87,14 +88,8 @@ namespace Tlabs.Dynamic.Tests {
       Assert.Equal("test2", list.First());
 
       // Assigning an object of a type that does not implement IConvertible fails
-      string json = @"[
-        'Small',
-        'Medium',
-        'Large'
-      ]";
-
-      Newtonsoft.Json.Linq.JArray a= Newtonsoft.Json.Linq.JArray.Parse(json);
-      propAcc["propList"].Set(obj, a);
+      IEnumerable olst= new TestEnumerable(new object[] { "small", 123, 'x', 1.2345m });
+      propAcc["objList"].Set(obj, olst);
     }
 
     [Fact]

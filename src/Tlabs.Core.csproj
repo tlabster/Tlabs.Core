@@ -1,35 +1,26 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <VersionPrefix>1.3.9</VersionPrefix>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <VersionPrefix>2.0.2</VersionPrefix>
+    <TargetFramework>net5.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <RuntimeFrameworkVersion>2.1.0</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>5.0.0</RuntimeFrameworkVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <Description>The common core utility classes of a Tlabs web-application.</Description>
     <Authors>Tlabs</Authors>
-    <PackageLicenseUrl>https://bitbucket.org/tlabster/tlabs.core/src/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://bitbucket.org/tlabster/tlabs.core</PackageProjectUrl>
+  </PropertyGroup>
 
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageLicenseExpression>LGPL-3.0-only</PackageLicenseExpression>
+    <PackageProjectUrl>https://bitbucket.org/tlabster/tlabs.core</PackageProjectUrl>
   </PropertyGroup>
 
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.*" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.*" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.*" />
-
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.1.*" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.1.*" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="2.1.*" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.*" />
-
-    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.1.*" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.*" />
-    <PackageReference Include="System.Reactive.Core" Version="4.3.*" />
-
-    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.0.9.*" />
+    <PackageReference Include="System.Reactive.Core" Version="5.0.*" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.2.*" />
   </ItemGroup>
 
 </Project>
