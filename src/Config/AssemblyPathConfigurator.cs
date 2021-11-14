@@ -38,11 +38,11 @@ namespace Tlabs.Config {
         this.paths= cfgPath.Split(';');
         cfgPath= null;
         AssemblyLoadContext.Default.Resolving+= (ctx, asmName) => {
-          log.LogInformation("Resolving extended assembly: {asmName}", asmName.FullName);
           Assembly asm= null;
           foreach (var path in this.paths) {
             var asmPath= Path.Combine(basePath, path, asmName.Name) + ".dll";
             if (File.Exists(asmPath)) try {
+              log.LogInformation("Resolving extended assembly: {asmName}", asmName.FullName);
               asm= ctx.LoadFromAssemblyPath(Path.Combine(basePath, asmName.Name + ".dll"));
               log.LogDebug(" {asmName} loaded from: {asmPath}", asmName.FullName, asmPath);
               break;

@@ -4,10 +4,11 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Hosting;
 
 using Tlabs.Config;
 using Tlabs.Misc;
@@ -41,8 +42,8 @@ namespace Tlabs {
     static IWebHost host;
     static ILoggerFactory logFactory;
     static ILoggerFactory tmpLogFactory;
-    static readonly IApplicationLifetime notYetALife= new NotYetALifeApplication();
-    static IApplicationLifetime appLifetime= notYetALife;
+    static readonly IHostApplicationLifetime notYetALife= new NotYetALifeApplication();
+    static IHostApplicationLifetime appLifetime= notYetALife;
     static IServiceProvider appSvcProv;
 
     static IAppTime appTime;
@@ -108,9 +109,12 @@ namespace Tlabs {
 
     static ILoggerFactory CreateDefaultLogFactory() {
       Console.WriteLine($"++ Using temporary default {nameof(LoggerFactory)}");
-      return tmpLogFactory= new LoggerFactory()
-        .AddConsole(LogLevel.Trace);  //Settings.GetSection("logging"));
-        // .AddDebug(LogLevel.Trace);
+      return tmpLogFactory= LoggerFactory.Create(builder => {
+        builder.AddConsole(opt => {
+          // opt.TimestampFormat= "???";
+        });
+        builder.SetMinimumLevel(LogLevel.Trace);
+      });
     }
 
     ///<summary>Returns a <see cref="ILogger{T}"/> for <typeparamref name="T"/></summary>
@@ -119,8 +123,8 @@ namespace Tlabs {
     ///</remarks>
     public static ILogger<T> Logger<T>() { return Singleton<AppLogger<T>>.Instance; }
 
-    ///<summary>Application <see cref="IApplicationLifetime"/></summary>
-    public static IApplicationLifetime AppLifetime {
+    ///<summary>Application <see cref="IHostApplicationLifetime"/></summary>
+    public static IHostApplicationLifetime AppLifetime {
       get { return appLifetime; }
     }
 
@@ -132,7 +136,7 @@ namespace Tlabs {
       get { return appSvcProv; }
       set {
         if (null != appSvcProv || null != Interlocked.CompareExchange<IServiceProvider>(ref appSvcProv, value, null)) throw new InvalidOperationException($"{nameof(ServiceProv)} is already set.");
-        Interlocked.CompareExchange<IApplicationLifetime>(ref appLifetime, appSvcProv.GetService(typeof(IApplicationLifetime)) as IApplicationLifetime, notYetALife);
+        Interlocked.CompareExchange<IHostApplicationLifetime>(ref appLifetime, appSvcProv.GetService(typeof(IHostApplicationLifetime)) as IHostApplicationLifetime, notYetALife);
       }
     }
 
@@ -216,7 +220,7 @@ namespace Tlabs {
       }
     }
 
-    private class NotYetALifeApplication : IApplicationLifetime {
+    private class NotYetALifeApplication : IHostApplicationLifetime {
       public CancellationToken ApplicationStarted => throw new NotImplementedException();
 
       public CancellationToken ApplicationStopping => throw new NotImplementedException();

@@ -17,8 +17,8 @@ namespace Tlabs.Config {
 
   ///<summary>Middleware context used with a <see cref="IConfigurator{MiddlewareContext}"/>./>.</summary>
   public class MiddlewareContext {
-    ///<summary>Hosting environment</summary>
-    public IHostingEnvironment HostingEnv { get; set; }
+    ///<summary>Web hosting environment</summary>
+    public IWebHostEnvironment HostingEnv { get; set; }
     ///<summary>Application builder to be configured.</summary>
     public IApplicationBuilder AppBuilder { get; set; }
   }
@@ -75,7 +75,7 @@ namespace Tlabs.Config {
   }
 
 
-  /// <summary>Base class to configure ist-self als enumerable of <typeparamref name="T"/>.</summary>
+  /// <summary>Base class to configure it-self als enumerable of <typeparamref name="T"/>.</summary>
   public abstract class SelfEnumConfigurator<T> : IConfigurator<IServiceCollection> {
     ///<inherit/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {

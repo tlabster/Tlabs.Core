@@ -11,7 +11,7 @@
 
     class Lazy {
       static Lazy() { } //Explicit static ctor for *NOT* to marking type with beforefieldinit
-      internal static readonly T instance = new T();
+      internal static readonly T instance= new T();
     }
   }
 }

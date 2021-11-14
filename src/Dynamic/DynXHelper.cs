@@ -22,7 +22,7 @@ namespace Tlabs.Dynamic {
     ///<summary>
     /// <se cref="LambdaExpression"/> compiled from <paramref name="code"/> with access to the public properties of <typeparamref name="TCtx"/> (and <paramref name="funcLib"/>) returning <typeparamref name="TRet"/>.
     ///</summary>
-    public static Expression<Func<TCtx, TRet>> BuildLambdaExpression<TCtx, TRet>(string code, IDictionary<string, object> funcLib, IDictionary<string, Type> ctxConverter) {
+    public static Expression<Func<TCtx, TRet>> BuildLambdaExpression<TCtx, TRet>(string code, IReadOnlyDictionary<string, object> funcLib, IReadOnlyDictionary<string, Type> ctxConverter) {
       var ctxObj= Expression.Parameter(typeof(TCtx));
       var ctxExprInfo= BuildExpression(code, ctxObj, typeof(TRet), funcLib, ctxConverter);
       return Expression.Lambda<Func<TCtx, TRet>>(ctxExprInfo.Expression, ctxObj);
@@ -46,7 +46,7 @@ namespace Tlabs.Dynamic {
     /// <para>
     /// </para>
     ///</remarks>
-    public static ContextExpression BuildExpression(string expression, ParameterExpression ctxType, Type retType, IDictionary<string, object> funcLib, IDictionary<string, Type> ctxConverter) {
+    public static ContextExpression BuildExpression(string expression, ParameterExpression ctxType, Type retType, IReadOnlyDictionary<string, object> funcLib, IReadOnlyDictionary<string, Type> ctxConverter) {
       //var ctxProps= ctxType.Type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy)/*.Where(p => p.CanRead)*/.ToList();
       var ctxProps= ctxType.Type.getFlattenedProperties();
       var exprParams= ctxProps.Select(p => {
@@ -82,7 +82,7 @@ namespace Tlabs.Dynamic {
     /// Parse the <paramref name="expression"/> with access to the public properties of <typeparamref name="TCtx"/> (and <paramref name="funcLib"/>) returning <paramref name="retType"/>
     /// into a <see cref="LambdaExpression"/>.
     ///</summary>
-    public static LambdaExpression ParsedExpression<TCtx>(string expression, Type retType, IDictionary<string, object> funcLib) {
+    public static LambdaExpression ParsedExpression<TCtx>(string expression, Type retType, IReadOnlyDictionary<string, object> funcLib) {
       if (null == expression) throw new ArgumentNullException(nameof(expression));
       try {
         return DynamicExpressionParser.ParseLambda(false, typeof(TCtx), retType, expression, funcLib);
@@ -97,7 +97,7 @@ namespace Tlabs.Dynamic {
     /// Parse the <paramref name="expression"/> with access to <paramref name="exprParams"/> (and <paramref name="funcLib"/>) returning <paramref name="retType"/>
     /// into a <see cref="LambdaExpression"/>.
     ///</summary>
-    public static LambdaExpression ParsedExpression(string expression, IEnumerable<ParameterExpression> exprParams, Type retType, IDictionary<string, object> funcLib) {
+    public static LambdaExpression ParsedExpression(string expression, IEnumerable<ParameterExpression> exprParams, Type retType, IReadOnlyDictionary<string, object> funcLib) {
       try {
         return DynamicExpressionParser.ParseLambda(false, exprParams.ToArray(), retType, expression, funcLib);
       }

@@ -43,8 +43,8 @@ namespace Tlabs.Dynamic {
     }
 
     private static object coerceIntoTargetValue(object val, Type targetType) {
-      IEnumerable valEnum;
       if (null == val) return val;
+      if (targetType == val.GetType()) return val;
       targetType= Nullable.GetUnderlyingType(targetType) ?? targetType;
       if (targetType.IsAssignableFrom(val.GetType()))
         return val;                                       //no convertion neccessary
@@ -53,17 +53,27 @@ namespace Tlabs.Dynamic {
       if (null != cv)                                     // is convertible?
         return Convert.ChangeType(cv, Nullable.GetUnderlyingType(targetType) ?? targetType);   //convert to underlying or targetType
 
-      if (targetType.IsGenericType && null != (valEnum= val as IEnumerable)) {
-        /*  Support convertion of types that only implement IEnumerable (like with strange stuff like Newtonsoft.Json.Linq.JArray...))
+      if (val is IEnumerable<object> valEnum) {
+        /*  Support convertion of types that only implement IEnumerable (like List<object> when deserializing into property IDictionary<string, object>)
          *  into a target type implementing IList<>.
         */
-        var itemType= targetType.GenericTypeArguments[0];
-        Type targetListType= typeof(List<>).MakeGenericType(itemType);
-        if (targetType.IsAssignableFrom(targetListType)) {
-          IList lst= (IList)Activator.CreateInstance(targetListType);
-          foreach (var itm in valEnum)
-            lst.Add(Convert.ChangeType(itm, itemType));
-          val= lst;
+        if (targetType.IsGenericType) {
+          var itemType= targetType.GenericTypeArguments[0];
+          Type targetListType= typeof(List<>).MakeGenericType(itemType);
+          if (targetType.IsAssignableFrom(targetListType)) {
+            IList lst= (IList)Activator.CreateInstance(targetListType);
+            foreach (var itm in valEnum)
+              lst.Add(Convert.ChangeType(itm, itemType));
+            return lst;
+          }
+        }
+        if (targetType.IsSZArray) {
+          var itemType= targetType.GetElementType();
+          var cnt= valEnum.Count();
+          var array= Array.CreateInstance(itemType, cnt);
+          var l= 0;
+          foreach (var itm in valEnum) array.SetValue(Convert.ChangeType(itm, itemType), l++);
+          return array;
         }
       }
       return val;
