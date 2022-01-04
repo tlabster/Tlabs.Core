@@ -34,6 +34,12 @@ namespace Tlabs.Diagnostic {
         logSrc.Write(LOG_EVENT, payload);
     }
 
+#if NET5_ONLY
+    /* Avoid any reference to System.Reactive!
+     * (This currently causes a weak reference to net5.0 which in turn requires the explicit decalaration of the net6.0 target framework
+     * to avoid an implicit fallback to net5.0 with "dotnet run -f net6.0")
+     * ***TODO: Need to figure out how use System.Reactive.Core with net6.0 !!!
+     */
     /// <summary>Subscripe log <paramref name="handler"/> .</summary>
     public static IDisposable SubscribeLogHandler(IReadOnlyDictionary<string, Detail> detailMap, Action<object, Detail, object> handler) {
       Func<object, Detail, bool> match= (src, dtl) => {
@@ -61,5 +67,6 @@ namespace Tlabs.Diagnostic {
       };
       return DiagnosticExt.SubscribeToListener(LOG_LISTENER, LOG_LISTENER, predicate, payload => handler(src, dtl, payload));
     }
+#endif
   }
 }

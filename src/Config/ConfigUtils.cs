@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -13,14 +11,6 @@ namespace Tlabs.Config {
   public interface IConfigurator<T> {
     ///<summary>Method called to add a specific configuration to a <paramref name="target"/>.</summary>
     void AddTo(T target, IConfiguration cfg);
-  }
-
-  ///<summary>Middleware context used with a <see cref="IConfigurator{MiddlewareContext}"/>./>.</summary>
-  public class MiddlewareContext {
-    ///<summary>Web hosting environment</summary>
-    public IWebHostEnvironment HostingEnv { get; set; }
-    ///<summary>Application builder to be configured.</summary>
-    public IApplicationBuilder AppBuilder { get; set; }
   }
 
   ///<summary>Configuration extensions.</summary>

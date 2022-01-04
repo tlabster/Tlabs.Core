@@ -8,7 +8,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Hosting;
 
 using Tlabs.Config;
 using Tlabs.Misc;
@@ -39,7 +38,7 @@ namespace Tlabs {
     ///<summary>Current framework version.</summary>
     public static string FrameworkVersion;
     static readonly Lazy<IConfigurationRoot> cfgSettings;
-    static IWebHost host;
+    // static IWebHost host;
     static ILoggerFactory logFactory;
     static ILoggerFactory tmpLogFactory;
     static readonly IHostApplicationLifetime notYetALife= new NotYetALifeApplication();
@@ -76,14 +75,6 @@ namespace Tlabs {
       var path= ConfigurationPath.Combine(key);
       return    App.Settings[path]
              ?? $"--[ {path} ]--";
-    }
-
-    ///<summary>The application executing host.</summary>
-    public static IWebHost Host {
-      get => host;
-      set {
-        if (null != host || null != Interlocked.CompareExchange<IWebHost>(ref host, value, null)) throw new InvalidOperationException($"{nameof(Host)} was already set.");
-      }
     }
 
     ///<summary>A LogFactory</summary>

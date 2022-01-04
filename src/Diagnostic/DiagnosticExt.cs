@@ -1,11 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Tlabs.Diagnostic {
 
   /// <summary>Diagnostic extensions.</summary>
   public static class DiagnosticExt {
+
+#if NET5_ONLY
+    /* Avoid any reference to System.Reactive!
+     * (This currently causes a weak reference to net5.0 which in turn requires the explicit decalaration of the net6.0 target framework
+     * to avoid an implicit fallback to net5.0 with "dotnet run -f net6.0")
+     * ***TODO: Need to figure out how use System.Reactive.Core with net6.0 !!!
+     */
     /// <summary>Utility method to subscribe to a <see cref="DiagnosticListener"/>.</summary>
     public static IDisposable SubscribeToListener(string listenerName, string eventName, Action<object> handler) {
       IDisposable subscription= null;
@@ -32,7 +38,7 @@ namespace Tlabs.Diagnostic {
 
       return subscription;
     }
-
+#endif
     /// <summary>Add (config) properties to the activitis tag enumeration.</summary>
     public static void AddPropTags(this Activity act, IReadOnlyDictionary<string, object> props) {
       foreach (var pair in props)

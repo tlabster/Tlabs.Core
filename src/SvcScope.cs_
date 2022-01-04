@@ -1,0 +1,38 @@
+﻿using System;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+public sealed class AppStartup {
+
+  public static IHostBuilder CreateAppHostBuilder(string[] args) {
+
+      var svcColl= new ServiceCollection()
+        .AddLogging(log => log.AddConsole().AddDebug())
+        .ApplyConfigurators(Tlabs.App.Settings, "applicationServices");
+      svcColl.AddTransient(typeof(IEventTracingMonitor), typeof(EventTracingMonitor));
+      svcColl.AddTransient(typeof(IThreadPoolAutoAdjust), typeof(ThreadPoolAutoAdjust));
+      svcColl.AddTransient(typeof(IOperationsPerfProfiler), typeof(OperationsPerfProfiler));
+
+      if (App.ServiceProv == null)
+        App.ServiceProv= svcColl.BuildServiceProvider();
+      this.SvcProvider= App.ServiceProv;
+      this.log= Tlabs.App.Logger<TestServiceFixture<StoreCfg>>();
+      
+      try {
+        using (var tmpScope= CreateSvcScope()) {
+          /*  Any dotnet-ef generated migrations are database provider spcific (e.g. MSSQL)
+           *  Since we setup the SQLite in memory from scratch it is OK to fall back to the DatabaseFacade.EnsureCreated() method...
+           */
+          var ctx= tmpScope.DbContext;
+          if (ctx.Database.EnsureCreated()) foreach (var dataSeed in tmpScope.SvcProvider.GetServices<IDataSeed>()) {
+            log.LogWarning($"Ensuring '{dataSeed.Campaign}'.");
+            dataSeed.Perform();
+          }
+        }
+      }
+      catch (Exception e) when (e.LogError(log, $"Failed to initialize {nameof(TestServiceFixture<StoreCfg>)}")) { }
+
+
+  }
+}
