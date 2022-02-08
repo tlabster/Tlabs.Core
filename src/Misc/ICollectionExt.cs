@@ -69,9 +69,7 @@ namespace Tlabs.Misc {
       if (null == seq) throw new ArgumentNullException(nameof(seq));
       if (null == other) throw new ArgumentNullException(nameof(other));
 
-#if NET6
-      if (seq.TryGetNonEnumerated(out var seqCnt) && other.TryGetNonEnumerated(out var otherCnt) && seqCnt != otherCnt) return false;
-#endif
+      if (seq.TryGetNonEnumeratedCount(out var seqCnt) && other.TryGetNonEnumeratedCount(out var otherCnt) && seqCnt != otherCnt) return false;
       var set= other.ToHashSet();
       return seq.All(itm => set.Contains(itm));
     }
@@ -82,9 +80,7 @@ namespace Tlabs.Misc {
       if (null == other) throw new ArgumentNullException(nameof(other));
       if (null == cmp) throw new ArgumentNullException(nameof(cmp));
 
-#if NET6
-      if (seq.TryGetNonEnumerated(out var seqCnt) && other.TryGetNonEnumerated(out var otherCnt) && seqCnt != otherCnt) return false;
-#endif
+      if (seq.TryGetNonEnumeratedCount(out var seqCnt) && other.TryGetNonEnumeratedCount(out var otherCnt) && seqCnt != otherCnt) return false;
       var set= other.ToHashSet(cmp);
       return seq.All(itm => set.Contains(itm, cmp));
     }

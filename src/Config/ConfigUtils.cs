@@ -62,6 +62,12 @@ namespace Tlabs.Config {
       return builder;
     }
 
+    ///<summary>Convert dictionary into <see cref="IConfiguration"/>.</summary>
+    public static IConfiguration ToConfiguration(this IReadOnlyDictionary<string, string> dict) {
+      var builder= new ConfigurationBuilder().AddInMemoryCollection(dict);
+      return builder.Build();
+    }
+
   }
 
 

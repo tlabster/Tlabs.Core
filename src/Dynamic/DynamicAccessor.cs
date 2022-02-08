@@ -51,8 +51,7 @@ namespace Tlabs.Dynamic {
       if (targetType.IsAssignableFrom(val.GetType()))
         return val;                                       //no convertion neccessary
       
-      var cv= val as IConvertible;
-      if (null != cv)                                     // is convertible?
+      if (val is IConvertible cv)                         // is convertible?
         return Convert.ChangeType(cv, Nullable.GetUnderlyingType(targetType) ?? targetType);   //convert to underlying or targetType
 
       if (val is IEnumerable<object> valEnum) {
