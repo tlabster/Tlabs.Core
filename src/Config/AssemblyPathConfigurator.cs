@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Tlabs.Config {
 
-  ///<summary>Configurator to add additional assembly path(s).</summary>
-  public class AssemblyPathConfigurator : IConfigurator<IWebHostBuilder> {
+  ///<summary>Configurator to add additional assembly path(s) for config target type <typeparamref name="T"/>.</summary>
+  public class AssemblyPathConfigurator<T> : IConfigurator<T> {
     private readonly ILogger log;
     private readonly string basePath;
     private string cfgPath;
@@ -20,21 +20,21 @@ namespace Tlabs.Config {
     public AssemblyPathConfigurator() : this(null) { }
     ///<summary>Ctor from <paramref name="config"/> dictionary.</summary>
     public AssemblyPathConfigurator(IDictionary<string, string> config) {
-      this.log= App.Logger<AssemblyPathConfigurator>();
+      this.log= App.Logger<AssemblyPathConfigurator<T>>();
       var cfg= config ?? new Dictionary<string, string>();
       this.basePath= Path.GetDirectoryName(App.MainEntryPath);
       log.LogDebug("Assembly base-path: {basePath}", basePath);
       if (!cfg.TryGetValue("path", out cfgPath)) return;   //no assembly path to be set
     }
     ///<summary>Add additional path(s) to <paramref name="target"/>.</summary>
-    public void AddTo(IWebHostBuilder target, IConfiguration cfg) {
+    public void AddTo(T target, IConfiguration cfg) {
       ExtendAsmPath();
     }
 
     ///<summary>Extend assembly path(s) as configured.</summary>
     public void ExtendAsmPath() {
       if (null != cfgPath) lock(cfgPath) if (null != cfgPath) {
-      
+
         this.paths= cfgPath.Split(';');
         cfgPath= null;
         AssemblyLoadContext.Default.Resolving+= (ctx, asmName) => {
@@ -54,9 +54,11 @@ namespace Tlabs.Config {
           return asm;
         };
       }
-      
     }
+
   }
 
+  ///<summary>Configurator to add additional assembly path(s).</summary>
+  public class AssemblyPathConfigurator : AssemblyPathConfigurator<IHostBuilder> { }
 
 }

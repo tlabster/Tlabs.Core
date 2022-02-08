@@ -11,6 +11,7 @@ namespace Tlabs.Dynamic {
   ///<summary>Class to provide property access to instances of a dynamically provided (typically generated) type.</summary>
   public class DynamicAccessor {
     private readonly Property nilProperty= new Property {
+      Info= null,
       Get= (o) => null,
       Set= (t, o) => { }
     };
@@ -35,6 +36,7 @@ namespace Tlabs.Dynamic {
                         ? (Expression)Expression.Call(Expression.Convert(targetParam, targetType), pi.SetMethod, Expression.Convert(Expression.Call(coerceMethod, valParam, Expression.Constant(pi.PropertyType)), pi.PropertyType))
                         : (Expression)Expression.Empty(); //NoOp if read-only
         accessorMap[pi.Name]= new Property {
+          Info= pi,
           Get= Expression.Lambda<Func<object, object>>(getterBody, targetParam).Compile(),
           Set= Expression.Lambda<Action<object, object>>(setterBody, targetParam, valParam).Compile()
         };
@@ -102,6 +104,8 @@ namespace Tlabs.Dynamic {
 
     ///<summary>Getter / Setter accessor.</summary>
     public struct Property {
+      ///<summary><see cref="PropertyInfo"/>.</summary>
+      public PropertyInfo Info;
       ///<summary>Getter delegate.</summary>
       public Func<object, object> Get;
       ///<summary>Setter delegate.</summary>
