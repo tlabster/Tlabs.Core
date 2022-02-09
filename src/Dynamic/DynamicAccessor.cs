@@ -10,7 +10,8 @@ namespace Tlabs.Dynamic {
 
   ///<summary>Class to provide property access to instances of a dynamically provided (typically generated) type.</summary>
   public class DynamicAccessor {
-    private readonly Property nilProperty= new Property {
+    ///<summary>Nop property returned for non existing members.</summary>
+    public static readonly Property NILProperty= new Property {
       Info= null,
       Get= (o) => null,
       Set= (t, o) => { }
@@ -87,7 +88,7 @@ namespace Tlabs.Dynamic {
     public Property this[string name] {
       get {
         Property acc;
-        return accessorMap.TryGetValue(name, out acc) ? acc : nilProperty;
+        return accessorMap.TryGetValue(name, out acc) ? acc : NILProperty;
       }
     }
 

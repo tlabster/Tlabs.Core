@@ -10,7 +10,7 @@ namespace Tlabs.Misc {
     ///<summary>Adds the elements of the specified collection <paramref name="coll"/> to the end of <see cref="IList{T}"/>.</summary>
     public static void AddRange<T>(this IList<T> lst, System.Collections.Generic.IEnumerable<T> coll) {
       if (null == lst) throw new ArgumentNullException(nameof(lst));
-      if (null == coll) throw new ArgumentNullException(nameof(coll));
+      if (null == coll) return;
       if (lst is List<T> specificLst) {
         specificLst.AddRange(coll);
         return;
@@ -23,7 +23,7 @@ namespace Tlabs.Misc {
     ///<summary>Adds the elements of the specified collection <paramref name="coll"/> to <see cref="ISet{T}"/>.</summary>
     public static void AddRange<T>(this ISet<T> set, System.Collections.Generic.IEnumerable<T> coll) {
       if (null == set) throw new ArgumentNullException(nameof(set));
-      if (null == coll) throw new ArgumentNullException(nameof(coll));
+      if (null == coll) return;
       foreach (var itm in coll)
         set.Add(itm);
     }
