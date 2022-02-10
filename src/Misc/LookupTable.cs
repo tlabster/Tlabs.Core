@@ -12,13 +12,25 @@ namespace Tlabs.Misc {
 
     ///<summary>Default ctor.</summary>
     public LookupTable() { this.table= new Dictionary<K, T>(); }
+    ///<summary>Ctor from <paramref name="comp"/>.</summary>
+    public LookupTable(IEqualityComparer<K> comp) { this.table= new Dictionary<K, T>(comp); }
+
     ///<summary>Ctor from <paramref name="create"/> delegate.</summary>
     public LookupTable(Func<K, T> create) : this() {
+      this.create= create;
+    }
+    ///<summary>Ctor from <paramref name="create"/> delegate and <paramref name="comp"/>.</summary>
+    public LookupTable(Func<K, T> create, IEqualityComparer<K> comp) : this(comp) {
       this.create= create;
     }
     ///<summary>Ctor from <paramref name="entries"/> and <paramref name="create"/> delegate.</summary>
     public LookupTable(IEnumerable<KeyValuePair<K, T>> entries, Func<K, T> create) {
       this.table= new Dictionary<K, T>(entries);
+      this.create= create;
+    }
+    ///<summary>Ctor from <paramref name="entries"/> and <paramref name="create"/> delegate and <paramref name="comp"/>.</summary>
+    public LookupTable(IEnumerable<KeyValuePair<K, T>> entries, Func<K, T> create, IEqualityComparer<K> comp) {
+      this.table= new Dictionary<K, T>(entries, comp);
       this.create= create;
     }
 
