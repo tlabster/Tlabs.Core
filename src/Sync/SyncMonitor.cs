@@ -47,7 +47,7 @@ namespace Tlabs.Sync {
 
   }
 
-  /// <summary>Synchronisation monitor whose signaled value could be awaited by a promise <see cref="Task{T}"/> returned from <see cref="SignaledValue()"/> .</summary>
+  /// <summary>Synchronisation monitor whose signaled value could be awaited by a promise <see cref="Task{T}"/> returned from <see cref="AsyncMonitor{T}.SignaledValue(CancellationToken?)"/> .</summary>
   public class AsyncMonitor<T> : SyncMonitor<T> {
     /// <summary>Default ctor.</summary>
     public AsyncMonitor() : base(null) { }
@@ -59,17 +59,18 @@ namespace Tlabs.Sync {
     protected TaskCompletionSource<T> complSrc= new TaskCompletionSource<T>();
 
     /// <summary>Returns a <see cref="Task{T}"/> to be awaited for a signaled value.</summary>
-    public Task<T> SignaledValue() => SignaledValue(Timeout.Infinite);
+    public Task<T> SignaledValue(CancellationToken? ctok= null) => SignaledValue(Timeout.Infinite, ctok);
 
     /// <summary>Returns a <see cref="Task{T}"/> to be awaited for a signaled value.</summary>
     /// <param name="timeOut">Maximum number of milliseconds to wait for a signal until the <see cref="Task{T}"/> is cancelled.</param>
-    public Task<T> SignaledValue(int timeOut) {
+    /// <param name="ctok">Cancellation token</param>
+    public Task<T> SignaledValue(int timeOut, CancellationToken? ctok= null) {
       if (IsSignaled) return Task.FromResult(this.Value);
       if (timeOut > 0) {
         var ctokSrc= new CancellationTokenSource(timeOut);
         ctokSrc.Token.Register(() => complSrc.TrySetCanceled());
       }
-
+      ctok?.Register(() => complSrc.TrySetCanceled());
       return complSrc.Task;
     }
 
