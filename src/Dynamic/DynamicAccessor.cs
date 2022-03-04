@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
@@ -53,7 +54,7 @@ namespace Tlabs.Dynamic {
         return val;                                       //no convertion neccessary
       
       if (val is IConvertible cv)                         // is convertible?
-        return Convert.ChangeType(cv, Nullable.GetUnderlyingType(targetType) ?? targetType);   //convert to underlying or targetType
+        return Convert.ChangeType(cv, Nullable.GetUnderlyingType(targetType) ?? targetType, CultureInfo.InvariantCulture);   //convert to underlying or targetType
 
       if (val is IEnumerable<object> valEnum) {
         /*  Support convertion of types that only implement IEnumerable (like List<object> when deserializing into property IDictionary<string, object>)
