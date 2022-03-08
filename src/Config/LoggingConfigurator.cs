@@ -47,7 +47,11 @@ namespace Tlabs.Config {
     ///<summary>Default ctor.</summary>
     public CustomStdoutFormatterOptions() {
       this.TimestampFormat= "O";
+      this.IncludeCategory= true;
     }
+
+    ///<summary>Include category with log entry.</summary>
+    public bool IncludeCategory { get; set; }
   }
   ///<summary>Custom stdout formatter.</summary>
   ///<remarks>This custom formatter generates log entries with this format:
@@ -72,9 +76,11 @@ namespace Tlabs.Config {
       }
       textWriter.Write(logLevelMark(logEntry.LogLevel));
       
-      textWriter.Write(logEntry.Category);
-      textWriter.Write(": ");
-
+      if (options.IncludeCategory) {
+        textWriter.Write(logEntry.Category);
+        textWriter.Write(": ");
+      }
+      
       if (options.IncludeScopes && null != scopeProvider) {
         scopeProvider.ForEachScope((scope, state) => {
           state.Write("=> ");
