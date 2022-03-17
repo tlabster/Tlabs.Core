@@ -89,7 +89,7 @@ namespace Tlabs.Dynamic.Tests {
 
       // Assigning an object of a type that does not implement IConvertible fails
       IEnumerable olst= new TestEnumerable(new object[] { "small", 123, 'x', 1.2345m });
-      propAcc["objList"].Set(obj, olst);
+      Assert.Throws<InvalidCastException>(()=> propAcc["objList"].Set(obj, olst));
     }
 
     [Fact]
@@ -140,7 +140,7 @@ namespace Tlabs.Dynamic.Tests {
 
       var enm= new TestEnumerable(lst2);
       Assert.False(enm.GetType() is IConvertible, "non IConvertible needed for this test");
-      props["decList"]= enm;
+      Assert.Throws<InvalidCastException>(() => props["decList"]= enm);
       Assert.Equal(lst2[0], ((IList<decimal>)propAcc["decList"].Get(obj))[0]);
       Assert.Equal(lst2[0], obj.decList[0]);
       Assert.Equal(lst2[1], ((IList<decimal>)propAcc["decList"].Get(obj))[1]);
