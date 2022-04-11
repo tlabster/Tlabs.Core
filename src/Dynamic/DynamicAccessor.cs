@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Reflection;
 using System.Linq;
 using System.Linq.Expressions;
@@ -17,7 +16,7 @@ namespace Tlabs.Dynamic {
       Get= (o) => null,
       Set= (t, o) => { }
     };
-    private Dictionary<string, Property> accessorMap= new Dictionary<string, Property>(StringComparer.OrdinalIgnoreCase);
+    readonly Dictionary<string, Property> accessorMap= new Dictionary<string, Property>(StringComparer.OrdinalIgnoreCase);
 
     ///<summary>Ctor from <paramref name="targetType"/>.</summary>
     public DynamicAccessor(Type targetType) {
@@ -46,6 +45,7 @@ namespace Tlabs.Dynamic {
 
     }
 
+    #pragma warning disable IDE0051   //used from compiled Expression tree (s.a.)
     private static object coerceIntoTargetValue(object val, Type targetType) {
       if (null == val) return val;
       if (targetType == val.GetType()) return val;
@@ -54,7 +54,7 @@ namespace Tlabs.Dynamic {
         return val;                                       //no convertion neccessary
       
       if (val is IConvertible cv)                         // is convertible?
-        return Convert.ChangeType(cv, Nullable.GetUnderlyingType(targetType) ?? targetType, CultureInfo.InvariantCulture);   //convert to underlying or targetType
+        return Convert.ChangeType(cv, Nullable.GetUnderlyingType(targetType) ?? targetType, App.DfltFormat);   //convert to underlying or targetType
 
       if (val is IEnumerable<object> valEnum) {
         /*  Support convertion of types that only implement IEnumerable (like List<object> when deserializing into property IDictionary<string, object>)
@@ -66,7 +66,7 @@ namespace Tlabs.Dynamic {
           if (targetType.IsAssignableFrom(targetListType)) {
             IList lst= (IList)Activator.CreateInstance(targetListType);
             foreach (var itm in valEnum)
-              lst.Add(Convert.ChangeType(itm, itemType));
+              lst.Add(Convert.ChangeType(itm, itemType, App.DfltFormat));
             return lst;
           }
         }
@@ -75,7 +75,7 @@ namespace Tlabs.Dynamic {
           var cnt= valEnum.Count();
           var array= Array.CreateInstance(itemType, cnt);
           var l= 0;
-          foreach (var itm in valEnum) array.SetValue(Convert.ChangeType(itm, itemType), l++);
+          foreach (var itm in valEnum) array.SetValue(Convert.ChangeType(itm, itemType, App.DfltFormat), l++);
           return array;
         }
       }
@@ -86,12 +86,7 @@ namespace Tlabs.Dynamic {
     public Type TargetType { get; }
 
     ///<summary>Indexer to return <see cref="Property"/> for <paramref name="name"/>.</summary>
-    public Property this[string name] {
-      get {
-        Property acc;
-        return accessorMap.TryGetValue(name, out acc) ? acc : NILProperty;
-      }
-    }
+    public Property this[string name] => accessorMap.TryGetValue(name, out var acc) ? acc : NILProperty;
 
     ///<summary>Check if <see cref="Property"/> for <paramref name="name"/> exists.</summary>
     public bool Has(string name) => accessorMap.ContainsKey(name);
@@ -115,8 +110,8 @@ namespace Tlabs.Dynamic {
 
 
     private class AccessDictionary : IDictionary<string, object> {
-      private DynamicAccessor acc;
-      private object obj;
+      readonly DynamicAccessor acc;
+      readonly object obj;
 
       public AccessDictionary(DynamicAccessor accessor, object target) {
         this.acc= accessor;
@@ -147,9 +142,8 @@ namespace Tlabs.Dynamic {
       public void Clear() => throw new InvalidOperationException();
 
       public bool Contains(KeyValuePair<string, object> item) {
-        Property p;
         object v;
-        if (acc.accessorMap.TryGetValue(item.Key, out p)) {
+        if (acc.accessorMap.TryGetValue(item.Key, out var p)) {
           v= p.Get(obj);
           return   null == v
                  ? null == item.Value
@@ -177,8 +171,7 @@ namespace Tlabs.Dynamic {
       public bool Remove(KeyValuePair<string, object> item) => throw new InvalidOperationException();
 
       public bool TryGetValue(string key, out object value) {
-        Property p;
-        if (acc.accessorMap.TryGetValue(key, out p)) {
+        if (acc.accessorMap.TryGetValue(key, out var p)) {
           value= p.Get(obj);
           return true;
         }

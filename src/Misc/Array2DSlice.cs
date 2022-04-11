@@ -5,8 +5,8 @@ using System.Collections.Generic;
 namespace Tlabs.Misc {
   ///<summary>Row slice of an 2D array of <typeparamref name="T"/>.</summary>
   public class Array2DRowSlice<T> : IReadOnlyList<T> {
-    T[,] data;
-    int row;
+    readonly T[,] data;
+    readonly int row;
 
     ///<summary>Ctor from <paramref name="data"/> and <paramref name="row"/>.</summary>
     public Array2DRowSlice(T[,] data, int row) {

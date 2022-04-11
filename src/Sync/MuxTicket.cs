@@ -44,8 +44,7 @@ namespace Tlabs.Sync {
     private class SyncTable : Misc.LookupTable<object, object> {
       public SyncTable(Func<object, object> create) : base(create) { }
       public object Evict(object key) {
-        object sync;
-        if (table.TryGetValue(key, out sync))
+        if (table.TryGetValue(key, out var sync))
           table.Remove(key);
         return sync;
       }

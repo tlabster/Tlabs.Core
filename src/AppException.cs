@@ -12,12 +12,14 @@ namespace Tlabs {
 
     ///<summary>Log error and return false.</summary>
     public static bool LogError(this Exception ex, ILogger log, string msg, params object[] args) {
+#pragma warning disable CA2254    //non const msg template needed here
       log.LogError(0, ex, msg, args);
       return false;
     }
 
     ///<summary>Log warning (w/o stack trace) and return false.</summary>
     public static bool LogWarn(this Exception ex, ILogger log, string msg, params object[] args) {
+#pragma warning disable CA2254    //non const msg template needed here
       log.LogWarning($"{msg} - ({ex.Message})", args);
       return false;
     }

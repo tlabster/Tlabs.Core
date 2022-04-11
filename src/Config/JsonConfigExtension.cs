@@ -25,10 +25,9 @@ namespace Tlabs.Config {
 
     ///<inherit/>
     public void AddTo(IConfigurationBuilder cfgBuilder, IConfiguration cfg) {
-      string jsonFile;
-      config.TryGetValue(JSON_FILE_CFG, out jsonFile);
+      config.TryGetValue(JSON_FILE_CFG, out var jsonFile);
       if (string.IsNullOrEmpty(jsonFile)) {
-        log.LogError($"Missing config.{JSON_FILE_CFG} property in {cfg}");
+        log.LogError("Missing config.{fn} property in {cfg}", JSON_FILE_CFG, cfg);
         return;
       }
       string cfgPath= jsonFile;

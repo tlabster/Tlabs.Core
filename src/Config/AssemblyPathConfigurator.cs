@@ -48,7 +48,7 @@ namespace Tlabs.Config {
               break;
             }
             catch (Exception e ) when(Misc.Safe.NoDisastrousCondition(e)) {
-              log.LogWarning(0, e, $"Failed to load assembly: '{asmPath}'");
+              log.LogWarning(0, e, "Failed to load assembly: '{asmPath}'", asmPath);
             }
           }
           return asm;

@@ -7,7 +7,7 @@ namespace Tlabs.Misc {
 
   ///<summary>Dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
   public class DictionaryList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> {
-    Dictionary<K, List<T>> dict;
+    readonly Dictionary<K, List<T>> dict;
 
     ///<summary>Default ctor.</summary>
     public DictionaryList() { dict= new Dictionary<K, List<T>>(); }
@@ -35,8 +35,7 @@ namespace Tlabs.Misc {
 
     ///<inheritdoc/>
     public void Add(K key, T value) {
-      List<T> lst;
-      if (!dict.TryGetValue(key, out lst)) dict.Add(key, lst= new List<T>());
+      if (!dict.TryGetValue(key, out var lst)) dict.Add(key, lst= new List<T>());
       lst.Add(value);
     }
 
@@ -65,8 +64,7 @@ namespace Tlabs.Misc {
 
     ///<inheritdoc/>
     public bool TryGetValue(K key, out IEnumerable<T> value) {
-      List<T> lst;
-      var ret= dict.TryGetValue(key, out lst);
+      var ret= dict.TryGetValue(key, out var lst);
       value= lst;
       return ret;
     }

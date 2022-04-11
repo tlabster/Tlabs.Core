@@ -29,13 +29,19 @@ namespace Tlabs.Misc {
 
     ///<summary>Perform <paramref name="action"/> with new service provider scope.</summary>
     public void WithScope(Action<IServiceProvider> action) {
-      using(var scope= CreateScope()) {
-        action(scope.ServiceProvider);
-      }
+      using var scope = CreateScope();
+      action(scope.ServiceProvider);
     }
 
     ///<inheritdoc/>
     public void Dispose() {
+      DoDispose(true);
+      GC.SuppressFinalize(this);
+    }
+
+    ///<summary>Dispose</summary>
+    protected virtual void DoDispose(bool disposing) {
+      if (!disposing) return;
       svcProv?.Dispose();
     }
 

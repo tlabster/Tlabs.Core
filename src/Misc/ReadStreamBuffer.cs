@@ -88,7 +88,7 @@ namespace Tlabs.Misc {
 
     sealed class BufferSegment : ReadOnlySequenceSegment<byte>, IDisposable {
       public IMemoryOwner<byte> Buffer { get; }
-      BufferSegment? prev;
+      readonly BufferSegment? prev;
       private bool isDisposed;
 
       public BufferSegment(int size, BufferSegment? prev) {

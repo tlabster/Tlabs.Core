@@ -17,16 +17,15 @@ namespace Tlabs.Msg.Intern {
      */
 
     static readonly ILogger log= Tlabs.App.Logger<LocalMessageBroker>();
-    private Dictionary<string, Func<object, Task>> msgHandlers= new Dictionary<string, Func<object, Task>>();     //msgHandler by subject
-    private Dictionary<Delegate, SubscriptionInfo> subscriptions= new Dictionary<Delegate, SubscriptionInfo>();   //subscriptionInfo by (original) subHandler
+    readonly Dictionary<string, Func<object, Task>> msgHandlers= new();     //msgHandler by subject
+    readonly Dictionary<Delegate, SubscriptionInfo> subscriptions= new();   //subscriptionInfo by (original) subHandler
 
     ///<inherit/>
     public void Publish(string subject, object msg) => findMessageHandler(subject)?.Invoke(msg);
 
     private Func<object, Task> findMessageHandler(string subject) {
-      Func<object, Task> msgHandler;
       lock(msgHandlers) {
-        msgHandlers.TryGetValue(subject, out msgHandler);
+        msgHandlers.TryGetValue(subject, out var msgHandler);
         return msgHandler;
       }
     }
@@ -67,11 +66,10 @@ namespace Tlabs.Msg.Intern {
     }
 
     private void subscribe(string subject, Delegate subHandler, Func<object, Task> proxy) {
-      Func<object, Task> msgHandler;
       log.LogDebug("Subscribe on '{subj}'.", subject);
       lock (msgHandlers) {
         subscriptions[subHandler]= new SubscriptionInfo(subject, proxy);
-        if (msgHandlers.TryGetValue(subject, out msgHandler))
+        if (msgHandlers.TryGetValue(subject, out var msgHandler))
           msgHandlers[subject]= (Func<object, Task>)Delegate.Combine(msgHandler, proxy);
         else msgHandlers[subject]= proxy;
       }
@@ -80,11 +78,10 @@ namespace Tlabs.Msg.Intern {
     ///<inherit/>
     public void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class {
       log.LogDebug("SubscribeRequest on '{subj}'.", subject);
-      Func<object, Task> msgHandler;
       lock (msgHandlers) {
         var proxy= createAsyncReqProxy<TMsg, TRet>(requestHandler);
         subscriptions[requestHandler]= new SubscriptionInfo(subject, proxy);
-        if (msgHandlers.TryGetValue(subject, out msgHandler))
+        if (msgHandlers.TryGetValue(subject, out var msgHandler))
           msgHandlers[subject]= (Func<object, Task>)Delegate.Combine(msgHandler, proxy);
         else msgHandlers[subject]= proxy;
       }
@@ -93,11 +90,10 @@ namespace Tlabs.Msg.Intern {
     ///<inherit/>
     public void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, Task<TRet>> requestHandler) where TMsg : class {
       log.LogDebug("SubscribeRequest on '{subj}'.", subject);
-      Func<object, Task> msgHandler;
       lock (msgHandlers) {
         var proxy= createReqProxy(requestHandler);
         subscriptions[requestHandler]= new SubscriptionInfo(subject, proxy);
-        if (msgHandlers.TryGetValue(subject, out msgHandler))
+        if (msgHandlers.TryGetValue(subject, out var msgHandler))
           msgHandlers[subject]= (Func<object, Task>)Delegate.Combine(msgHandler, proxy);
         else msgHandlers[subject]= proxy;
       }
@@ -107,27 +103,23 @@ namespace Tlabs.Msg.Intern {
     public void Unsubscribe(Delegate handler) {
       if (null == handler) return;
       lock(msgHandlers) {
-        SubscriptionInfo subscription;
-        if (! subscriptions.TryGetValue(handler, out subscription)) return; //unknown handler
+        if (! subscriptions.TryGetValue(handler, out var subscription)) return; //unknown handler
         subscriptions.Remove(handler);
-        Func<object, Task> handlerDel;
-        if (! msgHandlers.TryGetValue(subscription.Subject, out handlerDel)) return;
+        if (! msgHandlers.TryGetValue(subscription.Subject, out var handlerDel)) return;
         if (null == Delegate.Remove(handlerDel, subscription.MsgHandler)) msgHandlers.Remove(subscription.Subject);   //no subscription left on this subject
       }
     }
 
-    private Func<object, Task> createProxy<T>(Func<T, Task> subHandler) where T : class {
+    static Func<object, Task> createProxy<T>(Func<T, Task> subHandler) where T : class {
       return async (o) => {
-        var msg= o as T;
-        if (null != msg)
+        if (o is T msg)
           await subHandler(msg);
       };
     }
 
-    private Func<object, Task> createAsyncProxy<T>(Action<T> subHandler) where T : class {
+    static Func<object, Task> createAsyncProxy<T>(Action<T> subHandler) where T : class {
       return async (o) => {
-        var msg= o as T;
-        if (null != msg) {
+        if (o is T msg) {
           await Task.Yield();
           subHandler(msg);
         }
@@ -137,8 +129,7 @@ namespace Tlabs.Msg.Intern {
     private Func<object, Task> createReqProxy<TMsg, TRet>(Func<TMsg, Task<TRet>> subHandler) where TMsg : class {
       return async (o) => {
         var reqMsg= (RequestMsg)o;
-        var msg= reqMsg.Msg as TMsg;
-        if (null != msg) {
+        if (reqMsg.Msg is TMsg msg) {
           log.LogDebug("Publishing request response on '{subj}'.", reqMsg.ResponseSubj);
           Publish(reqMsg.ResponseSubj, await subHandler(msg));
         }
@@ -148,8 +139,7 @@ namespace Tlabs.Msg.Intern {
     private Func<object, Task> createAsyncReqProxy<TMsg, TRet>(Func<TMsg, TRet> subHandler) where TMsg : class {
       return async (o) => {
         var reqMsg= (RequestMsg)o;
-        var msg= reqMsg.Msg as TMsg;
-        if (null != msg) {
+        if (reqMsg.Msg is TMsg msg) {
           await Task.Yield();
           log.LogDebug("Publishing request response on '{subj}'.", reqMsg.ResponseSubj);
           Publish(reqMsg.ResponseSubj, subHandler(msg));

@@ -56,7 +56,7 @@ namespace Tlabs.Sync {
     public AsyncMonitor(object syncRoot) : base(syncRoot) { }
 
     /// <summary>Source for task result signaling.</summary>
-    protected TaskCompletionSource<T> complSrc= new TaskCompletionSource<T>();
+    protected TaskCompletionSource<T> complSrc= new();
 
     /// <summary>Returns a <see cref="Task{T}"/> to be awaited for a signaled value.</summary>
     public Task<T> SignaledValue(CancellationToken? ctok= null) => SignaledValue(Timeout.Infinite, ctok);

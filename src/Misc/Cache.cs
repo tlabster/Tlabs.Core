@@ -26,9 +26,9 @@ namespace Tlabs.Misc {
   }
 
   ///<summary>Basic cache supporting concurrent access with balanced read/write locking.</summary>
-  public class BasicCache<K, T> : ICache<K, T> where T : class {
+  public class BasicCache<K, T> : IDisposable, ICache<K, T> where T : class {
     readonly Dictionary<K, T> cache;
-    readonly ReaderWriterLockSlim lck= new ReaderWriterLockSlim();
+    readonly ReaderWriterLockSlim lck= new();
 
     ///<summary>Default ctor.</summary>
     public BasicCache() {
@@ -43,10 +43,9 @@ namespace Tlabs.Misc {
     ///<inheritdoc/>
     public T this[K key] {
       get {
-        T val;
         lck.EnterReadLock();
         try {
-          cache.TryGetValue(key, out val);
+          cache.TryGetValue(key, out var val);
           return val;
         }
         finally { lck.ExitReadLock(); }
@@ -63,10 +62,9 @@ namespace Tlabs.Misc {
     ///<inheritdoc/>
     public T this[K key, Func<T> getValue] {
       get {
-        T val;
         lck.EnterUpgradeableReadLock();
         try {
-          if (cache.TryGetValue(key, out val)) return val;
+          if (cache.TryGetValue(key, out var val)) return val;
           return this[key]= getValue();
         }
         finally { lck.ExitUpgradeableReadLock(); }
@@ -75,10 +73,9 @@ namespace Tlabs.Misc {
 
     ///<inheritdoc/>
     public T Evict(K key) {
-      T val;
       lck.EnterUpgradeableReadLock();
       try {
-        if (cache.TryGetValue(key, out val)) {
+        if (cache.TryGetValue(key, out var val)) {
           lck.EnterWriteLock();
           try {
             cache.Remove(key);
@@ -98,6 +95,17 @@ namespace Tlabs.Misc {
       }
       finally { lck.ExitReadLock(); }
     }}
+
+    ///<inheritdoc/>
+    public void Dispose() {
+      DoDispose(true);
+      GC.SuppressFinalize(this);
+    }
+
+    ///<summary>Do dispose</summary>
+    protected virtual void DoDispose(bool disposing) {
+      if (disposing) lck.Dispose();
+    }
   }
 
 

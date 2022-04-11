@@ -9,6 +9,15 @@
 
     <Description>The common core utility classes of a Tlabs web-application.</Description>
     <Authors>Tlabs</Authors>
+
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>6</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <AnalysisModeSecurity>All</AnalysisModeSecurity>
+    <AnalysisModeNaming>None</AnalysisModeNaming>
+    <!--
+    <AnalysisLevel>6-recommended</AnalysisLevel>
+    -->
   </PropertyGroup>
 
   <PropertyGroup>

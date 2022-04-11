@@ -46,7 +46,7 @@ namespace Tlabs.Dynamic.Misc  {
     internal static int AgeAt(object o, DateTime? at) {
       var date= o as DateTime?;
       if (!date.HasValue) return 0;
-      var now= at.HasValue ? at.Value : App.TimeInfo.Now;
+      var now= at ?? App.TimeInfo.Now;
       var age= now.Year - date.Value.Year;
       return date > now.AddYears(-age) ? age-1 : age;
     }
@@ -85,7 +85,7 @@ namespace Tlabs.Dynamic.Misc  {
     internal static DateTime? AfterDays(object o1, object od) {
       var nd= o1 as DateTime?;
       if (null == nd) return nd;
-      var days= Convert.ToInt32(od as IConvertible ?? 0);
+      var days= Convert.ToInt32(od as IConvertible ?? 0, App.DfltFormat);
       var dd= nd.Value.AddDays(days);
       if (dd.DayOfWeek == DayOfWeek.Sunday) //TODO: check for more known (bank) holidays
         dd= dd.AddDays(1);
@@ -93,9 +93,9 @@ namespace Tlabs.Dynamic.Misc  {
     }
     internal static bool AtMostOne(params bool[] b) {
       int n= b.Length;
-      bool bl, res= false;
+      bool res= false;
       for (int l = 0; l < n; ++l) {
-        res= res | (bl= b[l]);
+        res|= b[l];
         if (res) for (int j = l+1; j < n; ++j)
           if (b[j]) return false;
       }
@@ -143,17 +143,13 @@ namespace Tlabs.Dynamic.Misc  {
       return num ?? 0;
     }
 
-    internal static List<object> List(object o) {
-      var stList= o as List<string>;
-      if (stList != null) return stList.Cast<object>().ToList();
-      var decList= o as List<decimal>;
-      if (decList != null) return decList.Cast<object>().ToList();
-      var intList= o as List<int>;
-      if (intList != null) return intList.Cast<object>().ToList();
-      var dList= o as List<DateTime>;
-      if (dList != null) return dList.Cast<object>().ToList();
-      return null;
-    }
+    internal static List<object> List(object o) => o switch {
+      List<string> stList   => stList.Cast<object>().ToList(),
+      List<decimal> decList => decList.Cast<object>().ToList(),
+      List<int> intList     => intList.Cast<object>().ToList(),
+      List<DateTime> dList  => dList.Cast<object>().ToList(),
+      _                     => null
+    };
 
     internal static bool AnyIn<T>(object o1, object o2) where T : class {
       var sub= o1 as IEnumerable<T> ?? new T[] {o1 as T};
@@ -181,7 +177,7 @@ namespace Tlabs.Dynamic.Misc  {
 
     internal static DateTime Date(object o) {
       var date= o as DateTime?;
-      return date ?? default(DateTime);
+      return date ?? default;
     }
 
     ///<summary>Helper function library.</summary>

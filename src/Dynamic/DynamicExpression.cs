@@ -24,8 +24,8 @@ namespace Tlabs.Dynamic {
   ///</typeparam>
   public class DynamicExpression<TCtx, TRes> {
 
-    private string expression;
-    private Func<TCtx, TRes> exprDelegate;
+    readonly string expression;
+    readonly Func<TCtx, TRes> exprDelegate;
 
     ///<summary>Ctor from <paramref name="expression"/> and <paramref name="ctxConverter"/></summary>
     ///<remarks>
@@ -43,7 +43,7 @@ namespace Tlabs.Dynamic {
     ///</remarks>
     public DynamicExpression(string expression, IReadOnlyDictionary<string, Type> ctxConverter= null, IReadOnlyDictionary<string, object> funcLib= null) {
       if (null == (this.expression= expression)) throw new ArgumentNullException(nameof(expression));
-      funcLib= funcLib ?? Misc.Function.Library;
+      funcLib??= Misc.Function.Library;
 
       var lamda=   null == ctxConverter
                    ? (Expression<Func<TCtx, TRes>>) DynXHelper.ParsedExpression<TCtx>(expression, typeof(TRes), funcLib)
