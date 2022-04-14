@@ -12,8 +12,8 @@ namespace Tlabs.Config {
     ///<summary>Json file config property.</summary>
     public const string JSON_FILE_CFG= "jsonFile";
 
-    static ILogger log= App.Logger<JsonConfigExtension>();
-    IDictionary<string, string> config;
+    static readonly ILogger log= App.Logger<JsonConfigExtension>();
+    readonly IDictionary<string, string> config;
 
     ///<summary>Default ctor.</summary>
     public JsonConfigExtension() { }

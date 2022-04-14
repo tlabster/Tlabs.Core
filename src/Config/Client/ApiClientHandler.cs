@@ -9,11 +9,7 @@ namespace Tlabs.Config.Client {
 
   ///<summary>Web API client handler to log requests.</summary>
   public class ApiClientHandler : HttpClientHandler {
-    private ILogger<ApiClientHandler> log;
-    ///<summary>Ctor from <paramref name="log"/>.</summary>
-    public ApiClientHandler(ILogger<ApiClientHandler> log) {
-      this.log= log;
-    }
+    static readonly ILogger<ApiClientHandler> log= App.Logger<ApiClientHandler>();
 
     ///<inherit/>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage reqMsg, System.Threading.CancellationToken cancellationToken) {

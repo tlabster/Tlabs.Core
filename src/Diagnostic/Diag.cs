@@ -22,7 +22,7 @@ namespace Tlabs.Diagnostic {
       public static readonly Detail INFO= new Detail(30);
       /// <summary>Debugging.</summary>
       public static readonly Detail DEBUG= new Detail(40);
-      int level;
+      readonly int level;
       private Detail(int lev) { this.level= lev; }
       /// <summary>Detail level.</summary>
       public int Level => level;

@@ -1,10 +1,5 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-
 using Microsoft.Extensions.Logging;
-
 namespace Tlabs {
 
   ///<summary>Helper <see cref="Exception"/> extension to log exceptions within <c>catch() when ( )</c> clauses.</summary>
@@ -26,7 +21,7 @@ namespace Tlabs {
 
     ///<summary>Log debug diagnostics and return false.</summary>
     public static bool LogDiagnostics(this Exception ex, string msg, params object[] args) {
-      System.Diagnostics.Debug.WriteLine(msg, args);
+      System.Diagnostics.Debug.WriteLine($"{msg} - ({ex.Message})", args);
       return false;
     }
   }

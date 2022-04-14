@@ -19,7 +19,7 @@ namespace Tlabs.Config {
   ///NOTE: Service get registered by sort order of their "serviceDesc" key.
   ///</remarks>
   public class ServiceTypeConfigurator : IConfigurator<IServiceCollection> {
-    IDictionary<string, string> config;
+    readonly IDictionary<string, string> config;
 
     ///<summary>Ctor from <paramref name="config"/>.</summary>
     public ServiceTypeConfigurator(IDictionary<string, string> config) {

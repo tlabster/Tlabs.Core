@@ -13,8 +13,9 @@ namespace Tlabs.Config {
 
   ///<summary>Configures an api client.</summary>
   public class ApiClientConfigurator : IConfigurator<IServiceCollection> {
-    IDictionary<string, string> config;
-    ILogger log= App.Logger<ApiClientConfigurator>();
+    #pragma warning disable IDE0052 //keep fields for possible future use
+    readonly IDictionary<string, string> config;
+    readonly ILogger log= App.Logger<ApiClientConfigurator>();
 
     ///<summary>Default ctor.</summary>
     public ApiClientConfigurator() : this(null) { }
