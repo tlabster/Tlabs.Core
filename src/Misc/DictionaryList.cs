@@ -4,9 +4,75 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Tlabs.Misc {
+  ///<summary>Read-only dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
+  public interface IReadOnlyDictList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> {
+    ///<summary>The list (enumation) associated with <paramref name="key"/>.</summary>
+    public IEnumerable<T> this[K key] { get; }
+    ///<summary>Read-only collection of keys.</summary>
+    public ICollection<K> Keys { get; }
+
+    ///<summary>Read-only collection of all values (of all enumerations).</summary>
+    public IEnumerable<T> Values { get; }
+
+    ///<summary>Count of all values (of all enumerations).</summary>
+    public int Count { get; }
+
+    ///<inheritdoc/>
+    public bool IsReadOnly { get; }
+
+    ///<summary>Checks whether <paramref name="item"/> is contained in any enumerable.</summary>
+    public bool Contains(T item);
+
+    ///<summary>Checks whether <paramref name="key"/> is assocoated with an enumerable.</summary>
+    public bool ContainsKey(K key);
+
+    ///<summary>Try get <paramref name="value"/> by <paramref name="key"/>.</summary>
+    public bool TryGetValue(K key, out IEnumerable<T> value);
+  }
 
   ///<summary>Dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
-  public class DictionaryList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> {
+  public interface IDictionaryList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> {
+    ///<summary>The list (enumation) associated with <paramref name="key"/>.</summary>
+    public IEnumerable<T> this[K key] { get; set; }
+    ///<summary>Read-only collection of keys.</summary>
+    public ICollection<K> Keys { get; }
+
+    ///<summary>Read-only collection of all values (of all enumerations).</summary>
+    public IEnumerable<T> Values { get; }
+
+    ///<summary>Count of all values (of all enumerations).</summary>
+    public int Count { get; }
+
+    ///<inheritdoc/>
+    public bool IsReadOnly { get; }
+
+    ///<summary>Checks whether <paramref name="item"/> is contained in any enumerable.</summary>
+    public bool Contains(T item);
+
+    ///<summary>Checks whether <paramref name="key"/> is assocoated with an enumerable.</summary>
+    public bool ContainsKey(K key);
+
+    ///<summary>Try get <paramref name="value"/> by <paramref name="key"/>.</summary>
+    public bool TryGetValue(K key, out IEnumerable<T> value);
+
+    ///<summary>Add <paramref name="value"/> to enumerable assocoated with <paramref name="key"/>.</summary>
+    public void Add(K key, T value);
+
+    ///<summary>Add <paramref name="pair"/>.</summary>
+    public void Add(KeyValuePair<K, IEnumerable<T>> pair);
+
+    ///<summary>Clear.</summary>
+    public void Clear();
+
+    ///<summary>Returns true if enumerable assocoated with <paramref name="key"/> was removed.</summary>
+    public bool Remove(K key);
+
+    ///<summary>Returns true if <paramref name="value"/> was rmoved from enumerable assocoated with <paramref name="key"/>.</summary>
+    public bool Remove(K key, T value);
+  }
+
+  ///<summary>Dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
+  public class DictionaryList<K, T> : IDictionaryList<K, T>, IReadOnlyDictList<K, T> {
     readonly Dictionary<K, List<T>> dict;
 
     ///<summary>Default ctor.</summary>
@@ -32,6 +98,8 @@ namespace Tlabs.Misc {
 
     ///<inheritdoc/>
     public bool IsReadOnly => false;
+
+    bool IReadOnlyDictList<K, T>.IsReadOnly => true;
 
     ///<inheritdoc/>
     public void Add(K key, T value) {
@@ -60,7 +128,7 @@ namespace Tlabs.Misc {
     public bool Remove(K key) => dict.Remove(key);
 
     ///<inheritdoc/>
-    public bool Remove(K key, T value) => dict[key].Remove(value);
+    public bool Remove(K key, T value) => dict.TryGetValue(key, out var en) && en.Remove(value);
 
     ///<inheritdoc/>
     public bool TryGetValue(K key, out IEnumerable<T> value) {
