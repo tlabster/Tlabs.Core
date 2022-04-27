@@ -7,7 +7,7 @@ namespace Tlabs.Misc {
   ///<summary>Object look-up table.</summary>
   public class LookupTable<K, T> : IReadOnlyDictionary<K, T> {
     ///<summary>Look-up table.</summary>
-    protected Dictionary<K, T> table; 
+    protected IDictionary<K, T> table; 
     readonly Func<K, T> create;
 
     ///<summary>Default ctor.</summary>
@@ -31,6 +31,12 @@ namespace Tlabs.Misc {
     ///<summary>Ctor from <paramref name="entries"/> and <paramref name="create"/> delegate and <paramref name="comp"/>.</summary>
     public LookupTable(IEnumerable<KeyValuePair<K, T>> entries, Func<K, T> create, IEqualityComparer<K> comp) {
       this.table= new Dictionary<K, T>(entries, comp);
+      this.create= create;
+    }
+
+    ///<summary>Ctor from <paramref name="dict"/> and <paramref name="create"/> delegate.</summary>
+    public LookupTable(IDictionary<K, T> dict, Func<K, T> create) {
+      this.table= dict ?? new Dictionary<K, T>();
       this.create= create;
     }
 
