@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Tlabs.Config {
   ///<summary>Configures a console logger.</summary>
   public class SysLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
       var optConfig= cfg.GetSection("options");
       log.Services.Configure<ConsoleFormatterOptions>(optConfig);
@@ -21,7 +21,7 @@ namespace Tlabs.Config {
 
   ///<summary>Configures a Serilog file logger.</summary>
   public class FileLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
       Environment.SetEnvironmentVariable("EXEPATH", Path.GetDirectoryName(App.MainEntryPath));
       var optConfig= cfg.GetSection("options");
@@ -32,7 +32,7 @@ namespace Tlabs.Config {
 
   ///<summary>Configures a console logger.</summary>
   public class StdoutLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
       var optConfig= cfg.GetSection("options");
       log.Services.Configure<CustomStdoutFormatterOptions>(optConfig);

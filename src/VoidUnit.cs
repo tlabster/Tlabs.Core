@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Tlabs.Core {
+namespace Tlabs {
   ///<summary>A (void) unit type is a type that allows only one value (and thus can hold no information).</summary>
   ///<remarks>A <see cref="VoidUnit"/> can be used as a 'void type' with generic type parameters.</remarks>
   public struct VoidUnit : IEquatable<VoidUnit> {

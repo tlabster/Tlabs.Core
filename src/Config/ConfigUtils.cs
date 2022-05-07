@@ -73,7 +73,7 @@ namespace Tlabs.Config {
 
   /// <summary>Base class to configure it-self als enumerable of <typeparamref name="T"/>.</summary>
   public abstract class SelfEnumConfigurator<T> : IConfigurator<IServiceCollection> {
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(T), GetType()));  //add self
     }
@@ -84,19 +84,19 @@ namespace Tlabs.Config {
   public class Empty : IConfigurationSection {
     ///<summary>Empty Configuration</summary>
     public static readonly IConfigurationSection Configuration= new Empty();
-    ///<inherit/>
+    ///<inheritdoc/>
     public string this[string key] { get => null; set => throw new NotImplementedException(); }
-    ///<inherit/>
+    ///<inheritdoc/>
     public string Key => String.Empty;
-    ///<inherit/>
+    ///<inheritdoc/>
     public string Path => String.Empty;
-    ///<inherit/>
+    ///<inheritdoc/>
     public string Value { get => null; set => throw new NotImplementedException(); }
-    ///<inherit/>
+    ///<inheritdoc/>
     public IEnumerable<IConfigurationSection> GetChildren() => System.Linq.Enumerable.Empty<IConfigurationSection>();
-    ///<inherit/>
+    ///<inheritdoc/>
     public IChangeToken GetReloadToken() => null;
-    ///<inherit/>
+    ///<inheritdoc/>
     public IConfigurationSection GetSection(string key) => Configuration;
   }
 }

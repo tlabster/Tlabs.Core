@@ -25,7 +25,7 @@ namespace Tlabs.Config {
       this.config= config ?? new Dictionary<string, string>();
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       //***TODO: add support for options */
       services.AddApiClient();

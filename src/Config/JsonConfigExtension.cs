@@ -23,7 +23,7 @@ namespace Tlabs.Config {
       this.config= config ?? new Dictionary<string, string>();
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IConfigurationBuilder cfgBuilder, IConfiguration cfg) {
       config.TryGetValue(JSON_FILE_CFG, out var jsonFile);
       if (string.IsNullOrEmpty(jsonFile)) {

@@ -11,7 +11,7 @@ namespace Tlabs.Config.Client {
   public class ApiClientHandler : HttpClientHandler {
     static readonly ILogger<ApiClientHandler> log= App.Logger<ApiClientHandler>();
 
-    ///<inherit/>
+    ///<inheritdoc/>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage reqMsg, System.Threading.CancellationToken cancellationToken) {
       var watch= Misc.TimingWatch.StartTiming();
       logReqStart(log, reqMsg.Method, reqMsg.RequestUri, null);

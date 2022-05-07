@@ -80,7 +80,7 @@ namespace Tlabs.Timing {
       }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public DateTime DueDate(DateTime fromNow) {
       this.fromNow= fromNow;
       TIME_COMP_BASE.CopyTo(timeComp, 0);

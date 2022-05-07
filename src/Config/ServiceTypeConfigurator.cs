@@ -26,7 +26,7 @@ namespace Tlabs.Config {
       this.config= config ?? new Dictionary<string, string>(0);
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       foreach (var pair in config.OrderBy(p => p.Key)) {
         var parts= pair.Value.Split('|');

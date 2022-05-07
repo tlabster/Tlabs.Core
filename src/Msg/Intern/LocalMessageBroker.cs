@@ -11,7 +11,7 @@ using Tlabs.Config;
 
 namespace Tlabs.Msg.Intern {
 
-  ///<inherit/>
+  ///<inheritdoc/>
   public class LocalMessageBroker : IMessageBroker {
     /* NOTE: Currently we do not support subsciptions on wild-card subjects...
      */
@@ -20,7 +20,7 @@ namespace Tlabs.Msg.Intern {
     readonly Dictionary<string, Func<object, Task>> msgHandlers= new();     //msgHandler by subject
     readonly Dictionary<Delegate, SubscriptionInfo> subscriptions= new();   //subscriptionInfo by (original) subHandler
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Publish(string subject, object msg) => findMessageHandler(subject)?.Invoke(msg);
 
     private Func<object, Task> findMessageHandler(string subject) {
@@ -30,7 +30,7 @@ namespace Tlabs.Msg.Intern {
       }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public Task<TRes> PublishRequest<TRes>(string subject, object message, int timeout) where TRes : class {
       var reqMsg= new RequestMsg(subject, message);
       CancellationTokenSource ctokSrc= null;
@@ -55,12 +55,12 @@ namespace Tlabs.Msg.Intern {
       return compl.Task;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Subscribe<T>(string subject, Action<T> subHandler) where T : class {
       subscribe(subject, subHandler, createAsyncProxy(subHandler));
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Subscribe<T>(string subject, Func<T, Task> subHandler) where T : class {
       subscribe(subject, subHandler, createProxy(subHandler));
     }
@@ -75,7 +75,7 @@ namespace Tlabs.Msg.Intern {
       }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class {
       log.LogDebug("SubscribeRequest on '{subj}'.", subject);
       lock (msgHandlers) {
@@ -87,7 +87,7 @@ namespace Tlabs.Msg.Intern {
       }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, Task<TRet>> requestHandler) where TMsg : class {
       log.LogDebug("SubscribeRequest on '{subj}'.", subject);
       lock (msgHandlers) {
@@ -99,7 +99,7 @@ namespace Tlabs.Msg.Intern {
       }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Unsubscribe(Delegate handler) {
       if (null == handler) return;
       lock(msgHandlers) {
@@ -169,7 +169,7 @@ namespace Tlabs.Msg.Intern {
 
     ///<summary>Service configurator.</summary>
     public class Configurator : IConfigurator<IServiceCollection> {
-      ///<inherit/>
+      ///<inheritdoc/>
       public void AddTo(IServiceCollection svcColl, IConfiguration cfg) {
         svcColl.AddSingleton<IMessageBroker, LocalMessageBroker>();
       }
