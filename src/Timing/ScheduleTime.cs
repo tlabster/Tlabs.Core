@@ -32,8 +32,8 @@ namespace Tlabs.Timing {
     const string PAT_WILDCARD= "*";
     static readonly char[] TIME_PAT_SEP= new char[] { '-', ' ', ':' };
     static readonly int PAT_COMP_COUNT= TIME_TMPL.Split(TIME_PAT_SEP).Length;
-    static readonly int[] PAT_CHK_POINTS= new int[] { 4, 7, 10, 13, 16 };
-    static readonly char[] PAT_SEP_POINTS= new char[] { '-', '-', ' ', ':', ':' };
+    // static readonly int[] PAT_CHK_POINTS= new int[] { 4, 7, 10, 13, 16 };
+    // static readonly char[] PAT_SEP_POINTS= new char[] { '-', '-', ' ', ':', ':' };
     static readonly int[] TIME_COMP_BASE= new int[] { 1, 1, 1, 0, 0, 0 };
     static readonly int[] TIME_COMP_MAX= new int[] { int.MaxValue, 12, -1, 23, 59, 59 };
     static readonly Calendar CAL= DateTimeFormatInfo.InvariantInfo.Calendar;
@@ -47,16 +47,16 @@ namespace Tlabs.Timing {
     DateTime fromNow;
     string[] patComp;
     IList<DayOfWeek> weekDays;
-    int[] timeComp= new int[PAT_COMP_COUNT];
+    readonly int[] timeComp= new int[PAT_COMP_COUNT];
 
     ///<summary>Ctor from <paramref name="scheduleTimePattern"/></summary>
     ///<remarks>(See class for schedule-time pattern.)</remarks>
     public ScheduleTime(string scheduleTimePattern) {
-      if (null == scheduleTimePattern) throw new ArgumentNullException("scheduleTimePattern");
+      if (null == scheduleTimePattern) throw new ArgumentNullException(nameof(scheduleTimePattern));
       var parts= scheduleTimePattern.Split('|');
-      if (parts.Length > 2) throw new ArgumentException(string.Format("Invalid schedule time pattern: '{0}'", scheduleTimePattern));
+      if (parts.Length > 2) throw new ArgumentException($"Invalid schedule time pattern: '{scheduleTimePattern}'");
       var wDays= new List<DayOfWeek>();
-      var days= 2 == parts.Length ? parts[1].Split(',') : new string[0];
+      var days= 2 == parts.Length ? parts[1].Split(',') : Array.Empty<string>();
       foreach (var no in days)
         wDays.Add((DayOfWeek)Enum.Parse(typeof(DayOfWeek), no.Trim()));
 
@@ -69,18 +69,18 @@ namespace Tlabs.Timing {
 
     private void Init(string timePattern, IList<DayOfWeek> weekDays) {
       //time pattern format is: "yyyy-mm-dd hh:mm:ss"
-      if (null == timePattern) throw new ArgumentNullException("timePattern");
+      if (null == timePattern) throw new ArgumentNullException(nameof(timePattern));
       if (PAT_COMP_COUNT != (patComp= timePattern.Split(TIME_PAT_SEP)).Length)
-        throw new ArgumentException(string.Format("Invalid schedule time pattern: '{0}'", timePattern));
+        throw new ArgumentException($"Invalid schedule time pattern: '{timePattern}'");
 
       this.weekDays= weekDays;
       try { DueDate(App.TimeInfo.Now); } //validate timePattern
       catch (FormatException) {
-        throw new ArgumentException(string.Format("Invalid schedule time pattern: '{0}'", timePattern));
+        throw new ArgumentException($"Invalid schedule time pattern: '{timePattern}'");
       }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public DateTime DueDate(DateTime fromNow) {
       this.fromNow= fromNow;
       TIME_COMP_BASE.CopyTo(timeComp, 0);

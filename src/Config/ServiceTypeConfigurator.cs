@@ -19,14 +19,14 @@ namespace Tlabs.Config {
   ///NOTE: Service get registered by sort order of their "serviceDesc" key.
   ///</remarks>
   public class ServiceTypeConfigurator : IConfigurator<IServiceCollection> {
-    IDictionary<string, string> config;
+    readonly IDictionary<string, string> config;
 
     ///<summary>Ctor from <paramref name="config"/>.</summary>
     public ServiceTypeConfigurator(IDictionary<string, string> config) {
       this.config= config ?? new Dictionary<string, string>(0);
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       foreach (var pair in config.OrderBy(p => p.Key)) {
         var parts= pair.Value.Split('|');

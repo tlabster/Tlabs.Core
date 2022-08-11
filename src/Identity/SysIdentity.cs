@@ -10,11 +10,11 @@ namespace Tlabs.Identity {
 
     ///<summary>Singleton instance.</summary>
     public static readonly SysIdentity Instance= new SysIdentity();
-    ///<inherit/>
+    ///<inheritdoc/>
     public string AuthenticationType => "none";
-    ///<inherit/>
+    ///<inheritdoc/>
     public bool IsAuthenticated => false;
-    ///<inherit/>
+    ///<inheritdoc/>
     public string Name => "system";
   }
 }

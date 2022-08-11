@@ -22,8 +22,7 @@ namespace Tlabs {
     public const string APP_SVC_SECTION= "applicationServices";
     const string ENV_DOTNET_PFX= "DOTNET_";
     const string ENV_ASPNET_PFX= "ASPNET_";
-    static Assembly entryAsm= Assembly.GetEntryAssembly();
-    static ILogger log;
+    static readonly Assembly entryAsm= Assembly.GetEntryAssembly();
 
     static ILoggerFactory logFactory;
 
@@ -40,9 +39,7 @@ namespace Tlabs {
        * for being availble immediately (even before the DI service provider has been setup...)
        * from App.Logger<T>
        */
-      logFactory= createLogFactory(hostSettings);
-      ApplicationStartup.log= App.Logger<ApplicationStartup>();             //startup logger
-
+      logFactory= createLogFactory();
 
       var hostBuilder= new HostBuilder(); //Host.CreateDefaultBuilder(args) [https://github.com/dotnet/runtime/blob/79ae74f5ca5c8a6fe3a48935e85bd7374959c570/src/libraries/Microsoft.Extensions.Hosting/src/Host.cs]
       hostBuilder.UseContentRoot(App.ContentRoot);
@@ -79,7 +76,7 @@ namespace Tlabs {
       return hostBuilder;
     }
 
-    static ILoggerFactory createLogFactory(IConfigurationRoot config) {
+    static ILoggerFactory createLogFactory() {
       var logConfig= App.Settings.GetSection("logging");
       var logFac= LoggerFactory.Create(log => {
         log.AddConfiguration(logConfig);
@@ -107,6 +104,7 @@ namespace Tlabs {
       public DefaultLoggerLevelConfigureOptions(LogLevel level) : base(options => options.MinLevel = level) { }
     }
 
+#pragma warning disable IDE0051   //keep in case we need this one day
     static void configureUserSecret(IHostEnvironment env, IConfigurationBuilder config) {
       if (env.IsDevelopment() && !string.IsNullOrEmpty(env.ApplicationName)) {
         var appAssembly = Assembly.Load(new AssemblyName(env.ApplicationName));

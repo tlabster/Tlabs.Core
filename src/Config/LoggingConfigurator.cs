@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Tlabs.Config {
   ///<summary>Configures a console logger.</summary>
   public class SysLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
       var optConfig= cfg.GetSection("options");
       log.Services.Configure<ConsoleFormatterOptions>(optConfig);
@@ -21,7 +21,7 @@ namespace Tlabs.Config {
 
   ///<summary>Configures a Serilog file logger.</summary>
   public class FileLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
       Environment.SetEnvironmentVariable("EXEPATH", Path.GetDirectoryName(App.MainEntryPath));
       var optConfig= cfg.GetSection("options");
@@ -32,7 +32,7 @@ namespace Tlabs.Config {
 
   ///<summary>Configures a console logger.</summary>
   public class StdoutLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
       var optConfig= cfg.GetSection("options");
       log.Services.Configure<CustomStdoutFormatterOptions>(optConfig);
@@ -58,9 +58,9 @@ namespace Tlabs.Config {
   ///<code>{timestamp} [{level}] {category}: {message?} {exception?}{newline}</code>
   ///</remarks>
   public sealed class CustomStdoutFormatter : ConsoleFormatter {
+    readonly CustomStdoutFormatterOptions options;
     ///<summary>Custom stdout formatter name.</summary>
     public const string NAME= "stdoutFormat";
-    CustomStdoutFormatterOptions options;
     ///<summary>Ctor from <paramref name="opt"/>.</summary>
     public CustomStdoutFormatter(IOptions<CustomStdoutFormatterOptions> opt) : base(NAME) {
       this.options= opt.Value;
@@ -71,7 +71,7 @@ namespace Tlabs.Config {
       if (string.IsNullOrEmpty(msg) && null == logEntry.Exception) return;  //nothing to log
 
       if (!string.IsNullOrEmpty(options.TimestampFormat)) {
-        textWriter.Write(App.TimeInfo.Now.ToString(options.TimestampFormat));
+        textWriter.Write(App.TimeInfo.Now.ToString(options.TimestampFormat, App.DfltFormat));
         textWriter.Write(' ');
       }
       textWriter.Write(logLevelMark(logEntry.LogLevel));
@@ -100,17 +100,15 @@ namespace Tlabs.Config {
       textWriter.WriteLine();
     }
 
-    string logLevelMark(LogLevel lev) {
-      return lev switch {
-        LogLevel.Critical => "[CRT] ",
-        LogLevel.Error => "[ERR] ",
-        LogLevel.Warning => "[WRN] ",
-        LogLevel.Information => "[INF] ",
-        LogLevel.Debug => "[DBG] ",
-        LogLevel.Trace => "[TRC] ",
-        _ => "[???]"
-      };
-    }
+    static string logLevelMark(LogLevel lev) => lev switch {
+      LogLevel.Critical     => "[CRT] ",
+      LogLevel.Error        => "[ERR] ",
+      LogLevel.Warning      => "[WRN] ",
+      LogLevel.Information  => "[INF] ",
+      LogLevel.Debug        => "[DBG] ",
+      LogLevel.Trace        => "[TRC] ",
+      _                     => "[???]"
+    };
   }
 
 }

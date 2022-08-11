@@ -19,16 +19,16 @@ namespace Tlabs.Dynamic {
     static readonly ILogger<DynamicClassFactory.Log> log= App.Logger<DynamicClassFactory.Log>();
 
     // EmptyTypes is used to indicate that we are looking for someting without any parameters.
-    static readonly Type[] EmptyTypes= new Type[0];
+    static readonly Type[] EmptyTypes= Array.Empty<Type>();
 
-    static readonly Tlabs.Misc.BasicCache<string, Type> typeCache= new Tlabs.Misc.BasicCache<string, Type>();
+    static readonly Tlabs.Misc.BasicCache<string, Type> typeCache= new();
 
     static readonly ModuleBuilder ModuleBuilder;
 
     // Some objects we cache
-    static readonly CustomAttributeBuilder CompilerGeneratedAttrib= new CustomAttributeBuilder(typeof(CompilerGeneratedAttribute).GetConstructor(EmptyTypes), new object[0]);
+    static readonly CustomAttributeBuilder CompilerGeneratedAttrib= new CustomAttributeBuilder(typeof(CompilerGeneratedAttribute).GetConstructor(EmptyTypes), Array.Empty<object>());
     static readonly CustomAttributeBuilder DebuggerBrowsableAttrib= new CustomAttributeBuilder(typeof(DebuggerBrowsableAttribute).GetConstructor(new[] { typeof(DebuggerBrowsableState) }), new object[] { DebuggerBrowsableState.Never });
-    static readonly CustomAttributeBuilder DebuggerHiddenAttrib= new CustomAttributeBuilder(typeof(DebuggerHiddenAttribute).GetConstructor(EmptyTypes), new object[0]);
+    static readonly CustomAttributeBuilder DebuggerHiddenAttrib= new CustomAttributeBuilder(typeof(DebuggerHiddenAttribute).GetConstructor(EmptyTypes), Array.Empty<object>());
 
     static readonly ConstructorInfo DefaultCtor= typeof(object).GetConstructor(EmptyTypes);
     static readonly MethodInfo ToStringMethod= typeof(object).GetMethod("ToString", BindingFlags.Instance | BindingFlags.Public);
@@ -46,7 +46,7 @@ namespace Tlabs.Dynamic {
 
     static readonly Type DefaultBaseType= typeof(object);
     static readonly string typeNamePrefix= "<>__" + nameof(DynamicClassFactory) + "__";
-    static int sequence= 0;
+    static int sequence;  //= 0;
     class PropertyDef {
       public string Name;
       public Type Type;
@@ -97,12 +97,12 @@ namespace Tlabs.Dynamic {
     public static Type CreateType(IList<DynamicProperty> properties, Type parentType= null, string typeName= null) {
       if (null == properties) throw new ArgumentNullException(nameof(properties));
 
-      parentType= parentType ?? DefaultBaseType;
+      parentType??= DefaultBaseType;
       string typeKey=   string.IsNullOrEmpty(typeName)
                       ? generateTypeKey(properties, parentType)
                       : typeName + "~" + parentType.Name;
 
-      Func<Type> createNew= () => createNewType(properties, parentType, typeName);
+      Type createNew() => createNewType(properties, parentType, typeName);
       if (log.IsEnabled(LogLevel.Trace)) {
         var type= typeCache[typeKey];
         if (null != type) {
@@ -138,7 +138,7 @@ namespace Tlabs.Dynamic {
       if (genericType) {
         var genericParams=   propDefs.Count > 0
                            ? tb.DefineGenericParameters(propDefs.Select(prop => $"TPar__<{prop.Name}>").ToArray())
-                           : new GenericTypeParameterBuilder[0];
+                           : Array.Empty<GenericTypeParameterBuilder>();
         for (int l= 0; l < genericParams.Length; ++l) {
           var tp= genericParams[l];
           tp.SetCustomAttribute(CompilerGeneratedAttrib);

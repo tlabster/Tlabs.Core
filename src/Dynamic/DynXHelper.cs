@@ -50,16 +50,14 @@ namespace Tlabs.Dynamic {
       //var ctxProps= ctxType.Type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy)/*.Where(p => p.CanRead)*/.ToList();
       var ctxProps= ctxType.Type.getFlattenedProperties();
       var exprParams= ctxProps.Select(p => {
-        Type paramType;
-        if (!ctxConverter.TryGetValue(p.Name, out paramType))
+        if (!ctxConverter.TryGetValue(p.Name, out var paramType))
           paramType= p.PropertyType;
         return Expression.Parameter(paramType, p.Name);
       });
       var parsedExpr= ParsedExpression(expression, exprParams, retType, funcLib);
       var ctxParams= ctxProps.Select(p => {
         Expression paramVal= Expression.MakeMemberAccess(ctxType, p);
-        Type convertionType;
-        if (ctxConverter.TryGetValue(p.Name, out convertionType))
+        if (ctxConverter.TryGetValue(p.Name, out var convertionType))
           paramVal= Expression.Convert(paramVal, convertionType);   //perform a type convertion
         return paramVal;
       });

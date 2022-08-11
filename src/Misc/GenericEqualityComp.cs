@@ -17,9 +17,9 @@ namespace Tlabs.Misc {
       if (null == (this.isEqual= isEqual)) throw new ArgumentNullException("lambdaComparer");
       if (null == (this.hash= hash)) throw new ArgumentNullException("lambdaHash");
     }
-    ///<inherit/>
+    ///<inheritdoc/>
     public bool Equals(T x, T y) => isEqual(x, y);
-    ///<inherit/>
+    ///<inheritdoc/>
     public int GetHashCode(T obj) => hash(obj);
   }
 

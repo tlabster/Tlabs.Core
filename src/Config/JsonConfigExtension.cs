@@ -12,8 +12,8 @@ namespace Tlabs.Config {
     ///<summary>Json file config property.</summary>
     public const string JSON_FILE_CFG= "jsonFile";
 
-    static ILogger log= App.Logger<JsonConfigExtension>();
-    IDictionary<string, string> config;
+    static readonly ILogger log= App.Logger<JsonConfigExtension>();
+    readonly IDictionary<string, string> config;
 
     ///<summary>Default ctor.</summary>
     public JsonConfigExtension() { }
@@ -23,12 +23,11 @@ namespace Tlabs.Config {
       this.config= config ?? new Dictionary<string, string>();
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IConfigurationBuilder cfgBuilder, IConfiguration cfg) {
-      string jsonFile;
-      config.TryGetValue(JSON_FILE_CFG, out jsonFile);
+      config.TryGetValue(JSON_FILE_CFG, out var jsonFile);
       if (string.IsNullOrEmpty(jsonFile)) {
-        log.LogError($"Missing config.{JSON_FILE_CFG} property in {cfg}");
+        log.LogError("Missing config.{fn} property in {cfg}", JSON_FILE_CFG, cfg);
         return;
       }
       string cfgPath= jsonFile;

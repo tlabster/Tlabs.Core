@@ -7,8 +7,8 @@ namespace Tlabs.Misc {
   ///<summary>Object look-up table.</summary>
   public class LookupTable<K, T> : IReadOnlyDictionary<K, T> {
     ///<summary>Look-up table.</summary>
-    protected Dictionary<K, T> table; 
-    private Func<K, T> create;
+    protected IDictionary<K, T> table; 
+    readonly Func<K, T> create;
 
     ///<summary>Default ctor.</summary>
     public LookupTable() { this.table= new Dictionary<K, T>(); }
@@ -34,11 +34,16 @@ namespace Tlabs.Misc {
       this.create= create;
     }
 
+    ///<summary>Ctor from <paramref name="dict"/> and <paramref name="create"/> delegate.</summary>
+    public LookupTable(IDictionary<K, T> dict, Func<K, T> create) {
+      this.table= dict ?? new Dictionary<K, T>();
+      this.create= create;
+    }
+
     ///<inheritdoc/>
     public T this[K key] {
       get {
-        T val;
-        if (table.TryGetValue(key, out val)) return val;
+        if (table.TryGetValue(key, out var val)) return val;
         if (null == create) throw new KeyNotFoundException(key.ToString());
         return table[key]= create(key);
       }

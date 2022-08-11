@@ -36,7 +36,10 @@ namespace Tlabs {
     ///<summary>Main entry exe path.</summary>
     public static readonly string MainEntryPath;
     ///<summary>Current framework version.</summary>
-    public static string FrameworkVersion;
+    public static readonly string FrameworkVersion;
+    ///<summary>Default format provider.</summary>
+    public static readonly System.Globalization.CultureInfo DfltFormat= System.Globalization.CultureInfo.InvariantCulture;
+
     static readonly Lazy<IConfigurationRoot> cfgSettings;
     // static IWebHost host;
     static ILoggerFactory logFactory;
@@ -134,9 +137,8 @@ namespace Tlabs {
     ///<summary>Exceutes the <paramref name="scopedAction"/> with a (new) scoped <see cref="IServiceProvider"/>.</summary>
     public static void WithServiceScope(Action<IServiceProvider> scopedAction) {
       var scopeFac= ServiceProv.GetService(typeof(IServiceScopeFactory)) as IServiceScopeFactory;
-      using(var svcScope= scopeFac?.CreateScope()) {
-        scopedAction(svcScope.ServiceProvider);
-      }
+      using var svcScope= scopeFac?.CreateScope();
+      scopedAction(svcScope.ServiceProvider);
     }
 
     ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor
@@ -167,10 +169,10 @@ namespace Tlabs {
     ///</remarks>
     public static Task<TRes> RunBackgroundService<TSvc, TRes>(Type svcType, Func<TSvc, TRes> runSvc) where TRes : class {
       // return Task<TRes>.Run(() => {
-      Func<TRes> service= () => {
+      TRes service() {
         TRes res= null;
         WithServiceScope(svcProv => {
-          TSvc svc= default(TSvc);
+          TSvc svc= default;
           try {
             svc= (TSvc)CreateResolvedInstance(svcType, svcProv);
             res= runSvc(svc);
@@ -178,12 +180,14 @@ namespace Tlabs {
           finally { (svc as IDisposable)?.Dispose(); }   //try to dispose
         });
         return res;
-      };
+      }
       // return Task.Run(service);
       return Task.Factory.StartNew(service,
+                                   CancellationToken.None,
                                      TaskCreationOptions.DenyChildAttach    //default from Task.Run(service)
                                    | TaskCreationOptions.PreferFairness     //prefer parallel exec. (by scheduling on the global queue insted of the thread local queue)
       //                           | TaskCreationOptions.LongRunning        //hint to create a new thread w/o consuming a thread-pool thread
+      , TaskScheduler.Default                                               //use thread pool
       );
     }
 
@@ -200,7 +204,7 @@ namespace Tlabs {
     }
 
     internal class AppLogger<T> : ILogger<T> {
-      private ILogger<T> log;
+      readonly ILogger<T> log;
       public AppLogger() {
         this.log= App.LogFactory.CreateLogger<T>();
       }

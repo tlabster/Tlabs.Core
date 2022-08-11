@@ -8,9 +8,8 @@ namespace Tlabs.Misc {
   public static class PropertyExt {
     /// <summary>Return a property's string value or <paramref name="defaultVal"/> if not existing or not a string.</summary>
     public static string GetString(this Properties prop, string propKey, string defaultVal) {
-      object val;
       string retStr;
-      if (prop.TryGetValue(propKey, out val))
+      if (prop.TryGetValue(propKey, out var val))
         return string.IsNullOrEmpty(retStr= val as string) ? defaultVal : retStr;
       return defaultVal;
     }
@@ -22,8 +21,7 @@ namespace Tlabs.Misc {
 
     /// <summary>Return a property's integer value or <paramref name="defaultVal"/> if not existing or not convertible to int.</summary>
     public static int GetInt(this Properties prop, string propKey, int defaultVal) {
-      object val;
-      if (prop.TryGetValue(propKey, out val)) try {
+      if (prop.TryGetValue(propKey, out var val)) try {
           return ((IConvertible)val).ToInt32(System.Globalization.NumberFormatInfo.InvariantInfo);
         }
         catch (Exception e) { if (Safe.NoDisastrousCondition(e)) throw; /* else return default */ }
@@ -32,8 +30,7 @@ namespace Tlabs.Misc {
 
     /// <summary>Return a property's boolean value or <paramref name="defaultVal"/> if not existing or not convertible to bool.</summary>
     public static bool GetBool(this Properties prop, string propKey, bool defaultVal) {
-      object val;
-      if (prop.TryGetValue(propKey, out val)) try {
+      if (prop.TryGetValue(propKey, out var val)) try {
           return ((IConvertible)val).ToBoolean(System.Globalization.NumberFormatInfo.InvariantInfo);
         }
         catch (Exception e) { if (Safe.NoDisastrousCondition(e)) throw; /* else return default */ }
@@ -42,8 +39,7 @@ namespace Tlabs.Misc {
 
     /// <summary>Return a property's value or <paramref name="defaultVal"/> if not existing - in that case is also set as new properties value.</summary>
     public static object GetOrSet(this Properties prop, string propKey, object defaultVal) {
-      object val;
-      if (!prop.TryGetValue(propKey, out val))
+      if (!prop.TryGetValue(propKey, out var val))
         prop[propKey]= (val= defaultVal);
       return val;
     }
@@ -58,14 +54,15 @@ namespace Tlabs.Misc {
     /// </para>
     /// </remarks>
     /// <param name="prop">(optionaly nested) properties dictionary</param>
-    /// <param name="propKeyPath">properties key path (using '.' as path delimiter)</param>
+    /// <param name="propKeyPath">properties key path (using <paramref name="pathSep"/> as path separator)</param>
     /// <param name="val">resolved value</param>
     /// <param name="resolvedKey">resolved key</param>
+    /// <param name="pathSep">Optional path seperator char (defaults to '.')</param>
     /// <returns>true if a value could be resolved using the <paramref name="propKeyPath"/></returns>
-    public static bool TryResolveValue(this Properties prop, string propKeyPath, out object val, out string resolvedKey) {
+    public static bool TryResolveValue(this Properties prop, string propKeyPath, out object val, out string resolvedKey, char pathSep= '.') {
       val= resolvedKey= null;
       var valDict= prop;
-      var keyToks= propKeyPath.Split('.');
+      var keyToks= propKeyPath.Split(pathSep);
       int l= 0;
       foreach (string ktok in keyToks) {
         resolvedKey= ktok;
@@ -84,19 +81,16 @@ namespace Tlabs.Misc {
     /// <param name="prop">A properties dictionary</param>
     /// <param name="propSpecifier">A property spcifier. If it is a name or property path enclosed in brackets like
     /// '[name.subKey]', the contents of the bracket are tried to be resolved with
-    /// <see cref="TryResolveValue(IDictionary{string, object}, string , out object, out string)"/></param>
+    /// <see cref="TryResolveValue(IDictionary{string, object}, string , out object, out string, char)"/></param>
     /// <returns>The resolved property value given by the <paramref name="propSpecifier"/> or if could not be resolved as a property, the
     /// <paramref name="propSpecifier"/> it self.</returns>
     public static object ResolvedProperty(this Properties prop, string propSpecifier) {
-      string dummy;
-      object o,
-             propVal= propSpecifier;  //default return
+      object propVal= propSpecifier;  //default return
       if (null == propSpecifier
           || propSpecifier.Length < 3
           || '[' != propSpecifier[0]
           || ']' != propSpecifier[propSpecifier.Length-1]) return propVal;
-
-      if (TryResolveValue(prop, propSpecifier.Substring(1, propSpecifier.Length-2), out o, out dummy))
+      if (TryResolveValue(prop, propSpecifier.Substring(1, propSpecifier.Length-2), out var o, out _))
         propVal= o;
 
       return propVal;
@@ -115,20 +109,20 @@ namespace Tlabs.Misc {
     /// <param name="propKeyPath">properties key path (using '.' as path delimiter)</param>
     /// <param name="val">value to be set</param>
     /// <param name="resolvedKey">resolved key (last token of the path on success)</param>
+    /// <param name="pathSep">Optional path seperator char (defaults to '.')</param>
     /// <returns>true if  value could be set</returns>
-    public static bool SetResolvedValue(this Properties prop, string propKeyPath, object val, out string resolvedKey) {
+    public static bool SetResolvedValue(this Properties prop, string propKeyPath, object val, out string resolvedKey, char pathSep= '.') {
       resolvedKey= null;
       var valDict= prop;
-      var keyToks= propKeyPath.Split('.');
-      IDictionary<string, object> dict;
+      var keyToks= propKeyPath.Split(pathSep);
+      Properties dict;
       int l= 0;
       foreach (string ktok in keyToks) {
-        object o;
         if (++l == keyToks.Length) {
           valDict[resolvedKey= ktok]= val;
           return true;
         }
-        if (!valDict.TryGetValue((resolvedKey= ktok), out o)) {
+        if (!valDict.TryGetValue((resolvedKey= ktok), out var o)) {
           valDict[ktok]= dict= new Dictionary<string, object>();
           valDict= dict;
           continue;
@@ -136,13 +130,12 @@ namespace Tlabs.Misc {
         if (null == (dict= o as IDictionary<string, object>)) return false;
         valDict= dict;
       }
-      throw new IndexOutOfRangeException(propKeyPath);  //must not happen
+      throw new InvalidOperationException($"Invalid key path: {propKeyPath}");  //must not happen
     }
 
     /// <summary>Convert <see cref="IReadOnlyDictionary{K, T}"/> into read-only <see cref="IDictionary{K, T}"/>.</summary>
     public static IReadOnlyDictionary<string, object> ToReadonly(this Properties prop) {
-      var rdProp= prop as IReadOnlyDictionary<string, object>;
-      if (null != rdProp) return rdProp;
+      if (prop is IReadOnlyDictionary<string, object> rdProp) return rdProp;
       return new Dictionary<string, object>(prop);
     }
 

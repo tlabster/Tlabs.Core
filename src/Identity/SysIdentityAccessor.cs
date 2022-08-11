@@ -7,17 +7,17 @@ namespace Tlabs.Identity {
   public class SysIdentityAccessor : IIdentityAccessor {
     ///<summary>system default <see cref="ClaimsPrincipal"/>.</summary>
     protected ClaimsPrincipal sysPrincipal= new ClaimsPrincipal(new ClaimsIdentity(SysIdentity.Instance));
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual ClaimsPrincipal Principal => sysPrincipal;
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual string Name => SysIdentity.Instance.Name;
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual string AuthenticationType => SysIdentity.Instance.AuthenticationType;
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual int Id => 0;
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual string[] Roles => null;
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual bool HasRole(string role) => false;
   }
 }

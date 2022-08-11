@@ -46,7 +46,7 @@ namespace Tlabs.Timing {
     internal static readonly ILogger Log= App.Logger<TimeScheduler>();
 
     private Timer timer;    //***TODO: replace Timer with Task.Delay(waitMili).ContinnueWith(HandleDueTime);
-    private LinkedList<ScheduleInfo> schedule= new LinkedList<ScheduleInfo>();
+    readonly LinkedList<ScheduleInfo> schedule= new();
 
     /// <summary>Default ctor</summary>
     public TimeScheduler() { }
@@ -70,7 +70,7 @@ namespace Tlabs.Timing {
         var fromNow= App.TimeInfo.Now;
         var schedule= new ScheduleInfo(time, dueTimeCallee);
         Add(schedule, fromNow);
-        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"New time schedule, due at: {string.Format("{0:" + TimeScheduler.TIME_FORMAT + "}", schedule.DueDate)}");
+        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug("New time schedule, due at: {td}", schedule.DueDate.ToString(TimeScheduler.TIME_FORMAT, App.DfltFormat));
         UpdateTimer(fromNow);
       }
     }
@@ -121,7 +121,7 @@ namespace Tlabs.Timing {
            */
           var schInfo= schNode.Value;
 
-          if (Log.IsEnabled(LogLevel.Debug))  Log.LogDebug($"Invoking callee of {schInfo.Callee.Target} with due-time: {string.Format("{0:" + TimeScheduler.TIME_FORMAT + "}", schInfo.DueDate)}");
+          if (Log.IsEnabled(LogLevel.Debug))  Log.LogDebug("Invoking callee of {target} with due-time: {tm}", schInfo.Callee.Target, schInfo.DueDate.ToString(TimeScheduler.TIME_FORMAT, App.DfltFormat));
           Task.Run(schInfo.Callee);   //schInfo.Callee.BeginInvoke(null, null); //invoke asynch.
           schedule.RemoveFirst();
           Add(schInfo, fromNow);
@@ -136,10 +136,13 @@ namespace Tlabs.Timing {
       long nextTimerDelay= Timeout.Infinite;
       LinkedListNode<ScheduleInfo> firstNode;
       if (null != (firstNode= schedule.First) && DateTime.MaxValue != firstNode.Value.DueDate) {
-        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"Update timer with due date: {firstNode.Value.DueDate:s}");
+        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug("Update timer with due date: {date}", firstNode.Value.DueDate.ToString("s", App.DfltFormat));
         nextTimerDelay= (long)(firstNode.Value.DueDate - fromNow).TotalMilliseconds;
         if (nextTimerDelay < 0) {
-          if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"Next schedule is over due: {firstNode.Value.DueDate:s} from now {fromNow:s} ({(long)(firstNode.Value.DueDate - fromNow).TotalMilliseconds})");
+          if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug("Next schedule is over due: {due} from now {now} ({ms}ms)",
+                                                          firstNode.Value.DueDate.ToString("s", App.DfltFormat),
+                                                          fromNow.ToString("s", App.DfltFormat),
+                                                          (long)(firstNode.Value.DueDate - fromNow).TotalMilliseconds);
           nextTimerDelay= 0;  //start immediately if overdue
         }
         else if (nextTimerDelay > Int32.MaxValue) nextTimerDelay= Int32.MaxValue;
@@ -156,14 +159,14 @@ namespace Tlabs.Timing {
       public Action Callee;
 
       public ScheduleInfo(ITimePlan time, Action callee) {
-        if (null == (this.ScheduleTime= time)) throw new ArgumentNullException("shedule time");
-        if (null == (this.Callee= callee)) throw new ArgumentNullException("callee");
+        if (null == (this.ScheduleTime= time)) throw new ArgumentNullException(nameof(time));
+        if (null == (this.Callee= callee)) throw new ArgumentNullException(nameof(callee));
         this.DueDate= DateTime.MaxValue;  //default before first update
       }
 
       public void Update(DateTime fromNow) {
         DueDate= ScheduleTime.DueDate(fromNow);
-        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug($"Next due time (at {fromNow:s}): {DueDate:s}");
+        if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug("Next due time (at {from}): {date}", fromNow.ToString("s", App.DfltFormat), DueDate.ToString("s", App.DfltFormat));
       }
     }
 

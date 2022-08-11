@@ -12,7 +12,7 @@ namespace Tlabs.Misc {
   public struct TimingWatch {
     private static readonly double TICKS= TimeSpan.TicksPerSecond / (double)Stopwatch.Frequency;
 
-    private long startTime;
+    readonly long startTime;
 
     ///<summary>true if created by <see cref="TimingWatch.StartTiming()"/>.</summary>
     public bool IsStarted => 0 != startTime;
