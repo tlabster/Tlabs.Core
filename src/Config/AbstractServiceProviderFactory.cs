@@ -35,12 +35,12 @@ namespace Tlabs.Misc {
 
     ///<inheritdoc/>
     public void Dispose() {
-      DoDispose(true);
+      Dispose(true);
       GC.SuppressFinalize(this);
     }
 
     ///<summary>Dispose</summary>
-    protected virtual void DoDispose(bool disposing) {
+    protected virtual void Dispose(bool disposing) {
       if (!disposing) return;
       svcProv?.Dispose();
     }
