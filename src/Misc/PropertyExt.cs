@@ -54,14 +54,15 @@ namespace Tlabs.Misc {
     /// </para>
     /// </remarks>
     /// <param name="prop">(optionaly nested) properties dictionary</param>
-    /// <param name="propKeyPath">properties key path (using '.' as path delimiter)</param>
+    /// <param name="propKeyPath">properties key path (using <paramref name="pathSep"/> as path separator)</param>
     /// <param name="val">resolved value</param>
     /// <param name="resolvedKey">resolved key</param>
+    /// <param name="pathSep">Optional path seperator char (defaults to '.')</param>
     /// <returns>true if a value could be resolved using the <paramref name="propKeyPath"/></returns>
-    public static bool TryResolveValue(this Properties prop, string propKeyPath, out object val, out string resolvedKey) {
+    public static bool TryResolveValue(this Properties prop, string propKeyPath, out object val, out string resolvedKey, char pathSep= '.') {
       val= resolvedKey= null;
       var valDict= prop;
-      var keyToks= propKeyPath.Split('.');
+      var keyToks= propKeyPath.Split(pathSep);
       int l= 0;
       foreach (string ktok in keyToks) {
         resolvedKey= ktok;
@@ -80,7 +81,7 @@ namespace Tlabs.Misc {
     /// <param name="prop">A properties dictionary</param>
     /// <param name="propSpecifier">A property spcifier. If it is a name or property path enclosed in brackets like
     /// '[name.subKey]', the contents of the bracket are tried to be resolved with
-    /// <see cref="TryResolveValue(IDictionary{string, object}, string , out object, out string)"/></param>
+    /// <see cref="TryResolveValue(IDictionary{string, object}, string , out object, out string, char)"/></param>
     /// <returns>The resolved property value given by the <paramref name="propSpecifier"/> or if could not be resolved as a property, the
     /// <paramref name="propSpecifier"/> it self.</returns>
     public static object ResolvedProperty(this Properties prop, string propSpecifier) {
@@ -108,11 +109,12 @@ namespace Tlabs.Misc {
     /// <param name="propKeyPath">properties key path (using '.' as path delimiter)</param>
     /// <param name="val">value to be set</param>
     /// <param name="resolvedKey">resolved key (last token of the path on success)</param>
+    /// <param name="pathSep">Optional path seperator char (defaults to '.')</param>
     /// <returns>true if  value could be set</returns>
-    public static bool SetResolvedValue(this Properties prop, string propKeyPath, object val, out string resolvedKey) {
+    public static bool SetResolvedValue(this Properties prop, string propKeyPath, object val, out string resolvedKey, char pathSep= '.') {
       resolvedKey= null;
       var valDict= prop;
-      var keyToks= propKeyPath.Split('.');
+      var keyToks= propKeyPath.Split(pathSep);
       Properties dict;
       int l= 0;
       foreach (string ktok in keyToks) {
