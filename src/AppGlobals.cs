@@ -183,9 +183,11 @@ namespace Tlabs {
       }
       // return Task.Run(service);
       return Task.Factory.StartNew(service,
+                                   CancellationToken.None,
                                      TaskCreationOptions.DenyChildAttach    //default from Task.Run(service)
                                    | TaskCreationOptions.PreferFairness     //prefer parallel exec. (by scheduling on the global queue insted of the thread local queue)
       //                           | TaskCreationOptions.LongRunning        //hint to create a new thread w/o consuming a thread-pool thread
+      , TaskScheduler.Default                                               //use thread pool
       );
     }
 

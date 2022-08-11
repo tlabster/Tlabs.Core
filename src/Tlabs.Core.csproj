@@ -16,6 +16,9 @@
     <AnalysisModeSecurity>All</AnalysisModeSecurity>
     <AnalysisModeNaming>None</AnalysisModeNaming>
     <!--
+    <AnalysisModeUsage>All</AnalysisModeUsage>
+    <AnalysisModeReliability>All</AnalysisModeReliability>
+    <AnalysisModeMaintainability>All</AnalysisModeMaintainability>
     <AnalysisLevel>6-recommended</AnalysisLevel>
     -->
   </PropertyGroup>

@@ -11,10 +11,11 @@ namespace Tlabs.Config {
 
   ///<summary>Configurator to add additional assembly path(s) for config target type <typeparamref name="T"/>.</summary>
   public class AssemblyPathConfigurator<T> : IConfigurator<T> {
-    private readonly ILogger log;
-    private readonly string basePath;
-    private string cfgPath;
-    private string[] paths;
+    readonly object sync= new();
+    readonly ILogger log;
+    readonly string basePath;
+    string cfgPath;
+    string[] paths;
 
     ///<summary>Default ctor.</summary>
     public AssemblyPathConfigurator() : this(null) { }
@@ -33,7 +34,7 @@ namespace Tlabs.Config {
 
     ///<summary>Extend assembly path(s) as configured.</summary>
     public void ExtendAsmPath() {
-      if (null != cfgPath) lock(cfgPath) if (null != cfgPath) {
+      if (null != cfgPath) lock(sync) if (null != cfgPath) {
 
         this.paths= cfgPath.Split(';');
         cfgPath= null;
