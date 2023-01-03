@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace Tlabs.Sync {
 
   ///<summary>Buffered action runner</summary>
-  public class BufferedActionRunner : IDisposable {
+  public sealed class BufferedActionRunner : IDisposable {
     ActionBuffer actBuf;
 
     ///<summary>Run <paramref name="action"/> after <paramref name="bufferTime"/> has been elapsed.</summary>
@@ -32,6 +32,7 @@ namespace Tlabs.Sync {
     public void Dispose() {
       actBuf?.Dispose();
       this.actBuf= null;
+      GC.SuppressFinalize(this);
     }
 
     private class ActionBuffer : IDisposable {
