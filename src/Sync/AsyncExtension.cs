@@ -7,7 +7,7 @@ namespace Tlabs.Sync {
   ///<summary>Async (task) extension utils</summary>
   public static class AsyncExtensions {
     ///<summary>Specify a <paramref name="timeout"/> on <paramref name="task"/> with optional <paramref name="cts"/></summary>
-    public static async Task Timeout(this Task task, TimeSpan timeout, CancellationTokenSource cts= null) {
+    public static async Task Timeout(this Task task, int timeout, CancellationTokenSource cts= null) {
       if (task == await Task.WhenAny(task, Task.Delay(timeout))) {
         await task;
         return;
@@ -17,7 +17,7 @@ namespace Tlabs.Sync {
     }
 
     ///<summary>Specify a <paramref name="timeout"/> on <paramref name="task"/> with optional <paramref name="cts"/></summary>
-    public static async Task<T> Timeout<T>(this Task<T> task, TimeSpan timeout, CancellationTokenSource cts= null) {
+    public static async Task<T> Timeout<T>(this Task<T> task, int timeout, CancellationTokenSource cts= null) {
       if (task == await Task.WhenAny(task, Task.Delay(timeout)))
         return await task;
 
