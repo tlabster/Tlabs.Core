@@ -4,6 +4,7 @@ using System.Threading;
 namespace Tlabs.Sync {
 
   /// <summary>Mutual exclusive accessible object.</summary>
+  [Obsolete("MUST not be used with await !", false)]
   public sealed class Mutex<T> : IDisposable {
     private readonly object syncRoot;
     private T value;
