@@ -6,7 +6,9 @@ namespace Tlabs.Sync {
   /// <summary>Key based mutex ticket.</summary>
   ///<remarks>For each givent key given with the ctor <see cref="MuxTicket"/> maintains a internal sync object that is being
   /// acquired before ctor returns....
+  /// CAUTION: <see cref="Mutex{T}"/>
   ///</remarks>
+  [Obsolete("MUST not be used with await !", false)]
   public sealed class MuxTicket : IDisposable {
     static readonly SyncTable syncMap= new SyncTable(k => new object());
     /// <summary>Ctor from <paramref name="key"/> and optional <paramref name="timeOut"/>.</summary>

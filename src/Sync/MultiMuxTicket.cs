@@ -7,7 +7,9 @@ namespace Tlabs.Sync {
   /// <summary>Key based mutex ticket.</summary>
   ///<remarks>For each givent key given with the ctor <see cref="MuxTicket"/> maintains a internal sync object that is being
   /// acquired before ctor returns....
+  /// CAUTION: <see cref="MuxTicket"/>
   ///</remarks>
+  [Obsolete("MUST not be used with await !", false)]
   public sealed class MultiMuxTicket<T> : IDisposable {
 
     /// <summary>Ctor from <paramref name="keys"/> and optional <paramref name="timeOut"/>.</summary>

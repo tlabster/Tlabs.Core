@@ -110,13 +110,13 @@ namespace Tlabs.Misc.Tests {
 
       dlist.Add(nameof(ONE), 1);
       Assert.NotEmpty(dlist);
-      Assert.Equal(1, dlist.Keys.Count);
+      Assert.Equal(1, dlist.Keys.Count());
       Assert.NotEmpty(dlist[nameof(ONE)]);
       Assert.Equal(1, dlist[nameof(ONE)].First());
 
       for (var l= 1; l <= N; ++l)
         dlist.Add(nameof(SUM), l);
-      Assert.Equal(2, dlist.Keys.Count);
+      Assert.Equal(2, dlist.Keys.Count());
       Assert.Equal(N, dlist[nameof(SUM)].Count());
       Assert.Equal(dlist.Values.Count(), dlist[nameof(SUM)].Count() + dlist[nameof(ONE)].Count());
       //Assert.Equal(SUM, dlist[nameof(SUM)].Sum());

@@ -9,7 +9,7 @@ namespace Tlabs.Misc {
     ///<summary>The list (enumation) associated with <paramref name="key"/>.</summary>
     public IEnumerable<T> this[K key] { get; }
     ///<summary>Read-only collection of keys.</summary>
-    public ICollection<K> Keys { get; }
+    public IEnumerable<K> Keys { get; }
 
     ///<summary>Read-only collection of all values (of all enumerations).</summary>
     public IEnumerable<T> Values { get; }
@@ -35,7 +35,7 @@ namespace Tlabs.Misc {
     ///<summary>The list (enumation) associated with <paramref name="key"/>.</summary>
     public IEnumerable<T> this[K key] { get; set; }
     ///<summary>Read-only collection of keys.</summary>
-    public ICollection<K> Keys { get; }
+    public IEnumerable<K> Keys { get; }
 
     ///<summary>Read-only collection of all values (of all enumerations).</summary>
     public IEnumerable<T> Values { get; }
@@ -82,7 +82,7 @@ namespace Tlabs.Misc {
     public IEnumerable<T> this[K key] { get => dict[key]; set => dict[key]= new List<T>(value); }
 
     ///<inheritdoc/>
-    public ICollection<K> Keys => dict.Keys;
+    public IEnumerable<K> Keys => dict.Keys;
 
     ///<inheritdoc/>
     public IEnumerable<T> Values => dict.Values.SelectMany(l => l);

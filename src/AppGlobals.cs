@@ -136,8 +136,8 @@ namespace Tlabs {
 
     ///<summary>Exceutes the <paramref name="scopedAction"/> with a (new) scoped <see cref="IServiceProvider"/>.</summary>
     public static void WithServiceScope(Action<IServiceProvider> scopedAction) {
-      var scopeFac= ServiceProv.GetService(typeof(IServiceScopeFactory)) as IServiceScopeFactory;
-      using var svcScope= scopeFac?.CreateScope();
+      var scopeFac= ServiceProv.GetRequiredService(typeof(IServiceScopeFactory)) as IServiceScopeFactory;
+      using var svcScope= scopeFac.CreateScope();
       scopedAction(svcScope.ServiceProvider);
     }
 
