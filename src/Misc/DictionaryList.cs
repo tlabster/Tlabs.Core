@@ -74,12 +74,24 @@ namespace Tlabs.Misc {
   ///<summary>Dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
   public class DictionaryList<K, T> : IDictionaryList<K, T>, IReadOnlyDictList<K, T> {
     readonly Dictionary<K, List<T>> dict;
+    readonly Func<K, IEnumerable<T>> defaultValue= key => throw new KeyNotFoundException(key?.ToString()??"<null>");
 
     ///<summary>Default ctor.</summary>
-    public DictionaryList() { dict= new Dictionary<K, List<T>>(); }
+    public DictionaryList() { dict= new(); }
 
+    ///<summary>Default ctor.</summary>
+    public DictionaryList(Func<K, IEnumerable<T>> defaultValue, IEqualityComparer<K> comp= null) {
+      this.defaultValue= defaultValue;
+      this.dict= null ==comp ? new() : new(comp);
+    }
     ///<inheritdoc/>
-    public IEnumerable<T> this[K key] { get => dict[key]; set => dict[key]= new List<T>(value); }
+    public IEnumerable<T> this[K key] {
+      get {
+        if (dict.TryGetValue(key, out var v)) return v;
+        return this.defaultValue(key);
+      }
+      set => dict[key]= new List<T>(value);
+    }
 
     ///<inheritdoc/>
     public IEnumerable<K> Keys => dict.Keys;
