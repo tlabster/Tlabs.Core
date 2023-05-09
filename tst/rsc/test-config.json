@@ -22,7 +22,8 @@
         "type": "Tlabs.Config.AssemblyPathConfigurator, Tlabs.Core",
         "config": {
           "path": ".;binx"
-        }
+        },
+        "options": [1, 2, 3]
       },
       "serverKestrel": {
         "ord": 100,
@@ -112,6 +113,23 @@
     },
     "generic-test": {
       "type": "Tlabs.Config.Tests.ConfigTest+TstGenric`1, Tlabs.Core.Tests & Tlabs.Config.Tests.ConfigTest, Tlabs.Core.Tests"
+    }
+  },
+
+  "sysCommands": {
+    "LINUX": {
+      "shell": ["/bin/bash", "{0}"],
+      "cmdLines": {
+        "hello": {"cmd": ["./hello.sh", "1", "2"]},
+        "all": {"cmd": ["./to-all.sh", "1", "2"]}
+      }
+    },
+    "WINDOWS": {
+      "shell": ["cmd.exe", "/c", "{0}"],
+      "cmdLines": {
+        "hello": {"cmd": [".\\hello.cmd", "1", "2"]},
+        "all": {"cmd": [".\\to-all.bat", "1", "2"], "wrkDir": "D:\\tmp"}
+      }
     }
   }
 }

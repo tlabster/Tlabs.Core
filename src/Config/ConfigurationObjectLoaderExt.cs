@@ -23,7 +23,7 @@ namespace Tlabs.Config {
     }
 
     ///<summary>Returns an enumeration of <see cref="CfgObject{T}"/>(s) with <see cref="CfgObject{T}.Object"/> instances loaded from a <see cref="IConfiguration"/>.</summary>
-    public static IEnumerable<CfgObject<T>> LoadObject<T>(this IConfiguration cfg) where T : class {
+    public static IEnumerable<CfgObject<T>> LoadConfigurationObjects<T>(this IConfiguration cfg) where T : class {
       var secName= (cfg as IConfigurationSection)?.Key ?? "?";
       var typeName= typeof(T).Name;
       var types= new Dictionary<string, ObjectDescriptor>();
@@ -56,6 +56,8 @@ namespace Tlabs.Config {
       }
     }
 
-  }
+    ///<summary>Returns an enumeration of <see cref="CfgObject{T}"/>(s) with <see cref="CfgObject{T}.Object"/> instances loaded from a <see cref="IConfiguration"/>.</summary>
+    [Obsolete("Use LoadConfigurationObjects<T>()", false)]
+    public static IEnumerable<CfgObject<T>> LoadObject<T>(this IConfiguration cfg) where T : class => LoadConfigurationObjects<T>(cfg);
 
-}
+  }}

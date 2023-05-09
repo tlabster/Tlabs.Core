@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="rsc/test-*.json" CopyToOutputDirectory="PreserveNewest" Link="rsc/%(RecursiveDir)/%(Filename)%(Extension)" />
+    <Content Include="rsc/*" CopyToOutputDirectory="PreserveNewest" Link="rsc/%(RecursiveDir)/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

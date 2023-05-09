@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +19,7 @@ namespace Tlabs.Config {
     ///<summary>Apply section configurators to <typeparamref name="T"/>.</summary>
     public static T ApplyConfigurators<T>(this T target, IConfiguration config, string subSectionName= null) {
       IConfiguration section= (string.IsNullOrEmpty(subSectionName) ? null : config.GetSection(subSectionName)) ?? config;
-      foreach(var conf in section.LoadObject<IConfigurator<T>>()) {
+      foreach(var conf in section.LoadConfigurationObjects<IConfigurator<T>>()) {
         conf.Object.AddTo(target, section.GetSection(conf.SectionName));
       }
       return target;
@@ -27,23 +28,30 @@ namespace Tlabs.Config {
     ///<summary>Convert <paramref name="config"/> into flattened dictionary.</summary>
     ///<param name="config">Configuration (section)</param>
     ///<param name="stripSectionPath">if true (default) and config is section, strips off the section path from keys</param>
-    public static Dictionary<string, string> ToDictionary(this IConfiguration config, bool stripSectionPath = true) {
+    public static Dictionary<string, string> ToDictionary(this IConfiguration config, bool stripSectionPath= true) {
+      static void convertToDictionary(IConfiguration config, Dictionary<string, string> data, IConfigurationSection top = null) {
+        foreach (var child in config.GetChildren()) {
+          if (null == child.Value) {
+            convertToDictionary(config.GetSection(child.Key), data, top);
+            continue;
+          }
+          var key = top != null ? child.Path.Substring(top.Path.Length + 1) : child.Path;
+          data[key]= child.Value;
+        }
+      }
       var data= new Dictionary<string, string>();
       var section= stripSectionPath ? config as IConfigurationSection : null;
       convertToDictionary(config, data, section);
       return data;
     }
 
-    private static void convertToDictionary(IConfiguration config, Dictionary<string, string> data, IConfigurationSection top = null) {
-      foreach (var child in config.GetChildren()) {
-        if (null == child.Value) {
-          convertToDictionary(config.GetSection(child.Key), data, top);
-          continue;
-        }
-
-        var key= top != null ? child.Path.Substring(top.Path.Length + 1) : child.Path;
-        data[key]= child.Value;
-      }
+    ///<summary>Convert <paramref name="config"/> into nested dictionary.</summary>
+    ///<param name="config">Configuration (section)</param>
+    public static Dictionary<string, object> ToNestedDictionary(this IConfiguration config) {
+      return config.GetChildren().ToDictionary(child => child.Key,
+                                               child => (object)   (null == child.Value
+                                                                 ? config.GetSection(child.Key).ToNestedDictionary()
+                                                                 : child.Value));
     }
 
     ///<summary>Load <see cref="IConfigurationBuilder"/> form json file.</summary>
