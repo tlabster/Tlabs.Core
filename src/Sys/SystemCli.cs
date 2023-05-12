@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
@@ -31,11 +32,20 @@ namespace Tlabs.Sys {
       this.platformCmdTemplates= cmdTemplates;
     }
 
+    ///<summary>Enumeration of CLI platform(s).</summary>
+    public IEnumerable<OSPlatform> Platforms => osPlatformCommands.Keys.Select(k => OSPlatform.Create(k));
+
+    ///<summary>Enumeration of current platform commands.</summary>
+    public IEnumerable<string> PlatformCommands => platformCmdTemplates.CmdLines.Keys;
+
     ///<summary>Return <see cref="SystemCmd"/> with <paramref name="cmdName"/></summary>
     public SystemCmd Command(string cmdName) {
       if (!platformCmdTemplates.CmdLines.TryGetValue(cmdName, out var cmdLine)) throw new ArgumentException($"Unknown command: '{cmdName}'");
       return new SystemCmd(platformCmdTemplates.Shell, cmdLine).UseWorkingDir(cmdLine.WrkDir);
     }
+
+    ///<summary>Return true if <see cref="SystemCli"/> has <paramref name="cmdName"/> configured.</summary>
+    public bool HasCommand(string cmdName) => platformCmdTemplates.CmdLines.ContainsKey(cmdName);
 
     ///<summary>Service configurator</summary>
     public class Configurator : IConfigurator<IServiceCollection> {

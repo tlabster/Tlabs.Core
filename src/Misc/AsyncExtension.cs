@@ -8,18 +8,34 @@ namespace Tlabs.Misc {
   public static class AsyncExtensions {
     ///<summary>Specify a <paramref name="timeout"/> on <paramref name="task"/> with optional <paramref name="ctk"/></summary>
     public static async Task Timeout(this Task task, int timeout, CancellationToken ctk= default) {
-      if (task == await Task.WhenAny(task, Task.Delay(timeout, ctk))) {
-        return;
+      var cts= CancellationTokenSource.CreateLinkedTokenSource(ctk);
+      try {
+        var anyTsk= await Task.WhenAny(task, Task.Delay(timeout, cts.Token));
+        await anyTsk;   //throw any exception
+        if (task == anyTsk) return;
+
+        throw new TimeoutException($"{timeout} ms timeout before task completion expired.");
       }
-      throw new TimeoutException($"{timeout} ms timeout before task completion expired.");
+      finally {
+        cts.Cancel();
+        cts.Dispose();
+      }
     }
 
     ///<summary>Specify a <paramref name="timeout"/> on <paramref name="task"/> with optional <paramref name="ctk"/></summary>
     public static async Task<T> Timeout<T>(this Task<T> task, int timeout, CancellationToken ctk= default) {
-      if (task == await Task.WhenAny(task, Task.Delay(timeout, ctk)))
-        return await task;
+      var cts= CancellationTokenSource.CreateLinkedTokenSource(ctk);
+      try {
+        var anyTsk= await Task.WhenAny(task, Task.Delay(timeout, cts.Token));
+        if (task == anyTsk) return await task;
 
-      throw new TimeoutException($"{timeout} ms timeout before task completion expired.");
+        await anyTsk;   //throw any exception
+        throw new TimeoutException($"{timeout} ms timeout before task completion expired.");
+      }
+      finally {
+        cts.Cancel();
+        cts.Dispose();
+      }
     }
 
     ///<summary>Convert this <see cref="CancellationToken"/> into a <see cref="Task"/> that could be awaited for cancellation.</summary>
