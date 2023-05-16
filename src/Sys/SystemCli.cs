@@ -25,8 +25,11 @@ namespace Tlabs.Sys {
     ///<summary>Ctor from <paramref name="sysCmdOptions"/></summary>
     public SystemCli(IOptions<Dictionary<string, SysCmdTemplates>> sysCmdOptions) {
       this.osPlatformCommands= sysCmdOptions.Value.ToDictionary(pair => pair.Key, pair => new SysCmdTemplates(pair.Value));
-      if (!this.osPlatformCommands.TryGetValue(OSInfo.CurrentPlatform.ToString(), out var cmdTemplates)) {
-        log.LogWarning("Missing command templates for platform {platform}", OSInfo.CurrentPlatform);
+      var currOS= OSInfo.CurrentPlatform;
+      log.LogInformation("Selected CLI for: {os}", currOS);
+      
+      if (!this.osPlatformCommands.TryGetValue(currOS.ToString(), out var cmdTemplates)) {
+        log.LogWarning("Missing command templates for platform {platform}", currOS);
         cmdTemplates= new();
       }
       this.platformCmdTemplates= cmdTemplates;
