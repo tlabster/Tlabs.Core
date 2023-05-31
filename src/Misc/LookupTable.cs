@@ -7,10 +7,10 @@ namespace Tlabs.Misc {
   ///<summary>Object look-up table.</summary>
   ///<remarks>
   ///CAUTION: The <code>create</code> callback of the ctor is mutating (adding to) the <code>table</code> dictionary on read look-up!!
-  ///Even if it is implementing <code>IReadOnlyDictionary</code> it is not constant...
+  ///Do not exspect the look-up table to be imutable...
   ///</remarks>
-  [Obsolete("MUST not be used with await !", false)]
-  public class LookupTable<K, T> : IReadOnlyDictionary<K, T> {
+  // [Obsolete("MUST not be used with await !", false)]
+  public class LookupTable<K, T> : IEnumerable<System.Collections.Generic.KeyValuePair<K, T>> {
     ///<summary>Look-up table.</summary>
     protected IDictionary<K, T> table; 
     readonly Func<K, T> create;

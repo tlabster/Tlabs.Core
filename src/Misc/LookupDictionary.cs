@@ -51,6 +51,13 @@ namespace Tlabs.Misc {
       set => dict[key]= value;
     }
 
+    ///<summary>Adds a new value for <paramref name="key"/> by using the <c>defaultValue</c> delegate specified with the ctor if the key does not already exist.</summary>
+    ///<returns>The new value, or the exisitng value if the <paramref name="key"/> exists.</returns>
+    public T GetOrAdd(K key) {
+      if (dict.TryGetValue(key, out var val)) return val;
+      return dict[key]= defaultValue(key);
+    }
+
     ///<inheritdoc/>
     public IEnumerable<K> Keys => dict.Keys;
 
