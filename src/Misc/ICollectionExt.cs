@@ -7,8 +7,22 @@ namespace Tlabs.Misc {
   /// <summary>Extension methods for generic collection interfaces.</summary>
   public static class ICollectionExt {
 
+    ///<summary>Adds the elements of the specified <paramref name="rng"/> to the end of collection <paramref name="col"/>.</summary>
+    public static void AddRange<T>(this ICollection<T> col, IEnumerable<T> rng) {
+      if (null == col) throw new ArgumentNullException(nameof(col));
+      if (null == rng) return;
+      if (col is List<T> specificLst) {
+        specificLst.AddRange(rng);
+        return;
+      }
+
+      foreach (var itm in rng)
+        col.Add(itm);
+    }
+
+#if false
     ///<summary>Adds the elements of the specified collection <paramref name="coll"/> to the end of <see cref="IList{T}"/>.</summary>
-    public static void AddRange<T>(this IList<T> lst, System.Collections.Generic.IEnumerable<T> coll) {
+    public static void AddRange<T>(this IList<T> lst, IEnumerable<T> coll) {
       if (null == lst) throw new ArgumentNullException(nameof(lst));
       if (null == coll) return;
       if (lst is List<T> specificLst) {
@@ -21,12 +35,13 @@ namespace Tlabs.Misc {
     }
 
     ///<summary>Adds the elements of the specified collection <paramref name="coll"/> to <see cref="ISet{T}"/>.</summary>
-    public static void AddRange<T>(this ISet<T> set, System.Collections.Generic.IEnumerable<T> coll) {
+    public static void AddRange<T>(this ISet<T> set, IEnumerable<T> coll) {
       if (null == set) throw new ArgumentNullException(nameof(set));
       if (null == coll) return;
       foreach (var itm in coll)
         set.Add(itm);
     }
+#endif
 
     ///<summary>Gets an exisiting or adds the <paramref name="itm"/> to the <see cref="ISet{T}"/>.</summary>
     public static T GetOrAdd<T>(this ISet<T> set, T itm, IEqualityComparer<T> cmp= null) {

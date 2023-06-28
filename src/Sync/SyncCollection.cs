@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using Tlabs.Misc;
+
 namespace Tlabs.Sync {
 
   /// <summary>Collection with synchronized access.</summary>
@@ -18,6 +20,9 @@ namespace Tlabs.Sync {
     /// <summary>Default ctor.</summary>
     public SyncCollection(IEnumerable<T> enm) { coll= new LinkedList<T>(enm); }
 
+    /// <summary>Synchronization root.</summary>
+    public object SyncRoot => coll;
+
     ///<inheritdoc/>
     public int Count => coll.Count;
 
@@ -26,37 +31,42 @@ namespace Tlabs.Sync {
 
     ///<inheritdoc/>
     public void Add(T item) {
-      lock (coll) coll.Add(item);
+      lock (SyncRoot) coll.Add(item);
+    }
+
+    /// <summary>Add <paramref name="range"/> to the end of this collection.</summary>
+    public void AddRange(IEnumerable<T> range) {
+      lock(coll) coll.AddRange(range);
     }
 
     ///<inheritdoc/>
     public void Clear() {
-      lock (coll) coll.Clear();
+      lock (SyncRoot) coll.Clear();
     }
 
     ///<inheritdoc/>
     public bool Contains(T item) {
-      lock (coll) return coll.Contains(item);
+      lock (SyncRoot) return coll.Contains(item);
     }
 
     /// <summary>Returns true if collection contains item matching <paramref name="predicate"/>.</summary>
     public bool Contains(Func<T, bool> predicate) {
-      lock (coll) return coll.Any(predicate);
+      lock (SyncRoot) return coll.Any(predicate);
     }
 
     ///<inheritdoc/>
     public void CopyTo(T[] array, int arrayIndex) {
-      lock (coll) coll.CopyTo(array, arrayIndex);
+      lock (SyncRoot) coll.CopyTo(array, arrayIndex);
     }
 
     ///<inheritdoc/>
     public bool Remove(T item) {
-      lock (coll) return coll.Remove(item);
+      lock (SyncRoot) return coll.Remove(item);
     }
 
     ///<inheritdoc/>
     public IEnumerator<T> GetEnumerator() {
-      lock (coll) return new LinkedList<T>(coll).GetEnumerator();
+      lock (SyncRoot) return new LinkedList<T>(coll).GetEnumerator();
     }
 
     ///<inheritdoc/>
@@ -64,7 +74,7 @@ namespace Tlabs.Sync {
 
     /// <summary>Returns a <see cref="ICollection{T}"/> of items matching <paramref name="predicate"/>.</summary>
     public ICollection<T> CollectionOf(Func<T, bool> predicate) {
-      lock (coll) return new LinkedList<T>(coll.Where(predicate));
+      lock (SyncRoot) return new LinkedList<T>(coll.Where(predicate));
     }
 
   }
