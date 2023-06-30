@@ -1,6 +1,4 @@
-﻿#define DEBUG_CMD
-
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -26,19 +24,10 @@ namespace Tlabs.Sys {
 
     ///<summary>Ctor from <paramref name="sysCmdOptions"/></summary>
     public SystemCli(IOptions<Dictionary<string, SysCmdTemplates>> sysCmdOptions) {
-#if DEBUG_CMD
-      log.LogWarning("*** sysCmdOptions:");
-      foreach (var sys in sysCmdOptions.Value) logSysCmdTemplates(sys);
-#endif
 
       this.osPlatformCommands= sysCmdOptions.Value.ToDictionary(pair => pair.Key, pair => new SysCmdTemplates(pair.Value));
       var currOS= OSInfo.CurrentPlatform;
       log.LogInformation("Selected CLI for: {os}", currOS);
-
-#if DEBUG_CMD
-      log.LogWarning("*** osPlatformCommands:");
-      foreach(var sys in osPlatformCommands) logSysCmdTemplates(sys);
-#endif
 
       if (!this.osPlatformCommands.TryGetValue(currOS.ToString(), out var cmdTemplates)) {
         log.LogWarning("Missing command templates for platform {platform}", currOS);
@@ -46,12 +35,9 @@ namespace Tlabs.Sys {
       }
       this.platformCmdTemplates= cmdTemplates;
 
-#if DEBUG_CMD
-      log.LogWarning("*** platformCmdTemplates:");
-      logSysCmdTemplates(new KeyValuePair<string, SysCmdTemplates>(currOS.ToString(), this.platformCmdTemplates));
-#endif
     }
 
+#if false
     static void logSysCmdTemplates(KeyValuePair<string, SysCmdTemplates> sys) {
       log.LogWarning("  {sys]:}", sys.Key);
       log.LogWarning("    shell: {shell}", string.Join(" ", sys.Value.Shell));
@@ -60,6 +46,8 @@ namespace Tlabs.Sys {
         log.LogWarning("      {cmdName}: {cmd}", cmd.Key, string.Join(" ", cmd.Value.Cmd));
       }
     }
+#endif
+
     ///<summary>Enumeration of CLI platform(s).</summary>
     public IEnumerable<OSPlatform> Platforms => osPlatformCommands.Keys.Select(k => OSPlatform.Create(k));
 

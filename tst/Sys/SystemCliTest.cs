@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-using Tlabs.Misc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Options;
 
 using Xunit;
