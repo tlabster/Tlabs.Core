@@ -23,8 +23,10 @@ namespace Tlabs.Sync {
           newBuf.Schedule(action);
           return;
         }
-        if (oldBuf == Interlocked.CompareExchange<ActionBuffer>(ref this.actBuf, null, oldBuf))
+        if (oldBuf == Interlocked.CompareExchange<ActionBuffer>(ref this.actBuf, null, oldBuf)) {
           oldBuf.Dispose();
+          newBuf.BufTime= oldBuf.BufTime ?? newBuf.BufTime;
+        }
       }
     }
 
@@ -35,7 +37,7 @@ namespace Tlabs.Sync {
       GC.SuppressFinalize(this);
     }
 
-    private class ActionBuffer : IDisposable {
+    private sealed class ActionBuffer : IDisposable {
       int delay;
       CancellationTokenSource cts;
       public ActionBuffer(int bufferTime) {
@@ -43,9 +45,21 @@ namespace Tlabs.Sync {
         this.delay= bufferTime;
       }
 
+      public DateTime? BufTime= DateTime.Now;
+
       public void Schedule(Action action) {
+        if ((DateTime.Now - BufTime)?.TotalMilliseconds >= delay) {
+          runAction(action);
+          return;
+        }
         Task.Delay(this.delay, this.cts.Token)
-            .ContinueWith(t => action(), TaskContinuationOptions.NotOnCanceled);
+            .ContinueWith(t => runAction(action), TaskContinuationOptions.NotOnCanceled);
+      }
+
+      private void runAction(Action action) {
+        BufTime= null;
+        Dispose();
+        action();
       }
 
       public void Dispose() {
@@ -53,6 +67,7 @@ namespace Tlabs.Sync {
         cts.Cancel();
         cts.Dispose();
         cts= null;
+        GC.SuppressFinalize(this);
       }
     }
   }

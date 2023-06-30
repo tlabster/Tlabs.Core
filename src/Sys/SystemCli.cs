@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define DEBUG_CMD
+
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -24,31 +26,56 @@ namespace Tlabs.Sys {
 
     ///<summary>Ctor from <paramref name="sysCmdOptions"/></summary>
     public SystemCli(IOptions<Dictionary<string, SysCmdTemplates>> sysCmdOptions) {
+#if DEBUG_CMD
+      log.LogWarning("*** sysCmdOptions:");
+      foreach (var sys in sysCmdOptions.Value) logSysCmdTemplates(sys);
+#endif
+
       this.osPlatformCommands= sysCmdOptions.Value.ToDictionary(pair => pair.Key, pair => new SysCmdTemplates(pair.Value));
       var currOS= OSInfo.CurrentPlatform;
       log.LogInformation("Selected CLI for: {os}", currOS);
-      
+
+#if DEBUG_CMD
+      log.LogWarning("*** osPlatformCommands:");
+      foreach(var sys in osPlatformCommands) logSysCmdTemplates(sys);
+#endif
+
       if (!this.osPlatformCommands.TryGetValue(currOS.ToString(), out var cmdTemplates)) {
         log.LogWarning("Missing command templates for platform {platform}", currOS);
         cmdTemplates= new();
       }
       this.platformCmdTemplates= cmdTemplates;
+
+#if DEBUG_CMD
+      log.LogWarning("*** platformCmdTemplates:");
+      logSysCmdTemplates(new KeyValuePair<string, SysCmdTemplates>(currOS.ToString(), this.platformCmdTemplates));
+#endif
     }
 
+    static void logSysCmdTemplates(KeyValuePair<string, SysCmdTemplates> sys) {
+      log.LogWarning("  {sys]:}", sys.Key);
+      log.LogWarning("    shell: {shell}", string.Join(" ", sys.Value.Shell));
+      log.LogWarning("    cmdLines:");
+      foreach (var cmd in sys.Value.CmdLines ?? new()) {
+        log.LogWarning("      {cmdName}: {cmd}", cmd.Key, string.Join(" ", cmd.Value.Cmd));
+      }
+    }
     ///<summary>Enumeration of CLI platform(s).</summary>
     public IEnumerable<OSPlatform> Platforms => osPlatformCommands.Keys.Select(k => OSPlatform.Create(k));
 
     ///<summary>Enumeration of current platform commands.</summary>
-    public IEnumerable<string> PlatformCommands => platformCmdTemplates.CmdLines.Keys;
+    public IEnumerable<string> PlatformCommands => platformCmdTemplates.CmdLines?.Keys ?? Enumerable.Empty<string>();
 
     ///<summary>Return <see cref="SystemCmd"/> with <paramref name="cmdName"/></summary>
     public SystemCmd Command(string cmdName) {
-      if (!platformCmdTemplates.CmdLines.TryGetValue(cmdName, out var cmdLine)) throw new ArgumentException($"Unknown command: '{cmdName}'");
-      return new SystemCmd(platformCmdTemplates.Shell, cmdLine).UseWorkingDir(cmdLine.WrkDir);
+      // SysCmdTemplates.CmdLine? cmdLine= null;
+      if (   null == platformCmdTemplates.CmdLines
+          || platformCmdTemplates.CmdLines.TryGetValue(cmdName, out var cmdLine) == false) throw new ArgumentException($"Unknown command: '{cmdName}'");
+      return new SystemCmd(platformCmdTemplates.Shell, cmdLine).UseWorkingDir(cmdLine?.WrkDir ?? "");
     }
 
     ///<summary>Return true if <see cref="SystemCli"/> has <paramref name="cmdName"/> configured.</summary>
-    public bool HasCommand(string cmdName) => platformCmdTemplates.CmdLines.ContainsKey(cmdName);
+    public bool HasCommand(string cmdName) => true == platformCmdTemplates.CmdLines?.ContainsKey(cmdName);
 
     ///<summary>Service configurator</summary>
     public class Configurator : IConfigurator<IServiceCollection> {

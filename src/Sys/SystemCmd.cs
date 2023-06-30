@@ -23,9 +23,9 @@ namespace Tlabs.Sys {
     readonly SysCmdTemplates.CmdLine cmdLine;
     string workingDirPath= "";
     string[] arguments= Array.Empty<string>();
-    internal SystemCmd(string[] shellCmd, SysCmdTemplates.CmdLine cmdLine) {
+    internal SystemCmd(string[] shellCmd, SysCmdTemplates.CmdLine? cmdLine) {
       this.shellCmd= shellCmd;
-      this.cmdLine= cmdLine;
+      this.cmdLine= cmdLine ?? new();
     }
 
     ///<summary>Use working directory</summary>

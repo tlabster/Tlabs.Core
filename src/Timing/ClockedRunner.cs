@@ -36,9 +36,16 @@ namespace Tlabs.Timing {
         for (long t= 0; !cts.Token.IsCancellationRequested;) {
           t+= interval;
           var untilNext= (int)(t - timer.ElapsedMilliseconds);
-          if (untilNext < 0) throw new TimeoutException($"Clocked running timed out for: {runnerTitle}");
+          while (untilNext < 0) {
+            for (long l= 0, n= -untilNext / interval; l < n+1; ++l ) {
+              if (cts.Token.IsCancellationRequested || run(cts.Token)) return;    //catch up missed invocations
+              t+= interval;
+              Task.Yield().GetAwaiter().GetResult();    //yield to other tasks
+            }
+            untilNext= (int)(t - timer.ElapsedMilliseconds);
+          }
           await Task.Delay(untilNext, cts.Token);
-          if (run(cts.Token)) return;
+          if (cts.Token.IsCancellationRequested || run(cts.Token)) return;
         }
       }
       catch (Exception e) when (e is not TaskCanceledException) {

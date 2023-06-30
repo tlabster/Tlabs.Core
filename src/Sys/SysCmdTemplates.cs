@@ -18,14 +18,14 @@ namespace Tlabs.Sys {
     ///<summary>Copy ctor</summary>
     public SysCmdTemplates(SysCmdTemplates sysCmd) {
       this.Shell= (string[])sysCmd.Shell.Clone();
-      this.CmdLines= sysCmd.CmdLines.ToDictionary(pair => pair.Key, pair => new CmdLine {Cmd= pair.Value.Cmd, WrkDir= pair.Value.WrkDir});
+      this.CmdLines= sysCmd.CmdLines?.ToDictionary(pair => pair.Key, pair => new CmdLine {Cmd= pair.Value.Cmd, WrkDir= pair.Value.WrkDir}) ?? new();
     }
 
     ///<summary>Shell invocation with args</summary>
     public string[] Shell { get; set; }= Array.Empty<string>();
 
     ///<summary>Named commands to be run with the shell.</summary>
-    public Dictionary<string, CmdLine> CmdLines { get; set; }= Misc.Singleton<Dictionary<string, CmdLine>>.Instance;
+    public Dictionary<string, CmdLine>? CmdLines { get; set; }
 
     ///<summary>Command line.</summary>
     public class CmdLine {

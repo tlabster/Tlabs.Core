@@ -42,17 +42,19 @@ namespace Tlabs.Timing.Test {
     public void TimeoutTest() {
       var mon= new SyncMonitor<bool>();
       var cnt= 0;
+      var timer= Misc.TimingWatch.StartTiming();
 
       var clock= new ClockedRunner("timeout runner", 100, ctk => {
-        tstout.WriteLine($"timing out");
-        Task.Delay(200).GetAwaiter().GetResult();
         ++cnt;
+        tstout.WriteLine($"{cnt}: timing out {timer.ElapsedMilliseconds} ms");
+        if (cnt <= 1) Task.Delay(250).GetAwaiter().GetResult();
         return false;
       });
 
-      Task.Delay(400).GetAwaiter().GetResult();
+      Task.Delay(500).GetAwaiter().GetResult();
       clock.Dispose();
-      Assert.Equal(1, cnt);   //first run timedout
+      Assert.True(cnt > 1);   //first run timedout
+      tstout.WriteLine($"timeout run cnt: {cnt}");
     }
 
     [Fact]
