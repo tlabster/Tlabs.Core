@@ -63,10 +63,10 @@ namespace Tlabs.Sync {
       }
 
       public void Dispose() {
-        if (null == cts) return;
-        cts.Cancel();
-        cts.Dispose();
-        cts= null;
+        var ctSrc= Interlocked.CompareExchange<CancellationTokenSource>(ref this.cts, null, this.cts);
+        if (null == ctSrc) return;
+        ctSrc.Cancel();
+        ctSrc.Dispose();
         GC.SuppressFinalize(this);
       }
     }
