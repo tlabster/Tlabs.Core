@@ -34,6 +34,13 @@ namespace Tlabs.Sync.Test {
 
     [Fact]
     //[ExpectedException(typeof(InvalidOperationException))]
+    public void BufTimeTest() {
+      DateTime? BufTime= null;
+      Assert.False((DateTime.Now - BufTime)?.TotalMilliseconds >=1);
+    }
+   
+   [Fact]
+    //[ExpectedException(typeof(InvalidOperationException))]
     public void SingelRunTest() {
       using var bufRunner= new BufferedActionRunner();
       var test= new TstAction(tstout);
