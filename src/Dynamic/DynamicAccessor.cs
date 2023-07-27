@@ -109,7 +109,7 @@ namespace Tlabs.Dynamic {
     }
 
 
-    private class AccessDictionary : IDictionary<string, object> {
+    private class AccessDictionary : IDictionary<string, object>, IReadOnlyDictionary<string, object> {
       readonly DynamicAccessor acc;
       readonly object obj;
 
@@ -126,8 +126,10 @@ namespace Tlabs.Dynamic {
       }
 
       public ICollection<string> Keys => acc.accessorMap.Keys;
+      IEnumerable<string> IReadOnlyDictionary<string, object>.Keys => this.Keys;
 
       public ICollection<object> Values => acc.accessorMap.Keys.Select(k => this[k]).ToList();
+      IEnumerable<object> IReadOnlyDictionary<string, object>.Values => this.Values;
 
       public int Count => acc.accessorMap.Count;
 
