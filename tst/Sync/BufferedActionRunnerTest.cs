@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Threading;
 using System.Threading.Tasks;
 
 using Tlabs.Misc;
@@ -32,14 +30,11 @@ namespace Tlabs.Sync.Test {
       }
     }
 
-    [Fact]
-    //[ExpectedException(typeof(InvalidOperationException))]
-    public void BufTimeTest() {
-      DateTime? BufTime= null;
-      Assert.False((DateTime.Now - BufTime)?.TotalMilliseconds >=1);
+    private void asyncRun(Action action) {
+      Task.Factory.StartNew(() => action(), TaskCreationOptions.LongRunning);
     }
-   
-   [Fact]
+
+    [Fact]
     //[ExpectedException(typeof(InvalidOperationException))]
     public void SingelRunTest() {
       using var bufRunner= new BufferedActionRunner();
@@ -56,11 +51,13 @@ namespace Tlabs.Sync.Test {
       using var bufRunner= new BufferedActionRunner();
       var test= new TstAction(tstout);
 
-      bufRunner.Run(50, () => test.Action());
-      bufRunner.Run(50, () => test.Action());
-      bufRunner.Run(50, () => test.Action());
-      Task.Delay(10).GetAwaiter().GetResult();
-      bufRunner.Run(50, () => test.Action());
+      asyncRun(() => bufRunner.Run(50, () => test.Action()));
+      asyncRun(() => bufRunner.Run(50, () => test.Action()));
+      asyncRun(() => bufRunner.Run(50, () => test.Action()));
+      asyncRun(() => {
+        Task.Delay(10).GetAwaiter().GetResult();
+        bufRunner.Run(50, () => test.Action());
+      });
       test.Mon.WaitForSignal();
 
       Assert.Equal(1, test.Cnt);
@@ -72,9 +69,13 @@ namespace Tlabs.Sync.Test {
       var test= new TstAction(tstout, 2);
 
       while (test.Cnt < 2) {
-        bufRunner.Run(50, () => test.Action());
+        asyncRun(() => bufRunner.Run(50, () => test.Action()));
+        asyncRun(() => {
+          Task.Delay(10).GetAwaiter().GetResult();
+          bufRunner.Run(50, () => test.Action());
+        });
         Task.Delay(10).GetAwaiter().GetResult();
-        bufRunner.Run(50, () => test.Action());
+        bufRunner.Run(5, () => test.Action());
       }
       test.Mon.WaitForSignal();
       Assert.True(test.Cnt > 1);
