@@ -48,12 +48,15 @@ namespace Tlabs.Sync {
       public DateTime? BufTime= DateTime.Now;
 
       public void Schedule(Action action) {
-        if ((DateTime.Now - BufTime)?.TotalMilliseconds >= delay) {
-          runAction(action);
-          return;
+        if (null == this.cts) return;
+        lock(this.cts) {
+          if ((DateTime.Now - BufTime)?.TotalMilliseconds >= delay) {
+            runAction(action);
+            return;
+          }
+          Task.Delay(this.delay, this.cts.Token)
+              .ContinueWith(t => runAction(action), TaskContinuationOptions.NotOnCanceled);
         }
-        Task.Delay(this.delay, this.cts.Token)
-            .ContinueWith(t => runAction(action), TaskContinuationOptions.NotOnCanceled);
       }
 
       private void runAction(Action action) {
@@ -63,11 +66,13 @@ namespace Tlabs.Sync {
       }
 
       public void Dispose() {
-        var ctSrc= Interlocked.CompareExchange<CancellationTokenSource>(ref this.cts, null, this.cts);
-        if (null == ctSrc) return;
-        ctSrc.Cancel();
-        ctSrc.Dispose();
-        GC.SuppressFinalize(this);
+        if (null == this.cts) return;
+        lock(this.cts) {
+          this.cts.Cancel();
+          this.cts.Dispose();
+          this.cts= null;
+          GC.SuppressFinalize(this);
+        }
       }
     }
   }
