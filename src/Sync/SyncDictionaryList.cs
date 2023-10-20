@@ -51,6 +51,14 @@ namespace Tlabs.Sync {
     }
 
     ///<inheritdoc/>
+    public void AddRange(K key, IEnumerable<T> values) {
+      lock (dict) {
+        if (!dict.TryGetValue(key, out var lst)) dict.Add(key, lst= new LinkedList<T>());
+        lst.AddRange(values);
+      }
+    }
+
+    ///<inheritdoc/>
     public void Add(KeyValuePair<K, IEnumerable<T>> pair) {
       lock (dict) dict.Add(pair.Key, new LinkedList<T>(pair.Value));
     }

@@ -58,6 +58,9 @@ namespace Tlabs.Misc {
     ///<summary>Add <paramref name="value"/> to enumerable assocoated with <paramref name="key"/>.</summary>
     public void Add(K key, T value);
 
+    ///<summary>Add all <paramref name="values"/> to enumerable assocoated with <paramref name="key"/>.</summary>
+    public void AddRange(K key, IEnumerable<T> values);
+
     ///<summary>Add <paramref name="pair"/>.</summary>
     public void Add(KeyValuePair<K, IEnumerable<T>> pair);
 
@@ -117,6 +120,12 @@ namespace Tlabs.Misc {
     public void Add(K key, T value) {
       if (!dict.TryGetValue(key, out var lst)) dict.Add(key, lst= new List<T>());
       lst.Add(value);
+    }
+
+    ///<inheritdoc/>
+    public void AddRange(K key, IEnumerable<T> values) {
+      if (!dict.TryGetValue(key, out var lst)) dict.Add(key, lst= new List<T>());
+      lst.AddRange(values);
     }
 
     ///<inheritdoc/>
