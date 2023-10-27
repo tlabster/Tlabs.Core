@@ -94,5 +94,16 @@ namespace Tlabs.Sync {
         return ret;
       }
     }
+
+    /// <summary>Return true if <paramref name="values"/> was removed from list with <paramref name="key"/> and returned</summary>
+    public bool TryRemoveList(K key, out IEnumerable<T> values) {
+      lock (dict) {
+        var ret= dict.TryGetValue(key, out var lst);
+        values= lst;
+        if (ret) dict.Remove(key);
+        return ret;
+      }
+    }
+
   }
 }
