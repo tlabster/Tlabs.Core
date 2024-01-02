@@ -49,9 +49,7 @@ namespace Tlabs.Config {
     ///<param name="config">Configuration (section)</param>
     public static Dictionary<string, object> ToNestedDictionary(this IConfiguration config) {
       return config.GetChildren().ToDictionary(child => child.Key,
-                                               child => (object)   (null == child.Value
-                                                                 ? config.GetSection(child.Key).ToNestedDictionary()
-                                                                 : child.Value));
+                                               child => (object)child.Value ?? config.GetSection(child.Key).ToNestedDictionary());
     }
 
     ///<summary>Load <see cref="IConfigurationBuilder"/> form json file.</summary>

@@ -5,7 +5,7 @@ namespace Tlabs.Dynamic {
   /// <summary>
   /// DynamicAttribute
   /// </summary>
-  public struct DynamicAttribute {
+  public readonly struct DynamicAttribute {
     /// <summary>
     /// Initializes a new instance of the <see cref="DynamicAttribute"/> class.
     /// </summary>

@@ -42,7 +42,7 @@ namespace Tlabs.Misc {
         res= null;
         return ret;
       }
-      finally { if (null != res) res.Dispose(); }
+      finally { res?.Dispose(); }
     }
 
     /// <summary>
@@ -77,9 +77,9 @@ namespace Tlabs.Misc {
           setupT(Undisposable(ref d), t);
           return Undisposable(ref t);
         }
-        finally { if (null != t) t.Dispose(); }
+        finally { t?.Dispose(); }
       }
-      finally { if (null != d) d.Dispose(); }
+      finally { d?.Dispose(); }
     }
 
     /// <summary>

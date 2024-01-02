@@ -9,8 +9,8 @@ namespace Tlabs.Sync {
 
   ///<summary>Buffered action runner</summary>
   public sealed class BufferedActionRunner : IDisposable {
-    static ILogger log= new App.AppLogger<BufferedActionRunner>();
-    object sync= new();
+    static readonly ILogger log= new App.AppLogger<BufferedActionRunner>();
+    readonly object sync= new();
     BufferedAction? buffAction;
 
     ///<summary>Run <paramref name="action"/> at least after <paramref name="bufferTime"/> has been elapsed (or earlier due to previous invocation within <paramref name="bufferTime"/>).</summary>
@@ -46,10 +46,10 @@ namespace Tlabs.Sync {
     }
 
     private sealed class BufferedAction : IDisposable {
-      DateTime start= DateTime.Now;
-      CancellationTokenSource cts= new();
-      int delay;
-      BufferedActionRunner actionRunner;
+      readonly DateTime start= DateTime.Now;
+      readonly CancellationTokenSource cts= new();
+      readonly int delay;
+      readonly BufferedActionRunner actionRunner;
       Action? action;
 
       public BufferedAction(BufferedActionRunner actionRunner, int bufferTime) {

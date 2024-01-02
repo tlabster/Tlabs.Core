@@ -21,6 +21,7 @@ namespace Tlabs.Sys {
 
     readonly string[] shellCmd;
     readonly SysCmdTemplates.CmdLine cmdLine;
+    // [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0052:Remove unread private member", Justification = "Not production code.")]
     string workingDirPath= "";
     string[] arguments= Array.Empty<string>();
     internal SystemCmd(string[] shellCmd, SysCmdTemplates.CmdLine? cmdLine) {
@@ -75,7 +76,7 @@ namespace Tlabs.Sys {
         RedirectStandardError= redirect,
         RedirectStandardOutput= redirect,
         UseShellExecute= false,
-        WorkingDirectory= this.cmdLine.WrkDir
+        WorkingDirectory= string.IsNullOrEmpty(workingDirPath) ? this.cmdLine.WrkDir : workingDirPath
       };
       foreach (var arg in run.args) startInfo.ArgumentList.Add(arg);
       var proc= new Process {
