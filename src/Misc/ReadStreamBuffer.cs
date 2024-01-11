@@ -80,6 +80,8 @@ namespace Tlabs.Misc {
 
     ///<inheritdoc/>
     public void Dispose() {
+      strm.Dispose();
+      start?.Dispose();
       end?.Dispose();
       start= end= null;
     }

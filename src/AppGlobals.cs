@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Tlabs.Config;
 using Tlabs.Misc;
 
+#nullable enable
+
 namespace Tlabs {
 
   ///<summary>Application global services.</summary>
@@ -42,18 +44,18 @@ namespace Tlabs {
 
     static readonly Lazy<IConfigurationRoot> cfgSettings;
     // static IWebHost host;
-    static ILoggerFactory logFactory;
-    static ILoggerFactory tmpLogFactory;
-    static readonly IHostApplicationLifetime notYetALife= new NotYetALifeApplication();
-    static IHostApplicationLifetime appLifetime= notYetALife;
-    static IServiceProvider appSvcProv;
+    static ILoggerFactory? logFactory;
+    static ILoggerFactory? tmpLogFactory;
+    static IHostApplicationLifetime? appLifetime= Singleton<NotYetALifeApplication>.Instance;
+    static IServiceProvider? appSvcProv;
 
-    static IAppTime appTime;
+    static IAppTime? appTime;
 
     static App() {
       ContentRoot= Directory.GetCurrentDirectory();
-      MainEntryPath= Assembly.GetEntryAssembly().Location;
-      FrameworkVersion= Path.GetFileName(Path.GetDirectoryName(typeof(System.Runtime.GCSettings).GetTypeInfo().Assembly.Location));
+      MainEntryPath= Assembly.GetEntryAssembly()?.Location ?? "";
+      if ("" == MainEntryPath) MainEntryPath= System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
+      FrameworkVersion= Environment.Version.ToString();  //Path.GetFileName(Path.GetDirectoryName(typeof(System.Runtime.GCSettings).GetTypeInfo().Assembly.Location));
 
       //Lazy configuration loading
       cfgSettings= new Lazy<IConfigurationRoot>(() => {
@@ -92,10 +94,10 @@ namespace Tlabs {
 
     private static ILoggerFactory getOrInitLogFact(Func<ILoggerFactory> loggerFact, bool setOnce= false) {
       if (setOnce || null == logFactory) {
-        var old= Interlocked.CompareExchange<ILoggerFactory>(ref logFactory, loggerFact(), null);
+        var old= Interlocked.CompareExchange<ILoggerFactory?>(ref logFactory, loggerFact(), null);
         if (   setOnce
             && null != old
-            && tmpLogFactory != Interlocked.CompareExchange<ILoggerFactory>(ref logFactory, loggerFact(), tmpLogFactory)
+            && tmpLogFactory != Interlocked.CompareExchange<ILoggerFactory?>(ref logFactory, loggerFact(), tmpLogFactory)
         ) throw new InvalidOperationException($"{nameof(LogFactory)} is already set.");
       }
       return logFactory;
@@ -118,25 +120,28 @@ namespace Tlabs {
     public static ILogger<T> Logger<T>() { return Singleton<AppLogger<T>>.Instance; }
 
     ///<summary>Application <see cref="IHostApplicationLifetime"/></summary>
-    public static IHostApplicationLifetime AppLifetime {
-      get { return appLifetime; }
-    }
+    public static IHostApplicationLifetime AppLifetime => appLifetime ?? Singleton<NotYetALifeApplication>.Instance;
 
     ///<summary>Application wide <see cref="IServiceProvider"/></summary>
     ///<remarks>
     /// This should be set (once) during application startup.
     ///</remarks>
-    public static IServiceProvider ServiceProv {
-      get { return appSvcProv; }
-      set {
-        if (null != appSvcProv || null != Interlocked.CompareExchange<IServiceProvider>(ref appSvcProv, value, null)) throw new InvalidOperationException($"{nameof(ServiceProv)} is already set.");
-        Interlocked.CompareExchange<IHostApplicationLifetime>(ref appLifetime, appSvcProv.GetService(typeof(IHostApplicationLifetime)) as IHostApplicationLifetime, notYetALife);
-      }
+    public static IServiceProvider ServiceProv => appSvcProv ?? Singleton<DEFAULT_ServiceProvider>.Instance;
+
+    /* Internal ServiceProv initialization:
+     * To support some unit-test szenarios, repeated IServiceProvider initalization is possible once a previously
+     * set IServiceProvider gets reset by providing null...
+     */
+    internal static IServiceProvider? InternalInitSvcProv(IServiceProvider? svcProv) {
+      if (null == svcProv) return (appSvcProv= null);
+      if (null != appSvcProv || null != Interlocked.CompareExchange<IServiceProvider?>(ref appSvcProv, svcProv, null)) throw new InvalidOperationException($"{nameof(ServiceProv)} is already set.");
+      Interlocked.CompareExchange<IHostApplicationLifetime?>(ref appLifetime, ServiceProv.GetService(typeof(IHostApplicationLifetime)) as IHostApplicationLifetime, Singleton<NotYetALifeApplication>.Instance);
+      return appSvcProv;
     }
 
     ///<summary>Exceutes the <paramref name="scopedAction"/> with a (new) scoped <see cref="IServiceProvider"/>.</summary>
     public static void WithServiceScope(Action<IServiceProvider> scopedAction) {
-      var scopeFac= ServiceProv.GetRequiredService(typeof(IServiceScopeFactory)) as IServiceScopeFactory;
+      var scopeFac= ServiceProv.GetRequiredService<IServiceScopeFactory>();
       using var svcScope= scopeFac.CreateScope();
       scopedAction(svcScope.ServiceProvider);
     }
@@ -144,7 +149,7 @@ namespace Tlabs {
     ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor
     ///resolved from the optional <paramref name="svcProv"/> (defaults to <see cref="ServiceProv"/>).
     ///</summary>
-    public static object CreateResolvedInstance(Type instanceType, IServiceProvider svcProv= null) => ActivatorUtilities.CreateInstance(svcProv ?? ServiceProv, instanceType);
+    public static object CreateResolvedInstance(Type instanceType, IServiceProvider? svcProv= null) => ActivatorUtilities.CreateInstance(svcProv ?? ServiceProv, instanceType);
 
     ///<summary>Runs an asynchronous background service by calling <paramref name="runSvc"/>.</summary>
     ///<typeparam name="TSvc">Type of the service being created.</typeparam>
@@ -170,16 +175,16 @@ namespace Tlabs {
     public static Task<TRes> RunBackgroundService<TSvc, TRes>(Type svcType, Func<TSvc, TRes> runSvc) where TRes : class {
       // return Task<TRes>.Run(() => {
       TRes service() {
-        TRes res= null;
+        TRes? res= null;
         WithServiceScope(svcProv => {
-          TSvc svc= default;
+          TSvc? svc= default;
           try {
             svc= (TSvc)CreateResolvedInstance(svcType, svcProv);
             res= runSvc(svc);
           }
           finally { (svc as IDisposable)?.Dispose(); }   //try to dispose
         });
-        return res;
+        return res ?? throw new InvalidOperationException($"Failed to invoke {runSvc.GetType().Name}");
       }
       // return Task.Run(service);
       return Task.Factory.StartNew(service,
@@ -195,11 +200,11 @@ namespace Tlabs {
     public static IAppTime TimeInfo {
       get {
         //if (null == appTime) throw new InvalidOperationException("Application time-zone info not set.");
-        return appTime ?? new DateTimeHelper();
+        return appTime ?? Singleton<DateTimeHelper>.Instance;
       }
       set {
-        if (   null != appTime 
-            || null != Interlocked.CompareExchange<IAppTime>(ref appTime, value, null)) throw new InvalidOperationException($"{nameof(appTime)} already determined.");
+        if (   null != appTime
+            || null != Interlocked.CompareExchange<IAppTime?>(ref appTime, value, null)) throw new InvalidOperationException($"{nameof(appTime)} already determined.");
       }
     }
 
@@ -210,8 +215,15 @@ namespace Tlabs {
       }
       public IDisposable BeginScope<TState>(TState state) { return log.BeginScope(state); }
       public bool IsEnabled(LogLevel logLevel) { return log.IsEnabled(logLevel); }
-      public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
+      public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
         log.Log<TState>(logLevel, eventId, state, exception, formatter);
+      }
+    }
+
+    internal class DEFAULT_ServiceProvider : IServiceProvider {
+      public object? GetService(Type serviceType) {
+        App.Logger<DEFAULT_ServiceProvider>().LogWarning(nameof(DEFAULT_ServiceProvider) + " DOES NOT PROVIDE ANY SERVICE: {type}", serviceType?.Name);
+        return null;
       }
     }
 

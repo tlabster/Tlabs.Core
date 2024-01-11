@@ -84,8 +84,8 @@ namespace Tlabs.Misc {
 
     ///<summary>Default ctor.</summary>
     public DictionaryList(Func<K, IEnumerable<T>> defaultValue, IEqualityComparer<K> comp= null) {
-      this.defaultValue= defaultValue;
-      this.dict= null ==comp ? new() : new(comp);
+      this.defaultValue= defaultValue ?? this.defaultValue;
+      this.dict= null == comp ? new() : new(comp);
     }
     ///<inheritdoc/>
     public IEnumerable<T> this[K key] {

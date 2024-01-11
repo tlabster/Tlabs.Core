@@ -9,7 +9,7 @@ namespace Tlabs.Sync {
 
   ///<summary>Buffered action runner</summary>
   public sealed class BufferedActionRunner : IDisposable {
-    static readonly ILogger log= new App.AppLogger<BufferedActionRunner>();
+    static readonly ILogger log= App.Logger<BufferedActionRunner>();
     readonly object sync= new();
     BufferedAction? buffAction;
 
@@ -19,7 +19,8 @@ namespace Tlabs.Sync {
     ///<p>If a subsequent invocation specifies a <paramref name="bufferTime"/> less than the remaining time due for the first buffered, it is run immediately</p>
     ///</remarks>
     public void Run(int bufferTime, Action action) {
-      lock (sync) {
+      if (0 == bufferTime) runAction(action);
+      else lock (sync) {
         buffAction??= new BufferedAction(this, bufferTime);
         buffAction.Schedule(action, bufferTime);
       }

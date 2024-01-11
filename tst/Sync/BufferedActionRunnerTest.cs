@@ -9,9 +9,9 @@ namespace Tlabs.Sync.Test {
 
   public class BufferedActionRunnerTest {
     ITestOutputHelper tstout;
-    
+
     public BufferedActionRunnerTest(ITestOutputHelper tstout) { this.tstout= tstout; }
-    
+
     class TstAction {
       ITestOutputHelper tstout;
       int n;
@@ -32,6 +32,15 @@ namespace Tlabs.Sync.Test {
 
     private void asyncRun(Action action) {
       Task.Factory.StartNew(() => action(), TaskCreationOptions.LongRunning);
+    }
+
+    [Fact]
+    public void UnbufferedlRunTest() {
+      using var bufRunner= new BufferedActionRunner();
+      var test= new TstAction(tstout);
+
+      bufRunner.Run(0, () => test.Action());
+      Assert.Equal(1, test.Cnt);
     }
 
     [Fact]

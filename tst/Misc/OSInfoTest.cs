@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading.Tasks;
+
 using Xunit;
 
 namespace Tlabs.Misc.Tests {
@@ -6,9 +8,12 @@ namespace Tlabs.Misc.Tests {
   public class OSInfoTest : IClassFixture<OSInfoTest.Fixture> {
 
     public sealed class Fixture {
-      public int ResolveCount= 0;
+      int resCnt= 0;
+      public int ResolveCount() {
+        lock(this) return resCnt;
+      }
       public Fixture() {
-        OSInfo.OSPlatformResolved+= _ => ++this.ResolveCount;
+        OSInfo.OSPlatformResolved+= _ => { lock(this) ++resCnt; };
       }
 
     }
@@ -19,12 +24,11 @@ namespace Tlabs.Misc.Tests {
 
     [Fact]
     public void ResolveOSTest() {
-      Assert.Equal(0, fix.ResolveCount);
-
-      var os= OSInfo.CurrentPlatform;
-      Assert.Equal(1, fix.ResolveCount);
-      Assert.Same(os.ToString(), OSInfo.CurrentPlatform.ToString());
-      Assert.Equal(1, fix.ResolveCount);
+      Assert.Equal(0, fix.ResolveCount());
+      var os= OSInfo.CurrentPlatform.ToString();
+      Assert.NotEmpty(os);
+      Assert.Same(os, OSInfo.CurrentPlatform.ToString());
+      Assert.Equal(1, fix.ResolveCount());
     }
 
   }

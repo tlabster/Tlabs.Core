@@ -10,8 +10,8 @@ namespace Tlabs.Misc {
   /// var ms= watch.GetElapsedTime().TotalMilliseconds;
   ///</example>
   public readonly struct TimingWatch {
-    static readonly double TPS= TimeSpan.TicksPerSecond / (double)Stopwatch.Frequency;
-    static readonly long TPMS= Stopwatch.Frequency / 1000;
+    // static readonly double TPS= TimeSpan.TicksPerSecond / (double)Stopwatch.Frequency;
+    static readonly long TPMS= Stopwatch.Frequency / 1000;  //ticks per msec.
     readonly long startTime;
 
     ///<summary>true if created by <see cref="TimingWatch.StartTiming()"/>.</summary>

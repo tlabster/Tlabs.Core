@@ -78,6 +78,10 @@ namespace Tlabs.Dynamic.Test {
       Assert.NotNull(dynExpr);
       Assert.True(dynExpr.Evaluate(TYPED_CTX));
 
+      var dynStrExpr= new DynamicExpression<IExpressionContext, string>("it.Product.ProdNumber + \": \" + (DateTime.Now).ToString()");
+      Assert.NotNull(dynStrExpr);
+      Assert.NotEmpty(dynStrExpr.Evaluate(TYPED_CTX));
+
       dynExpr= new DynamicExpression<IExpressionContext, bool>(@"
            it.Product != null
         && ""test text"" == Product.Properties[""prop01""].ToString()

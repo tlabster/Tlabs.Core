@@ -24,8 +24,6 @@ namespace Tlabs {
     const string ENV_ASPNET_PFX= "ASPNET_";
     static readonly Assembly entryAsm= Assembly.GetEntryAssembly();
 
-    static ILoggerFactory logFactory;
-
     ///<summary>Create a <see cref="IHostBuilder"/> from optional command line <paramref name="args"/>.</summary>
     public static IHostBuilder CreateAppHostBuilder(string[] args= null, Action<IHostBuilder, IConfiguration> cfgBuilder= null) => CreateAppHostBuilder(DFLT_HOST_SECTION, args, cfgBuilder);
     ///<summary>Create a <see cref="IHostBuilder"/> from <paramref name="hostSection"/> and command line <paramref name="args"/>.</summary>
@@ -39,7 +37,14 @@ namespace Tlabs {
        * for being availble immediately (even before the DI service provider has been setup...)
        * from App.Logger<T>
        */
-      logFactory= createLogFactory();
+      // createLogFactory();
+      InitLogging<ApplicationStartup>(App.Settings.GetSection("logging"), log => {
+        log.AddEventSourceLogger();
+        log.Services.Configure<LoggerFactoryOptions>(opt => opt.ActivityTrackingOptions=   ActivityTrackingOptions.SpanId
+                                                                                         | ActivityTrackingOptions.TraceId
+                                                                                         | ActivityTrackingOptions.ParentId
+        );
+      });
 
       var hostBuilder= new HostBuilder(); //Host.CreateDefaultBuilder(args) [https://github.com/dotnet/runtime/blob/79ae74f5ca5c8a6fe3a48935e85bd7374959c570/src/libraries/Microsoft.Extensions.Hosting/src/Host.cs]
       hostBuilder.UseContentRoot(App.ContentRoot);
@@ -52,7 +57,7 @@ namespace Tlabs {
       /* Configure additional host settings:
        */
       cfgBuilder?.Invoke(hostBuilder, hostSettings);
-     
+
       /* Configure DI service provider (with validation in development environment).
        */
       hostBuilder.UseDefaultServiceProvider((hostingCtx, options) => {
@@ -66,38 +71,38 @@ namespace Tlabs {
       hostBuilder.ConfigureServices((hostingCtx, services) => {
         services.AddOptions();
 
-        services.AddSingleton<ILoggerFactory>(logFactory);
+        services.AddSingleton<ILoggerFactory>(App.LogFactory);
         services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
 
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
-              new DefaultLoggerLevelConfigureOptions(LogLevel.Information)));         
+              new DefaultLoggerLevelConfigureOptions(LogLevel.Information)));
       });
-        
+
       return hostBuilder;
     }
 
-    static ILoggerFactory createLogFactory() {
-      var logConfig= App.Settings.GetSection("logging");
-      var logFac= LoggerFactory.Create(log => {
-        log.AddConfiguration(logConfig);
-        log.AddEventSourceLogger();
-        log.ApplyConfigurators(logConfig, "configurator");
-        log.Services.Configure<LoggerFactoryOptions>(opt => opt.ActivityTrackingOptions=   ActivityTrackingOptions.SpanId
-                                                                                         | ActivityTrackingOptions.TraceId
-                                                                                         | ActivityTrackingOptions.ParentId
-        );
+    ///<summary>Initialize logging from <paramref name="logConfig"/> and <paramref name="logBuilder"/>.</summary>
+    ///<remarks>This is setting up the application central <see cref="App.LogFactory"/>.</remarks>
+    ///<returns>A start up logger for class <typeparamref name="T"/></returns>
+    public static ILogger<T> InitLogging<T>(IConfigurationSection logConfig, Action<ILoggingBuilder> logBuilder) {
+      App.LogFactory= LoggerFactory.Create(builder => {
+        if (null != logConfig) {
+          builder.AddConfiguration(logConfig);
+          builder.ApplyConfigurators(logConfig, "configurator");
+        }
+        logBuilder?.Invoke(builder);
       });
-      App.LogFactory= logFac;
-      App.Logger<ApplicationStartup>().LogCritical(        //this is the very first log entry
+      var log= App.Logger<T>();
+      log.LogCritical(        //this is the very first log entry
         "*** {appName}\n" +
         "\t({path})\n" +
         "\ton {netVers} ({arch})\n" +
         "\t - {os}",
         entryAsm.FullName,
-        entryAsm.Location,
+        App.MainEntryPath,
         $"{RTinfo.FrameworkDescription} framwork", RTinfo.OSArchitecture,
         RTinfo.OSDescription);
-      return logFac;
+      return log;
     }
 
     sealed class DefaultLoggerLevelConfigureOptions : ConfigureOptions<LoggerFilterOptions> {

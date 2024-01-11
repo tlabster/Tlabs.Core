@@ -15,7 +15,7 @@ namespace Tlabs.Config {
   public class ApiClientConfigurator : IConfigurator<IServiceCollection> {
     #pragma warning disable IDE0052 //keep fields for possible future use
     readonly IDictionary<string, string> config;
-    readonly ILogger log= App.Logger<ApiClientConfigurator>();
+    // readonly ILogger log= App.Logger<ApiClientConfigurator>();
 
     ///<summary>Default ctor.</summary>
     public ApiClientConfigurator() : this(null) { }

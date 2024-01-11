@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 using Microsoft.Extensions.Options;
 
@@ -43,10 +45,41 @@ namespace Tlabs.Sys.Tests {
     }
 
     [Fact]
-    public async void BufferedHelloTest() {
+    public void RawCmdTest() {
+      var cmd= new SystemCmd(new string[]{"cmd.exe", "/?"});
+      var cln= cmd.CmdLine;
+      Assert.StartsWith("cmd.exe", cln.cmd);
+      Assert.Equal(1, cln.args.Length);
+    }
+
+    // [Fact]
+    // public async Task RawCmdTest2() {
+    //   // var cmd= new SystemCmd(new string[]{@"D:\opt\Tools\echo.exe", "hello"});
+    //   var cmd = new SystemCmd(new string[] { "cmd.exe", "/?" });
+    //   var cln= cmd.CmdLine;
+    //   var cmdIO= new StdCmdIO();
+    //   var cmdTsk= cmd.Run(cmdIO, redirStdOut: true);
+
+    //   // for (string? line= await cmdIO.StdOut.ReadLineAsync(); null != line; line= await cmdIO.StdOut.ReadLineAsync()) {
+    //   //   tstout.WriteLine(line);
+    //   // }
+    //   for (string? line= await cmdIO.StdOut.ReadLineAsync();
+    //        null != line;
+    //        line= await cmdIO.StdOut.ReadLineAsync()) {
+    //     tstout.WriteLine(line);
+    //   }
+    //   tstout.WriteLine("stdOut closed");
+    //   await cmdTsk;
+    // }
+
+    [Fact]
+    public void InvalidCliCmdTest() {
       var cli0= new SystemCli(new TstOptions<Dictionary<string, SysCmdTemplates>>(new()));
       Assert.Throws<ArgumentException>(() => cli0.Command("missing"));
+    }
 
+    [Fact]
+    public async void BufferedHelloTest() {
       var cli= new SystemCli(new TstOptions<Dictionary<string, SysCmdTemplates>>(this.sysCmdTemplates));
       var cmd= cli.Command("hello");
       var res= await cmd.UseArguments("one", "two")
@@ -62,5 +95,27 @@ namespace Tlabs.Sys.Tests {
       tstout.WriteLine(res.StdErr.ReadToEnd());
       Assert.Equal(0, res.ExitCode);
     }
+
+    [Fact]
+    public async void AsyncHelloTest() {
+      var cli= new SystemCli(new TstOptions<Dictionary<string, SysCmdTemplates>>(this.sysCmdTemplates));
+      var cmd= cli.Command("hello");
+      var cmdIO= new StdCmdIO();
+      var cmdTsk= cmd.UseArguments("one", "two")
+                     .Run(cmdIO, redirStdOut: true);
+      var outLine= await cmdIO.StdOut.ReadLineAsync();
+      tstout.WriteLine(outLine);
+      Assert.Equal("Hello, world!", outLine);
+      outLine= await cmdIO.StdOut.ReadLineAsync();
+      tstout.WriteLine(outLine);
+      Assert.Equal("Params: \"one\" \"two\"", outLine);
+      var endTsk= cmdIO.StdOut.ReadToEndAsync();
+
+      var res= await cmdTsk;
+      Assert.Equal(0, res.ExitCode);
+      Assert.Empty((await endTsk).Trim());
+
+    }
+
   }
 }

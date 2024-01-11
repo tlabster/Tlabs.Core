@@ -30,7 +30,7 @@ namespace Tlabs.Dynamic {
     static readonly CustomAttributeBuilder DebuggerBrowsableAttrib= new CustomAttributeBuilder(typeof(DebuggerBrowsableAttribute).GetConstructor(new[] { typeof(DebuggerBrowsableState) }), new object[] { DebuggerBrowsableState.Never });
     static readonly CustomAttributeBuilder DebuggerHiddenAttrib= new CustomAttributeBuilder(typeof(DebuggerHiddenAttribute).GetConstructor(EmptyTypes), Array.Empty<object>());
 
-    static readonly ConstructorInfo DefaultCtor= typeof(object).GetConstructor(EmptyTypes);
+    // static readonly ConstructorInfo DefaultCtor= typeof(object).GetConstructor(EmptyTypes);
     static readonly MethodInfo ToStringMethod= typeof(object).GetMethod("ToString", BindingFlags.Instance | BindingFlags.Public);
 
     static readonly ConstructorInfo StringBuilderCtor= typeof(StringBuilder).GetConstructor(EmptyTypes);
@@ -45,7 +45,7 @@ namespace Tlabs.Dynamic {
     static readonly MethodInfo EqualityComparerGetHashCode= EqualityComparer.GetMethod("GetHashCode", new[] { EqualityComparerGenericArgument });
 
     static readonly Type DefaultBaseType= typeof(object);
-    static readonly string typeNamePrefix= "<>__" + nameof(DynamicClassFactory) + "__";
+    const string typeNamePrefix= "<>__" + nameof(DynamicClassFactory) + "__";
     static int sequence;  //= 0;
     class PropertyDef {
       public string Name;

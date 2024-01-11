@@ -1,9 +1,8 @@
 ﻿
 using System;
 using System.IO;
-using System.Linq;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 #nullable enable
 
@@ -55,4 +54,20 @@ namespace Tlabs.Sys {
     }
   }
 
+  ///<summary>Buffered system command result</summary>
+  public class StdCmdIO {
+    ///<summary>Standard out stream</summary>
+    public TextReader StdOut { get; set; }= TextReader.Null;
+    ///<summary>Standard error stream</summary>
+    public TextReader StdErr { get; set; }= TextReader.Null;
+    ///<summary>Standard input stream</summary>
+    public TextWriter StdIn { get; set; }= TextWriter.Null;
+
+    ///<summary>Close all IO streams.</summary>
+    public void CloseAll() {
+      StdOut.Close();
+      StdErr.Close();
+      StdIn.Close();
+    }
+  }
 }

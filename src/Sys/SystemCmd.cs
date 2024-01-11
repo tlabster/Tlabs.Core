@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 
 using Microsoft.Extensions.Logging;
+using Tlabs.Misc;
 
 #nullable enable
 
@@ -24,10 +25,15 @@ namespace Tlabs.Sys {
     // [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0052:Remove unread private member", Justification = "Not production code.")]
     string workingDirPath= "";
     string[] arguments= Array.Empty<string>();
-    internal SystemCmd(string[] shellCmd, SysCmdTemplates.CmdLine? cmdLine) {
+
+    ///<summary>Ctor from <paramref name="shellCmd"/> and <paramref name="cmdLine"/></summary>
+    public SystemCmd(string[] shellCmd, SysCmdTemplates.CmdLine? cmdLine= null) {
       this.shellCmd= shellCmd;
       this.cmdLine= cmdLine ?? new();
     }
+
+    ///<summary>Effective command line (fully resolved)</summary>
+    public (string cmd, string[] args) CmdLine => this.cmdLine.ResolveArguments(this.shellCmd, this.arguments);
 
     ///<summary>Use working directory</summary>
     public SystemCmd UseWorkingDir(string path) {
@@ -48,7 +54,7 @@ namespace Tlabs.Sys {
     public async Task<SysBufferedCmdResult> BufferedRun(CancellationToken ctk= default) {
       var bufferedRes= new SysBufferedCmdResult();
 
-      using var proc= createProcess(bufferedRes, redirect: true);
+      using var proc= createProcess(bufferedRes, redirStdOut: true, redirStdErr: true);
 
       /* Attach redirected output stream:
        */
@@ -67,33 +73,82 @@ namespace Tlabs.Sys {
       return bufferedRes;
     }
 
-    private Process createProcess(SysCmdResult cmdRes, bool redirect) {
-      var run= this.cmdLine.ResolveArguments(this.shellCmd, this.arguments);
+    ///<summary>Run this command with a new OS process and optional redirected <paramref name="stdIO"/></summary>
+    ///<remarks>Any redirected <paramref name="stdIO"/> streams can be read / written until the returned <see cref="Task"/> completes.
+    ///</remarks>
+    ///<returns><see cref="SysCmdResult"/></returns>
+    public async Task<SysCmdResult> Run(StdCmdIO? stdIO= null, bool redirStdOut= false, bool redirStdErr= false, bool redirStdIn= false, CancellationToken ctk= default) {
+      var cmdRes= new SysCmdResult();
+      using var proc= createProcess(cmdRes, redirStdOut, redirStdErr, redirStdIn);
+
+      /* Attach redirected output stream:
+       */
+      if (null != stdIO) {
+        if (redirStdOut) {
+          var br= new BufferedReader(ctk);
+          stdIO.StdOut= br;
+          proc.OutputDataReceived+= (_, ev) => br.BufferLine(ev.Data);
+          br.Closing+= () => proc.CancelOutputRead();
+          proc.BeginOutputReadLine();
+        }
+        if (redirStdErr) {
+          var br= new BufferedReader(ctk);
+          stdIO.StdErr= br;
+          proc.ErrorDataReceived+= (_, ev) => br.BufferLine(ev.Data);
+          br.Closing+= () => proc.CancelErrorRead();
+          proc.BeginErrorReadLine();
+        }
+        if (redirStdIn) {
+          stdIO.StdIn= proc.StandardInput;
+        }
+      }
+
+      try {
+        await proc.WaitForExitAsync(ctk);
+        cmdRes.ExitCode= proc.ExitCode;
+      }
+      finally {
+        stdIO?.CloseAll();
+        if (!proc.HasExited) proc.Kill(entireProcessTree: true);
+      }
+      return cmdRes;
+    }
+
+
+    private Process createProcess(SysCmdResult cmdRes, bool redirStdOut= false, bool redirStdErr= false, bool redirStdIn= false) {
+      var run= this.CmdLine;
 
       var startInfo= new ProcessStartInfo {
         FileName= run.cmd,
         CreateNoWindow= true,
-        RedirectStandardError= redirect,
-        RedirectStandardOutput= redirect,
+        RedirectStandardError= redirStdErr,
+        RedirectStandardOutput= redirStdOut,
+        RedirectStandardInput= redirStdIn,
         UseShellExecute= false,
         WorkingDirectory= string.IsNullOrEmpty(workingDirPath) ? this.cmdLine.WrkDir : workingDirPath
       };
       foreach (var arg in run.args) startInfo.ArgumentList.Add(arg);
+
       var proc= new Process {
         StartInfo= startInfo,
         EnableRaisingEvents= true
       };
-      proc.Exited+= (_, _) => cmdRes.ExitTime= DateTime.Now;  //Process.ExitTime could become inaccessible after exit...
-
-      log.LogInformation("Starting process: {proc} {args}", run.cmd, string.Join(" ", run.args));
-      return startProcess(proc, cmdRes);
+      try {
+        log.LogInformation("Starting process: {proc} {args}", run.cmd, string.Join(" ", run.args));
+        return startProcess(proc, cmdRes);
+      }
+      catch (Exception) {
+        proc.Dispose();
+        throw;
+      }
     }
 
     private static Process startProcess(Process proc, SysCmdResult cmdRes) {
       var cmd= proc.StartInfo.FileName;
       try {
+        proc.Exited+= (_, _) => cmdRes.ExitTime= DateTime.Now;  //Process.ExitTime could become inaccessible after exit...
+        cmdRes.StartTime= DateTime.Now;                         //Process.StartTime could become inaccessible after exit...
         if (!proc.Start()) throw new InvalidOperationException($"{cmd} was not started - but reused?");
-        cmdRes.StartTime= DateTime.Now;   //Process.StartTime could become inaccessible after exit...
       }
       catch (System.ComponentModel.Win32Exception e) { throw new InvalidOperationException($"Failed to start {cmd}", e); }
 
