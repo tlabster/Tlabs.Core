@@ -10,8 +10,8 @@ namespace Tlabs.Config {
   public static class ConfigurationObjectLoaderExt {
     internal class ObjectDescriptor {
       public int ord { get; set; }
-      public string type { get; set; }
-      public Dictionary<string, string> config { get; set; }
+      public string? type { get; set; }
+      public Dictionary<string, string>? config { get; set; }
     }
 
     ///<summary>Configuration object with section key.</summary>
@@ -38,19 +38,19 @@ namespace Tlabs.Config {
         }
         var configDesc= $"{secName}:{tpair.Key ?? "?"}:type: {objDsc.type}";
         Type tp= Misc.Safe.LoadType(objDsc.type, configDesc);
-        T obj= null;
+        T? obj= null;
         try {
           try { // frist from ctor taking a config dictionary
-            obj= (T)Activator.CreateInstance(tp, new object[] {objDsc.config});
+            obj= (T?)Activator.CreateInstance(tp, new object?[] {objDsc.config});
           }
           catch (MissingMemberException) {
-            obj= (T)Activator.CreateInstance(tp); //try with default ctor
+            obj= (T?)Activator.CreateInstance(tp); //try with default ctor
           }
         }
         catch (Exception e) { throw new AppConfigException($"Failed to create {typeName} instance for {configDesc}", e); }
         if (null != obj)
           yield return new CfgObject<T> {
-            SectionName= tpair.Key,
+            SectionName= tpair.Key!,
             Object= obj
           };
       }

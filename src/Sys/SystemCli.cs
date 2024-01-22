@@ -19,7 +19,7 @@ namespace Tlabs.Sys {
   public class SystemCli {
 
     static readonly ILogger log= Tlabs.App.Logger<SystemCli>();
-    readonly IReadOnlyDictionary<string, SysCmdTemplates> osPlatformCommands;
+    readonly Dictionary<string, SysCmdTemplates> osPlatformCommands;
     readonly SysCmdTemplates platformCmdTemplates;
 
     ///<summary>Ctor from <paramref name="sysCmdOptions"/></summary>

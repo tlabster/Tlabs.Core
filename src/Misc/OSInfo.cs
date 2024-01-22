@@ -4,8 +4,7 @@ using System.Runtime.InteropServices;
 namespace Tlabs.Misc {
   ///<summary>Operating system info</summary>
   public sealed class OSInfo {
-    OSInfo() { } //private ctor
-    internal static event Action<OSPlatform?> OSPlatformResolved; //resolve event for testing
+    internal static event Action<OSPlatform?>? OSPlatformResolved; //resolve event for testing
 
     ///<summary>Current <see cref="OSPlatform"/></summary>
     public static OSPlatform CurrentPlatform => LazyOSInfo.currentOSPlatform;

@@ -1,8 +1,7 @@
 ﻿
 using System;
 using System.IO;
-using System.Threading.Tasks;
-using System.Diagnostics;
+using System.Threading;
 
 #nullable enable
 
@@ -11,7 +10,7 @@ namespace Tlabs.Sys {
   ///<summary>System command result</summary>
   public class SysCmdResult : IDisposable {
     ///<summary>true if disposed</summary>
-    protected bool isDisposed;
+    protected int isDisposed;
 
     ///<summary>Start time</summary>
     public DateTime StartTime { get; set; }
@@ -22,12 +21,10 @@ namespace Tlabs.Sys {
 
     ///<summary>Internal dispose</summary>
     protected virtual void Dispose(bool disposing) {
-      if (!isDisposed) {
-        // if (disposing) {
-        //   // TODO: dispose managed state (managed objects)
-        // }
-        isDisposed= true;
-      }
+      if (0 != Interlocked.Exchange(ref isDisposed, 1)) return;
+      // if (disposing) {
+      //   // TODO: dispose managed state (managed objects)
+      // }
     }
 
     ///<inheritdoc/>
@@ -46,7 +43,7 @@ namespace Tlabs.Sys {
 
     ///<inheritdoc/>
     protected override void Dispose(bool disposing) {
-      if (!isDisposed && disposing) {
+      if (0 == isDisposed && disposing) {
         StdOut.Dispose();
         StdErr.Dispose();
       }

@@ -26,32 +26,32 @@ namespace Tlabs.Dynamic {
     static readonly ModuleBuilder ModuleBuilder;
 
     // Some objects we cache
-    static readonly CustomAttributeBuilder CompilerGeneratedAttrib= new CustomAttributeBuilder(typeof(CompilerGeneratedAttribute).GetConstructor(EmptyTypes), Array.Empty<object>());
-    static readonly CustomAttributeBuilder DebuggerBrowsableAttrib= new CustomAttributeBuilder(typeof(DebuggerBrowsableAttribute).GetConstructor(new[] { typeof(DebuggerBrowsableState) }), new object[] { DebuggerBrowsableState.Never });
-    static readonly CustomAttributeBuilder DebuggerHiddenAttrib= new CustomAttributeBuilder(typeof(DebuggerHiddenAttribute).GetConstructor(EmptyTypes), Array.Empty<object>());
+    static readonly CustomAttributeBuilder CompilerGeneratedAttrib= new CustomAttributeBuilder(typeof(CompilerGeneratedAttribute).GetConstructor(EmptyTypes)!, Array.Empty<object>());
+    static readonly CustomAttributeBuilder DebuggerBrowsableAttrib= new CustomAttributeBuilder(typeof(DebuggerBrowsableAttribute).GetConstructor(new[] { typeof(DebuggerBrowsableState) })!, new object[] { DebuggerBrowsableState.Never });
+    static readonly CustomAttributeBuilder DebuggerHiddenAttrib= new CustomAttributeBuilder(typeof(DebuggerHiddenAttribute).GetConstructor(EmptyTypes)!, Array.Empty<object>());
 
     // static readonly ConstructorInfo DefaultCtor= typeof(object).GetConstructor(EmptyTypes);
-    static readonly MethodInfo ToStringMethod= typeof(object).GetMethod("ToString", BindingFlags.Instance | BindingFlags.Public);
+    static readonly MethodInfo ToStringMethod= typeof(object).GetMethod("ToString", BindingFlags.Instance | BindingFlags.Public)!;
 
-    static readonly ConstructorInfo StringBuilderCtor= typeof(StringBuilder).GetConstructor(EmptyTypes);
-    static readonly MethodInfo StringBuilderAppendString= typeof(StringBuilder).GetMethod("Append", new[] { typeof(string) });
-    static readonly MethodInfo StringBuilderAppendObject= typeof(StringBuilder).GetMethod("Append", new[] { typeof(object) });
+    static readonly ConstructorInfo StringBuilderCtor= typeof(StringBuilder).GetConstructor(EmptyTypes)!;
+    static readonly MethodInfo StringBuilderAppendString= typeof(StringBuilder).GetMethod("Append", new[] { typeof(string) })!;
+    static readonly MethodInfo StringBuilderAppendObject= typeof(StringBuilder).GetMethod("Append", new[] { typeof(object) })!;
 
     static readonly Type EqualityComparer= typeof(EqualityComparer<>);
     static readonly Type EqualityComparerGenericArgument= EqualityComparer.GetGenericArguments()[0];
 
-    static readonly MethodInfo EqualityComparerDefault= EqualityComparer.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public);
-    static readonly MethodInfo EqualityComparerEquals= EqualityComparer.GetMethod("Equals", new[] { EqualityComparerGenericArgument, EqualityComparerGenericArgument });
-    static readonly MethodInfo EqualityComparerGetHashCode= EqualityComparer.GetMethod("GetHashCode", new[] { EqualityComparerGenericArgument });
+    static readonly MethodInfo EqualityComparerDefault= EqualityComparer.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public)!;
+    static readonly MethodInfo EqualityComparerEquals= EqualityComparer.GetMethod("Equals", new[] { EqualityComparerGenericArgument, EqualityComparerGenericArgument })!;
+    static readonly MethodInfo EqualityComparerGetHashCode= EqualityComparer.GetMethod("GetHashCode", new[] { EqualityComparerGenericArgument })!;
 
     static readonly Type DefaultBaseType= typeof(object);
     const string typeNamePrefix= "<>__" + nameof(DynamicClassFactory) + "__";
     static int sequence;  //= 0;
     class PropertyDef {
-      public string Name;
-      public Type Type;
-      public IList<DynamicAttribute> Attributes;
-      public FieldBuilder Field;
+      public required string Name;
+      public required Type Type;
+      public required IList<DynamicAttribute> Attributes;
+      public FieldBuilder? Field;
       public override string ToString() => $"{Name}[{Type.Name}]";
     }
 
@@ -61,7 +61,7 @@ namespace Tlabs.Dynamic {
     static DynamicClassFactory() {
       var assemblyName= new AssemblyName(typeof(DynamicClassFactory).FullName + ", Version=1.0.0.0");
       var assemblyBuilder= AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
-      ModuleBuilder= assemblyBuilder.DefineDynamicModule(assemblyName.Name);
+      ModuleBuilder= assemblyBuilder.DefineDynamicModule(assemblyName.Name!);
     }
 
     /// <summary>Dynamically creates a new class type with a given set of public properties.</summary>
@@ -94,8 +94,8 @@ namespace Tlabs.Dynamic {
     /// ]]>
     /// </code>
     /// </example>
-    public static Type CreateType(IList<DynamicProperty> properties, Type parentType= null, string typeName= null) {
-      if (null == properties) throw new ArgumentNullException(nameof(properties));
+    public static Type CreateType(IList<DynamicProperty> properties, Type? parentType= null, string? typeName= null) {
+      ArgumentNullException.ThrowIfNull(properties);
 
       parentType??= DefaultBaseType;
       string typeKey=   string.IsNullOrEmpty(typeName)
@@ -110,16 +110,16 @@ namespace Tlabs.Dynamic {
           log.LogTrace("Returning existing type: {tp}", type.Name);
         }
       }
-      return typeCache[typeKey, createNew];
+      return typeCache[typeKey, createNew] ?? throw new InvalidOperationException($"Failed to create {typeKey}");
     }
 
-    private static Type createNewType(IList<DynamicProperty> properties, Type parentType, string typeName) {
+    private static Type createNewType(IList<DynamicProperty> properties, Type parentType, string? typeName) {
       Type type;
       string seq= $"_{Interlocked.Increment(ref sequence)}";
-      var genericType= string.IsNullOrEmpty(typeName);
+      bool isGeneric= string.IsNullOrEmpty(typeName);
 
       string name=   typeNamePrefix
-                   + (genericType ? $"{seq}`{properties.Count}" : (typeName + seq));
+                   + (isGeneric ? $"{seq}`{properties.Count}" : (typeName + seq));
       log.LogTrace("Creating new dynamic type: '{type}'", name);
 
       TypeBuilder tb= ModuleBuilder.DefineType(name,
@@ -135,7 +135,7 @@ namespace Tlabs.Dynamic {
       var propDefs= properties.Select(prop => new PropertyDef { Name= prop.Name, Type= prop.Type, Attributes= prop.Attributes }).ToList();
       if (log.IsEnabled(LogLevel.Trace)) log.LogTrace("Properties of '{type}': {props}", name, string.Join(", ", propDefs));
 
-      if (genericType) {
+      if (isGeneric) {
         var genericParams=   propDefs.Count > 0
                            ? tb.DefineGenericParameters(propDefs.Select(prop => $"TPar__<{prop.Name}>").ToArray())
                            : Array.Empty<GenericTypeParameterBuilder>();
@@ -189,15 +189,16 @@ namespace Tlabs.Dynamic {
 
       var first= true;
       foreach (var prop in propDefs) {
+        if (null == prop.Field) throw new InvalidOperationException("Missing field builder");
         Type equalityComparerT= EqualityComparer.MakeGenericType(prop.Type);
 
         // Equals()
-        MethodInfo equalityComparerTDefault=   genericType
-                                              ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerDefault)
-                                              : equalityComparerT.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public);
-        MethodInfo equalityComparerTEquals=   genericType
-                                              ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerEquals)
-                                              : equalityComparerT.GetMethod("Equals", new[] { prop.Type, prop.Type });
+        MethodInfo equalityComparerTDefault=   isGeneric
+                                             ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerDefault)!
+                                             : equalityComparerT.GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public)!;
+        MethodInfo equalityComparerTEquals=   isGeneric
+                                              ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerEquals)!
+                                              : equalityComparerT.GetMethod("Equals", new[] { prop.Type, prop.Type })!;
 
         // Illegal one-byte branch at position: 9. Requested branch was: 143.
         // So replace OpCodes.Brfalse_S to OpCodes.Brfalse
@@ -210,9 +211,9 @@ namespace Tlabs.Dynamic {
         ilEquals.Emit(OpCodes.Callvirt, equalityComparerTEquals);
 
         // GetHashCode();
-        MethodInfo equalityComparerTGetHashCode=   genericType
-                                                 ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerGetHashCode)
-                                                 : equalityComparerT.GetMethod("GetHashCode", new[] { prop.Type });
+        MethodInfo equalityComparerTGetHashCode=   isGeneric
+                                                 ? TypeBuilder.GetMethod(equalityComparerT, EqualityComparerGetHashCode)!
+                                                 : equalityComparerT.GetMethod("GetHashCode", new[] { prop.Type })!;
         ilGetHashCode.Emit(OpCodes.Stloc_0);
         ilGetHashCode.Emit(OpCodes.Ldc_I4, -1521134295);
         ilGetHashCode.Emit(OpCodes.Ldloc_0);
@@ -307,11 +308,11 @@ namespace Tlabs.Dynamic {
         /* Apply custom property attributes:
           */
         if (null != prop.Attributes) foreach (var attr in prop.Attributes) {
-            property.SetCustomAttribute(
-              new CustomAttributeBuilder(attr.Type.GetConstructor(attr.Parameters.Select(o => o?.GetType()).ToArray()),
-                                        attr.Parameters)
-            );
-          }
+          property.SetCustomAttribute(
+            new CustomAttributeBuilder(attr.Type.GetConstructor(attr.Parameters.Where(p => null != p).Select(p => p.GetType()).ToArray())!,
+                                       attr.Parameters)
+          );
+        }
       }
     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.Threading;
 
 #nullable enable
 
@@ -91,7 +92,7 @@ namespace Tlabs.Misc {
     sealed class BufferSegment : ReadOnlySequenceSegment<byte>, IDisposable {
       public IMemoryOwner<byte> Buffer { get; }
       readonly BufferSegment? prev;
-      private bool isDisposed;
+      int isDisposed;
 
       public BufferSegment(int size, BufferSegment? prev) {
         Buffer= MemoryPool<byte>.Shared.Rent(size);
@@ -111,11 +112,9 @@ namespace Tlabs.Misc {
       public void SetNext(BufferSegment next) => Next= next;
 
       public void Dispose() {
-        if (!isDisposed) {
-          isDisposed= true;
-          Buffer.Dispose();
-          prev?.Dispose();
-        }
+        if (0 != Interlocked.Exchange(ref isDisposed, 1)) return;
+        Buffer.Dispose();
+        prev?.Dispose();
       }
     }
   }

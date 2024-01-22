@@ -74,14 +74,14 @@ namespace Tlabs.Dynamic {
 
       return (new Type[] { type }).Concat(type.GetInterfaces())
                                   .SelectMany(i => i.GetProperties());
-    }    
+    }
 
     ///<summary>
     /// Parse the <paramref name="expression"/> with access to the public properties of <typeparamref name="TCtx"/> (and <paramref name="funcLib"/>) returning <paramref name="retType"/>
     /// into a <see cref="LambdaExpression"/>.
     ///</summary>
     public static LambdaExpression ParsedExpression<TCtx>(string expression, Type retType, IReadOnlyDictionary<string, object> funcLib) {
-      if (null == expression) throw new ArgumentNullException(nameof(expression));
+      ArgumentNullException.ThrowIfNull(expression);
       try {
         return DynamicExpressionParser.ParseLambda(false, typeof(TCtx), retType, expression, funcLib);
       }

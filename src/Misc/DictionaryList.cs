@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Tlabs.Misc {
   ///<summary>Read-only dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
-  public interface IReadOnlyDictList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> {
+  public interface IReadOnlyDictList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> where K : notnull {
     ///<summary>The list (enumation) associated with <paramref name="key"/>.</summary>
     public IEnumerable<T> this[K key] { get; }
     ///<summary>Read-only collection of keys.</summary>
@@ -31,7 +32,7 @@ namespace Tlabs.Misc {
   }
 
   ///<summary>Dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
-  public interface IDictionaryList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> {
+  public interface IDictionaryList<K, T> : IEnumerable<KeyValuePair<K, IEnumerable<T>>> where K : notnull {
     ///<summary>The list (enumation) associated with <paramref name="key"/>.</summary>
     public IEnumerable<T> this[K key] { get; set; }
     ///<summary>Read-only collection of keys.</summary>
@@ -75,7 +76,7 @@ namespace Tlabs.Misc {
   }
 
   ///<summary>Dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
-  public class DictionaryList<K, T> : IDictionaryList<K, T>, IReadOnlyDictList<K, T> {
+  public class DictionaryList<K, T> : IDictionaryList<K, T>, IReadOnlyDictList<K, T> where K : notnull {
     readonly Dictionary<K, List<T>> dict;
     readonly Func<K, IEnumerable<T>> defaultValue= key => throw new KeyNotFoundException(key?.ToString()??"<null>");
 
@@ -83,7 +84,7 @@ namespace Tlabs.Misc {
     public DictionaryList() { dict= new(); }
 
     ///<summary>Default ctor.</summary>
-    public DictionaryList(Func<K, IEnumerable<T>> defaultValue, IEqualityComparer<K> comp= null) {
+    public DictionaryList(Func<K, IEnumerable<T>> defaultValue, IEqualityComparer<K>? comp= null) {
       this.defaultValue= defaultValue ?? this.defaultValue;
       this.dict= null == comp ? new() : new(comp);
     }
@@ -137,7 +138,7 @@ namespace Tlabs.Misc {
     public void Clear() => dict.Clear();
 
     ///<inheritdoc/>
-    public bool Contains(T item) => Values.Any(i => i.Equals(item));
+    public bool Contains(T item) => Values.Contains(item);
 
     ///<inheritdoc/>
     public bool ContainsKey(K key) => dict.ContainsKey(key);
@@ -154,7 +155,7 @@ namespace Tlabs.Misc {
     ///<inheritdoc/>
     public bool TryGetValue(K key, out IEnumerable<T> value) {
       var ret= dict.TryGetValue(key, out var lst);
-      value= lst;
+      value= lst!;
       return ret;
     }
 

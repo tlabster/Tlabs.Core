@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Tlabs.Dynamic {
   /// <summary>
@@ -12,10 +13,10 @@ namespace Tlabs.Dynamic {
     /// <param name="name">The name from the property.</param>
     /// <param name="type">The type from the property.</param>
     /// <param name="attributes">The list of attributes to annotate the property (optional)</param>
-    public DynamicProperty(string name, Type type, IList<DynamicAttribute> attributes= null) {
-      Name = name;
-      Type = type;
-      Attributes = attributes;
+    public DynamicProperty(string name, Type type, IList<DynamicAttribute>? attributes= null) {
+      Name= name;
+      Type= type;
+      Attributes= attributes ?? ImmutableList<DynamicAttribute>.Empty;
     }
 
     /// <summary>

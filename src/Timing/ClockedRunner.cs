@@ -11,10 +11,10 @@ namespace Tlabs.Timing {
   ///<summary>Utillity to invoke a delegate repeatingly with a given clock interval.</summary>
   public sealed class ClockedRunner : IDisposable {
     static readonly ILogger log= Tlabs.App.Logger<ClockedRunner>();
- 
+
     readonly Stopwatch timer= new();
     readonly CancellationTokenSource cts;
-    bool isDisposed;
+    int isDisposed;
 
     ///<summary>Ctor to start the clocked runner.</summary>
     ///<param name="runnerTitle">Diagnostic title of the runner</param>
@@ -59,10 +59,9 @@ namespace Tlabs.Timing {
 
     ///<summary>Stopps the clocked runner and release of all resources.</summary>
     public void Dispose() {
-      if (isDisposed) return;
+      if (0 != Interlocked.Exchange(ref isDisposed, 1)) return;
       cts.Cancel();
       cts.Dispose();
-      isDisposed= true;
     }
   }
 }

@@ -22,7 +22,7 @@ namespace Tlabs.Misc.Tests {
       Assert.Equal("val01", cache["key01"]= "val01");
       Assert.Equal("val01", cache["key01", () => {
         Assert.True(false, "Must not invoke getValue");
-        return (string)null;
+        return "invalid";
       }
       ]);
       Assert.Equal("val02", cache["key02"]= "val02");

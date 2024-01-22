@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+
+using Tlabs.Sync;
 
 using Xunit;
 
@@ -8,12 +11,11 @@ namespace Tlabs.Misc.Tests {
   public class OSInfoTest : IClassFixture<OSInfoTest.Fixture> {
 
     public sealed class Fixture {
-      int resCnt= 0;
-      public int ResolveCount() {
-        lock(this) return resCnt;
-      }
+      public SyncMonitor<int> ResCnt= new();
       public Fixture() {
-        OSInfo.OSPlatformResolved+= _ => { lock(this) ++resCnt; };
+        OSInfo.OSPlatformResolved+= _ => {
+          ResCnt.Signal(++ResCnt.Value);
+        };
       }
 
     }
@@ -24,11 +26,14 @@ namespace Tlabs.Misc.Tests {
 
     [Fact]
     public void ResolveOSTest() {
-      Assert.Equal(0, fix.ResolveCount());
+      Assert.Equal(0, fix.ResCnt.Value);
+      // Volatile.Write(ref fix.ResCnt, Volatile.Read(in fix.ResCnt));
+
       var os= OSInfo.CurrentPlatform.ToString();
       Assert.NotEmpty(os);
+      Assert.Equal(1, fix.ResCnt.WaitForSignal(500));
       Assert.Same(os, OSInfo.CurrentPlatform.ToString());
-      Assert.Equal(1, fix.ResolveCount());
+      Assert.Equal(1, fix.ResCnt.Value);
     }
 
   }

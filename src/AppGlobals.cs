@@ -213,7 +213,7 @@ namespace Tlabs {
       public AppLogger() {
         this.log= App.LogFactory.CreateLogger<T>();
       }
-      public IDisposable BeginScope<TState>(TState state) { return log.BeginScope(state); }
+      public IDisposable? BeginScope<TState>(TState state) where TState : notnull { return log.BeginScope(state); }
       public bool IsEnabled(LogLevel logLevel) { return log.IsEnabled(logLevel); }
       public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
         log.Log<TState>(logLevel, eventId, state, exception, formatter);

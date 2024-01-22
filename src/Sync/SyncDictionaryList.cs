@@ -8,7 +8,7 @@ using Tlabs.Misc;
 namespace Tlabs.Sync {
 
   ///<summary>Dictionary of <see cref="IEnumerable{T}"/> of key type <typeparamref name="K"/>.</summary>
-  public class SyncDictionaryList<K, T> : IDictionaryList<K, T>, IReadOnlyDictList<K, T> {
+  public class SyncDictionaryList<K, T> : IDictionaryList<K, T>, IReadOnlyDictList<K, T> where K : notnull {
     readonly Dictionary<K, LinkedList<T>> dict;
 
     ///<summary>Default ctor.</summary>
@@ -24,7 +24,7 @@ namespace Tlabs.Sync {
     public IEnumerable<K> Keys { get { lock (dict) return new LinkedList<K>(dict.Keys); } }
 
     ///<inheritdoc/>
-    public IEnumerable<T> Values { get { lock (dict) return new LinkedList<T>(dict.Values.SelectMany(l => l)); } } 
+    public IEnumerable<T> Values { get { lock (dict) return new LinkedList<T>(dict.Values.SelectMany(l => l)); } }
 
     ///<inheritdoc/>
     public int Count {
@@ -90,7 +90,7 @@ namespace Tlabs.Sync {
     public bool TryGetValue(K key, out IEnumerable<T> value) {
       lock (dict) {
         var ret= dict.TryGetValue(key, out var lst);
-        value= lst;
+        value= lst!;
         return ret;
       }
     }
@@ -99,7 +99,7 @@ namespace Tlabs.Sync {
     public bool TryRemoveList(K key, out IEnumerable<T> values) {
       lock (dict) {
         var ret= dict.TryGetValue(key, out var lst);
-        values= lst;
+        values= lst!;
         if (ret) dict.Remove(key);
         return ret;
       }

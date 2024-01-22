@@ -14,7 +14,7 @@ namespace Tlabs.Config {
     public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
       var optConfig= cfg.GetSection("options");
       log.Services.Configure<ConsoleFormatterOptions>(optConfig);
-    
+
      log.AddSystemdConsole();
     }
   }
@@ -66,7 +66,7 @@ namespace Tlabs.Config {
       this.options= opt.Value;
     }
     ///<inheritdoc/>
-    public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider scopeProvider, TextWriter textWriter) {
+    public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider? scopeProvider, TextWriter textWriter) {
       var msg= logEntry.Formatter(logEntry.State, logEntry.Exception);
       if (string.IsNullOrEmpty(msg) && null == logEntry.Exception) return;  //nothing to log
 
@@ -75,12 +75,12 @@ namespace Tlabs.Config {
         textWriter.Write(' ');
       }
       textWriter.Write(logLevelMark(logEntry.LogLevel));
-      
+
       if (options.IncludeCategory) {
         textWriter.Write(logEntry.Category);
         textWriter.Write(": ");
       }
-      
+
       if (options.IncludeScopes && null != scopeProvider) {
         scopeProvider.ForEachScope((scope, state) => {
           state.Write("=> ");

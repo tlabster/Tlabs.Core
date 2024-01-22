@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Collections.Immutable;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -13,14 +13,14 @@ namespace Tlabs.Config {
     public const string JSON_FILE_CFG= "jsonFile";
 
     static readonly ILogger log= App.Logger<JsonConfigExtension>();
-    readonly IDictionary<string, string> config;
+    readonly IReadOnlyDictionary<string, string> config= ImmutableDictionary<string, string>.Empty;
 
     ///<summary>Default ctor.</summary>
     public JsonConfigExtension() { }
 
     ///<summary>Ctor from <paramref name="config"/>.</summary>
-    public JsonConfigExtension(IDictionary<string, string> config) {
-      this.config= config ?? new Dictionary<string, string>();
+    public JsonConfigExtension(IReadOnlyDictionary<string, string> config) {
+      this.config= config;
     }
 
     ///<inheritdoc/>
@@ -32,7 +32,7 @@ namespace Tlabs.Config {
       }
       string cfgPath= jsonFile;
       if (!Path.IsPathRooted(jsonFile))
-        cfgPath= Path.Combine(Path.GetDirectoryName(App.MainEntryPath), cfgPath);
+        cfgPath= Path.Combine(Path.GetDirectoryName(App.MainEntryPath) ??"", cfgPath);
 
       if (File.Exists(cfgPath)) {
         cfgBuilder.AddJsonFile(cfgPath);

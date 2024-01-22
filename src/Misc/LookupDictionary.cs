@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Tlabs.Misc {
 
   ///<summary>Look-up dictionary.</summary>
   ///<remarks>Reading by looking-up an entry does not mutate the dictionary.</remarks>
-  public class LookupDictionary<K, T> : IReadOnlyDictionary<K, T> {
+  public class LookupDictionary<K, T> : IReadOnlyDictionary<K, T> where K : notnull {
     ///<summary>look-up dictionary.</summary>
-    protected IDictionary<K, T> dict; 
-    readonly Func<K, T> defaultValue;
+    protected IDictionary<K, T> dict;
+    readonly Func<K, T>? defaultValue;
 
     ///<summary>Default ctor.</summary>
     public LookupDictionary() { this.dict= new Dictionary<K, T>(); }
@@ -55,6 +56,7 @@ namespace Tlabs.Misc {
     ///<returns>The new value, or the exisitng value if the <paramref name="key"/> exists.</returns>
     public T GetOrAdd(K key) {
       if (dict.TryGetValue(key, out var val)) return val;
+      if (null == defaultValue) throw new KeyNotFoundException(key.ToString());
       return dict[key]= defaultValue(key);
     }
 
@@ -74,7 +76,7 @@ namespace Tlabs.Misc {
     public IEnumerator<KeyValuePair<K, T>> GetEnumerator() => dict.GetEnumerator();
 
     ///<inheritdoc/>
-    public bool TryGetValue(K key, out T value) => dict.TryGetValue(key, out value);
+    public bool TryGetValue(K key, [MaybeNullWhen(false)]out T value) => dict.TryGetValue(key, out value);
 
     ///<inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => dict.GetEnumerator();

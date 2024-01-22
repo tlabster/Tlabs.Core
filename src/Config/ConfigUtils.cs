@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Primitives;
 
+using Tlabs.Misc;
+
 namespace Tlabs.Config {
 
   ///<summary>Base interface of a dynamically loaded configurator.</summary>
@@ -17,7 +19,7 @@ namespace Tlabs.Config {
   ///<summary>Configuration extensions.</summary>
   public static class ConfigUtilsExtensions {
     ///<summary>Apply section configurators to <typeparamref name="T"/>.</summary>
-    public static T ApplyConfigurators<T>(this T target, IConfiguration config, string subSectionName= null) {
+    public static T ApplyConfigurators<T>(this T target, IConfiguration config, string? subSectionName= null) {
       IConfiguration section= (string.IsNullOrEmpty(subSectionName) ? null : config.GetSection(subSectionName)) ?? config;
       foreach(var conf in section.LoadConfigurationObjects<IConfigurator<T>>()) {
         conf.Object.AddTo(target, section.GetSection(conf.SectionName));
@@ -28,8 +30,8 @@ namespace Tlabs.Config {
     ///<summary>Convert <paramref name="config"/> into flattened dictionary.</summary>
     ///<param name="config">Configuration (section)</param>
     ///<param name="stripSectionPath">if true (default) and config is section, strips off the section path from keys</param>
-    public static Dictionary<string, string> ToDictionary(this IConfiguration config, bool stripSectionPath= true) {
-      static void convertToDictionary(IConfiguration config, Dictionary<string, string> data, IConfigurationSection top = null) {
+    public static Dictionary<string, string?> ToDictionary(this IConfiguration config, bool stripSectionPath= true) {
+      static void convertToDictionary(IConfiguration config, Dictionary<string, string?> data, IConfigurationSection? top= null) {
         foreach (var child in config.GetChildren()) {
           if (null == child.Value) {
             convertToDictionary(config.GetSection(child.Key), data, top);
@@ -39,7 +41,7 @@ namespace Tlabs.Config {
           data[key]= child.Value;
         }
       }
-      var data= new Dictionary<string, string>();
+      var data= new Dictionary<string, string?>();
       var section= stripSectionPath ? config as IConfigurationSection : null;
       convertToDictionary(config, data, section);
       return data;
@@ -49,11 +51,11 @@ namespace Tlabs.Config {
     ///<param name="config">Configuration (section)</param>
     public static Dictionary<string, object> ToNestedDictionary(this IConfiguration config) {
       return config.GetChildren().ToDictionary(child => child.Key,
-                                               child => (object)child.Value ?? config.GetSection(child.Key).ToNestedDictionary());
+                                               child => (object?)child.Value ?? config.GetSection(child.Key).ToNestedDictionary());
     }
 
     ///<summary>Load <see cref="IConfigurationBuilder"/> form json file.</summary>
-    public static IConfigurationBuilder LoadJson(string baseName, string path, string env = "") {
+    public static IConfigurationBuilder LoadJson(string baseName, string path, string? env= null) {
       var builder= new ConfigurationBuilder()
         .SetBasePath(path)
         .AddJsonFile($"{baseName}.json", optional: false, reloadOnChange: true)
@@ -69,7 +71,7 @@ namespace Tlabs.Config {
     }
 
     ///<summary>Convert dictionary into <see cref="IConfiguration"/>.</summary>
-    public static IConfiguration ToConfiguration(this IReadOnlyDictionary<string, string> dict) {
+    public static IConfiguration ToConfiguration(this IReadOnlyDictionary<string, string?> dict) {
       var builder= new ConfigurationBuilder().AddInMemoryCollection(dict);
       return builder.Build();
     }
@@ -88,20 +90,26 @@ namespace Tlabs.Config {
 
   ///<summary>Empty <see cref="IConfiguration"/>.</summary>
   public class Empty : IConfigurationSection {
+    private sealed class NoChgToken : IChangeToken {
+      private sealed class Dsp : IDisposable { public void Dispose() {} }
+      public bool HasChanged => false;
+      public bool ActiveChangeCallbacks => false;
+      public IDisposable RegisterChangeCallback(Action<object?> callback, object? state) => Singleton<Dsp>.Instance;
+    }
     ///<summary>Empty Configuration</summary>
     public static readonly IConfigurationSection Configuration= new Empty();
     ///<inheritdoc/>
-    public string this[string key] { get => null; set => throw new NotImplementedException(); }
+    public string? this[string key] { get => null; set => throw new NotImplementedException(); }
     ///<inheritdoc/>
     public string Key => String.Empty;
     ///<inheritdoc/>
     public string Path => String.Empty;
     ///<inheritdoc/>
-    public string Value { get => null; set => throw new NotImplementedException(); }
+    public string? Value { get => null; set => throw new NotImplementedException(); }
     ///<inheritdoc/>
     public IEnumerable<IConfigurationSection> GetChildren() => System.Linq.Enumerable.Empty<IConfigurationSection>();
     ///<inheritdoc/>
-    public IChangeToken GetReloadToken() => null;
+    public IChangeToken GetReloadToken() => Singleton<NoChgToken>.Instance;
     ///<inheritdoc/>
     public IConfigurationSection GetSection(string key) => Configuration;
   }

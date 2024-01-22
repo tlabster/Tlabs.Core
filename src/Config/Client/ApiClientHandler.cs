@@ -18,7 +18,7 @@ namespace Tlabs.Config.Client {
 
       var respMsg=  await base.SendAsync(reqMsg, cancellationToken);
       var contHdr= respMsg.Content.Headers;
-      
+
       logReqEnd(log, reqMsg.Method, reqMsg.RequestUri, respMsg.StatusCode, contHdr.ContentType, contHdr.ContentLength, watch.GetElapsedTime().TotalMilliseconds, null);
 
       return respMsg;
@@ -27,11 +27,11 @@ namespace Tlabs.Config.Client {
     static readonly EventId ReqStartId= new EventId(1001000, nameof(ApiClientHandler) + "-Start");
     static readonly EventId ReqEndId= new EventId(1001001, nameof(ApiClientHandler) + "-End");
 
-    private static readonly Action<ILogger, HttpMethod, Uri, Exception> logReqStart=
-      LoggerMessage.Define<HttpMethod, Uri>(LogLevel.Information, ReqStartId, "{Method}: {Uri}");
+    private static readonly Action<ILogger, HttpMethod, Uri?, Exception?> logReqStart=
+      LoggerMessage.Define<HttpMethod, Uri?>(LogLevel.Information, ReqStartId, "{Method}: {Uri}");
 
-    private static readonly Action<ILogger, HttpMethod, Uri, HttpStatusCode, MediaTypeHeaderValue, long?, double, Exception> logReqEnd=
-      LoggerMessage.Define<HttpMethod, Uri, HttpStatusCode, MediaTypeHeaderValue, long?, double>(
+    private static readonly Action<ILogger, HttpMethod, Uri?, HttpStatusCode, MediaTypeHeaderValue?, long?, double, Exception?> logReqEnd=
+      LoggerMessage.Define<HttpMethod, Uri?, HttpStatusCode, MediaTypeHeaderValue?, long?, double>(
         LogLevel.Information,
         ReqEndId,
         "{Method}: {Uri} returned {Status} ({ContType} / {len} bytes) after {Elapsed}ms"

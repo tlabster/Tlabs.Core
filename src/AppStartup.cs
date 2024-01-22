@@ -22,16 +22,16 @@ namespace Tlabs {
     public const string APP_SVC_SECTION= "applicationServices";
     const string ENV_DOTNET_PFX= "DOTNET_";
     const string ENV_ASPNET_PFX= "ASPNET_";
-    static readonly Assembly entryAsm= Assembly.GetEntryAssembly();
+    static readonly Assembly? entryAsm= Assembly.GetEntryAssembly();
 
     ///<summary>Create a <see cref="IHostBuilder"/> from optional command line <paramref name="args"/>.</summary>
-    public static IHostBuilder CreateAppHostBuilder(string[] args= null, Action<IHostBuilder, IConfiguration> cfgBuilder= null) => CreateAppHostBuilder(DFLT_HOST_SECTION, args, cfgBuilder);
+    public static IHostBuilder CreateAppHostBuilder(string[]? args= null, Action<IHostBuilder, IConfiguration>? cfgBuilder= null) => CreateAppHostBuilder(DFLT_HOST_SECTION, args, cfgBuilder);
     ///<summary>Create a <see cref="IHostBuilder"/> from <paramref name="hostSection"/> and command line <paramref name="args"/>.</summary>
-    public static IHostBuilder CreateAppHostBuilder(string hostSection, string[] args= null, Action<IHostBuilder, IConfiguration> cfgBuilder= null) {
+    public static IHostBuilder CreateAppHostBuilder(string hostSection, string[]? args= null, Action<IHostBuilder, IConfiguration>? cfgBuilder= null) {
 
       var hostSettings= App.Settings.GetSection(hostSection)
                                     .ToConfigurationBuilder()
-                                    .AddCommandLine(args)
+                                    .AddCommandLine(args ?? Array.Empty<string>())
                                     .Build();
       /* Create the logging facillity (ILogFactory based)
        * for being availble immediately (even before the DI service provider has been setup...)
@@ -98,7 +98,7 @@ namespace Tlabs {
         "\t({path})\n" +
         "\ton {netVers} ({arch})\n" +
         "\t - {os}",
-        entryAsm.FullName,
+        entryAsm?.FullName,
         App.MainEntryPath,
         $"{RTinfo.FrameworkDescription} framwork", RTinfo.OSArchitecture,
         RTinfo.OSDescription);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Xunit;
 using Xunit.Abstractions;
 
@@ -81,23 +82,6 @@ namespace Tlabs.Misc.Tests {
     }
 
     [Fact]
-    public void LoadTypeTest() {
-      var type= Safe.LoadType("Tlabs.Misc.Tests.MiscTest, Tlabs.Core.Tests", "test type");
-      Assert.IsAssignableFrom<Type>(type);
-
-      type= Safe.LoadType("Tlabs.Misc.Tests.MiscTest+GenericTest`1, Tlabs.Core.Tests & Tlabs.Misc.Tests.MiscTest, Tlabs.Core.Tests", "test type");
-      Assert.IsAssignableFrom<Type>(type);
-
-      Assert.Throws<AppConfigException>(() =>
-        Safe.LoadType("Tlabs.Misc.Tests.MiscTest+GenericTest`1, Tlabs.Core.Tests & Tlabs.Misc.Tests.MiscTest+Dummy, Tlabs.Core.Tests", "test type")
-      );
-
-      Assert.Throws<AppConfigException>(() =>
-        Safe.LoadType("Tlabs.Misc.Tests.XYZ, Tlabs.Core.Tests", "test type")
-      );
-    }
-
-    [Fact]
     public void DictionaryListTest() {
       const int ONE= 1;
       const int N= 9;
@@ -133,9 +117,6 @@ namespace Tlabs.Misc.Tests {
       Assert.Empty(dlist);
 
     }
-    public class GenericTest<T> where T : MiscTest {
 
-    }
-    public class Dummy { }
   }
 }

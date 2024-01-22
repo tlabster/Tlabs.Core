@@ -9,7 +9,7 @@ namespace Tlabs.Timing {
 
   /// <summary>Interface to access the next due-date of a scheduled time.</summary>
   public interface ITimePlan {
-  
+
     /// <summary>Returns the next due-date <paramref name="fromNow"/>.</summary>
     /// <remarks>NOTE: Implementation must return due-dates which are in the future from <paramref name="fromNow"/>.
     /// <para>i.e. when a <see cref="ITimePlan"/> implementation returnde a due-date,
@@ -45,7 +45,7 @@ namespace Tlabs.Timing {
 
     internal static readonly ILogger Log= App.Logger<TimeScheduler>();
 
-    private Timer timer;    //***TODO: replace Timer with Task.Delay(waitMili).ContinnueWith(HandleDueTime);
+    private Timer? timer;    //***TODO: replace Timer with Task.Delay(waitMili).ContinnueWith(HandleDueTime);
     readonly LinkedList<ScheduleInfo> schedule= new();
 
     /// <summary>Default ctor</summary>
@@ -55,7 +55,7 @@ namespace Tlabs.Timing {
     public DateTime NextDueTime {
       get {
         lock (schedule) {
-          if (0 == schedule.Count) {
+          if (0 == schedule.Count || null == schedule.First) {
             if (null != timer) throw new InvalidOperationException("Internal timer must be null");
             return DateTime.MaxValue;
           }
@@ -78,7 +78,7 @@ namespace Tlabs.Timing {
     /// <summary>Remove all time schedule(s) for <paramref name="dueTimeCallee"/>.</summary>
     public void Remove(Action dueTimeCallee) {
       lock (schedule) {
-        LinkedListNode<ScheduleInfo> nd, next;
+        LinkedListNode<ScheduleInfo>? nd, next;
         for (nd= schedule.First; null != nd; nd= next) {
           next= nd.Next;
           if (dueTimeCallee == nd.Value.Callee)
@@ -109,12 +109,12 @@ namespace Tlabs.Timing {
       schedule.AddLast(schInfo);
     }
 
-    private void HandleDueTime(object o) {
+    private void HandleDueTime(object? o) {
       lock (schedule) {
         Log.LogDebug("Processing due time(s)");
 
         var fromNow= App.TimeInfo.Now.AddMilliseconds(RESOLUTION_MSEC);
-        LinkedListNode<ScheduleInfo> schNode;
+        LinkedListNode<ScheduleInfo>? schNode;
 
         while (null != (schNode= schedule.First) && schNode.Value.DueDate <= fromNow) {
           /* Invoke all due-time callees which have become due and re-schedule:
@@ -134,7 +134,7 @@ namespace Tlabs.Timing {
       /* Set timer to wait for next due-time:
        */
       long nextTimerDelay= Timeout.Infinite;
-      LinkedListNode<ScheduleInfo> firstNode;
+      LinkedListNode<ScheduleInfo>? firstNode;
       if (null != (firstNode= schedule.First) && DateTime.MaxValue != firstNode.Value.DueDate) {
         if (Log.IsEnabled(LogLevel.Debug)) Log.LogDebug("Update timer with due date: {date}", firstNode.Value.DueDate.ToString("s", App.DfltFormat));
         nextTimerDelay= (long)(firstNode.Value.DueDate - fromNow).TotalMilliseconds;
