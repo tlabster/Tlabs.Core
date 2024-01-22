@@ -14,3 +14,6 @@ Some of the things `Tlabs.Core` provides:
 * Synchronization and thread time scheduling
 * Misc. utils from Singleton, Cache to varous extension methods
 
+### .NET version dependency
+*	`2.1.*` .NET 6
+*	`2.2.*` .NET 8
