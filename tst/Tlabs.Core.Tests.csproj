@@ -34,6 +34,6 @@
   </ItemGroup>
 
   <Target Name="GenerateHtmlCoverageReport" AfterTargets="GenerateCoverageResultAfterTest">
-    <ReportGenerator ReportFiles="@(CoverletReport)" TargetDirectory="__coverage/html" />
+    <ReportGenerator ReportFiles="@(CoverletReport)" TargetDirectory="__coverage/html" ReportTypes="HtmlInline_AzurePipelines_Dark" />
   </Target>
 </Project>
