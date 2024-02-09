@@ -46,7 +46,7 @@ namespace Tlabs.Misc {
     }}
 
     ///<summary>Expand buffer with more data from stream.</summary>
-    public ref readonly ReadOnlySequence<byte> Expand() {
+    public ref readonly ReadOnlySequence<byte> Expand() {   //***TODO: Make this more generic to expand even from different data sources
       if (isEndOfStream) throw new InvalidOperationException("End of stream");
       /* Append segment:
        */
@@ -100,6 +100,7 @@ namespace Tlabs.Misc {
 
         Memory= Buffer.Memory;
         RunningIndex= prev?.RunningIndex + prev?.Memory.Length ?? 0;
+        // this.prev?.SetNext(this);
       }
 
       public BufferSegment(BufferSegment end) {
