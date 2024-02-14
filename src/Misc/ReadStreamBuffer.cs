@@ -22,6 +22,7 @@ namespace Tlabs.Misc {
     ReadOnlySequence<byte> sequence;
 
     ///<summary>Ctor from <paramref name="stream"/> and option <paramref name="chunkSize"/></summary>
+    [Obsolete("Use SegmentReadBuffer as drop-in replacement", false)]
     public ReadStreamBuffer(Stream stream, int chunkSize= 4096) {
       if (null == (this.strm= stream)) throw new ArgumentNullException(nameof(stream));
       if (0 >= (this.MinChunkSz= chunkSize)) throw new ArgumentException(nameof(chunkSize));

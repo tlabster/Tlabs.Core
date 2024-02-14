@@ -11,6 +11,7 @@
     <Authors>Tlabs</Authors>
 
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisModeDesign>Recommended</AnalysisModeDesign>
     <AnalysisModeSecurity>All</AnalysisModeSecurity>
     <AnalysisModeNaming>None</AnalysisModeNaming>
     <!--
