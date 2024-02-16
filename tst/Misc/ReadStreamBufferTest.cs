@@ -5,6 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace Tlabs.Misc.Tests {
+#pragma warning disable CS0618
 
   public class ReadStreamBufferTest {
     static byte[] buf256;
@@ -70,3 +71,4 @@ namespace Tlabs.Misc.Tests {
     }
   }
 }
+#pragma warning restore

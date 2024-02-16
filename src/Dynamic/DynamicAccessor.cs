@@ -135,9 +135,7 @@ namespace Tlabs.Dynamic {
 
       public bool IsReadOnly => false;
 
-      public void Add(string key, object? value) {
-        throw new NotImplementedException();
-      }
+      public void Add(string key, object? value) => throw new InvalidOperationException();
 
       public void Add(KeyValuePair<string, object?> item) => throw new InvalidOperationException();
 

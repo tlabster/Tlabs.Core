@@ -83,7 +83,7 @@ namespace Tlabs.Config {
 
       if (options.IncludeScopes && null != scopeProvider) {
         scopeProvider.ForEachScope((scope, state) => {
-          state.Write("=> ");
+          state.Write("=>");
           state.Write(scope);
           state.Write(' ');
         }, textWriter);
@@ -107,7 +107,7 @@ namespace Tlabs.Config {
       LogLevel.Information  => "[INF] ",
       LogLevel.Debug        => "[DBG] ",
       LogLevel.Trace        => "[TRC] ",
-      _                     => "[???]"
+      _                     => "[???] "
     };
   }
 

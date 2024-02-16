@@ -74,7 +74,8 @@ namespace Tlabs.Misc {
         T? t= null;
         try {
           t= allocT(d);
-          setupT(Undisposable(ref d), t);
+          setupT(d, t);
+          Undisposable(ref d);
           return Undisposable(ref t);
         }
         finally { t?.Dispose(); }

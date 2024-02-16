@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Collections.Generic;
 
-//TODO: Move this into Tlabs.Core
 namespace Tlabs.Misc {
   ///<summary>Generic impl. of a <see cref="IEqualityComparer{T}"/></summary>
   public class GenericEqualityComp<T> : IEqualityComparer<T> {

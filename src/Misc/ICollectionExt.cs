@@ -61,12 +61,12 @@ namespace Tlabs.Misc {
     }
 
     ///<summary>Compares <see cref="IDictionary{K,T}"/> contents for equality.</summary>
-    public static bool ContentEquals<K, T>(this IDictionary<K, T> dict, IDictionary<K, T> other) where T : class {
+    public static bool ContentEquals<K, T>(this IDictionary<K, T> dict, IDictionary<K, T> other) {
       ArgumentNullException.ThrowIfNull(dict);
       ArgumentNullException.ThrowIfNull(other);
 
       if (dict.Count != other.Count) return false;
-      return dict.All(p => other.TryGetValue(p.Key, out var val) && p.Value == val);
+      return dict.All(p => other.TryGetValue(p.Key, out var val) && object.Equals(p.Value, val));
     }
 
     ///<summary>Compares <see cref="IDictionary{K,T}"/> contents for equality.</summary>

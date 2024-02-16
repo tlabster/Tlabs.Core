@@ -56,6 +56,45 @@ namespace Tlabs.Misc.Tests {
       Assert.Null(Safe.CompareExchange(ref s0, null, ()=> "new"));
     }
 
+    static int disposeCnt;
+    sealed class Disposable : IDisposable {
+      public void Dispose() => ++disposeCnt;
+    }
+    sealed class Container : IDisposable {
+      public Disposable? ToBeDisposed;
+      public Container(Disposable d) => ToBeDisposed= d;
+      public void Dispose() => ++disposeCnt;
+    }
+
+    [Fact]
+    public void AllocTest() {
+      disposeCnt= 0;
+      Safe.Allocated<Container, Disposable>(d => new Container(d));
+      Assert.Equal(0, disposeCnt);
+      Assert.Throws<Exception>(()=> Safe.Allocated<Container, Disposable>(d => throw new Exception()));
+      Assert.Equal(1, disposeCnt);
+
+      disposeCnt= 0;
+      Safe.Allocated<Container, Disposable>(
+        ()=> new Disposable(),
+        (d)=> new Container(d),
+        (d, t) => {}
+      );
+      Assert.Equal(0, disposeCnt);
+      Assert.Throws<Exception>(() => Safe.Allocated<Container, Disposable>(
+        () => new Disposable(),
+        (d) => throw new Exception(),
+        (d, t) => { }
+      ));
+      Assert.Equal(1, disposeCnt);
+      Assert.Throws<Exception>(()=> Safe.Allocated<Container, Disposable>(
+        () => new Disposable(),
+        (d) => new Container(d),
+        (d, t) => throw new Exception()
+      ));
+      Assert.Equal(3, disposeCnt);
+    }
+
   }
 
 }

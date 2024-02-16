@@ -65,8 +65,7 @@ namespace Tlabs.Config {
 
     ///<summary>Convert section into new <see cref="IConfigurationBuilder"/>.</summary>
     public static IConfigurationBuilder ToConfigurationBuilder(this IConfigurationSection section) {
-      var builder= new ConfigurationBuilder()
-        .AddInMemoryCollection(section.ToDictionary());
+      var builder= new ConfigurationBuilder().AddInMemoryCollection(section.ToDictionary());
       return builder;
     }
 
