@@ -5,7 +5,7 @@ using Xunit;
 namespace Tlabs.Timing.Test {
   public class TstTimeEnvironment : IDisposable {
     public TstTimeEnvironment() {
-      App.TimeInfo= new DateTimeHelper(TimeZoneInfo.Local);
+      App.Setup= App.Setup with { TimeInfo= new DateTimeHelper(TimeZoneInfo.Local) };
     }
     public void Dispose() { }
   }

@@ -26,7 +26,6 @@ namespace Tlabs.Config {
       Environment.SetEnvironmentVariable("EXEPATH", Path.GetDirectoryName(App.MainEntryPath));
       var optConfig= cfg.GetSection("options");
       log.AddFile(optConfig);
-      // App.AppLifetime.ApplicationStopped.Register(()=> Serilog.Log.CloseAndFlush());
     }
   }
 
@@ -42,6 +41,19 @@ namespace Tlabs.Config {
     }
   }
 
+
+  ///<summary>Configures a <see cref="System.Diagnostics.Tracing.EventSource"/> logger.</summary>
+  public class EventSourceLoggingConfigurator : IConfigurator<ILoggingBuilder> {
+    ///<inheritdoc/>
+    public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
+      log.AddEventSourceLogger();
+      log.Services.Configure<LoggerFactoryOptions>(opt => opt.ActivityTrackingOptions=   ActivityTrackingOptions.SpanId
+                                                                                       | ActivityTrackingOptions.TraceId
+                                                                                       | ActivityTrackingOptions.ParentId
+      );
+    }
+  }
+
   ///<summary>Custom stdout formatter.</summary>
   public sealed class CustomStdoutFormatterOptions : ConsoleFormatterOptions {
     ///<summary>Default ctor.</summary>
@@ -52,6 +64,10 @@ namespace Tlabs.Config {
 
     ///<summary>Include category with log entry.</summary>
     public bool IncludeCategory { get; set; }
+
+    ///<summary>Defualt min. level.</summary>
+    public LogLevel DfltMinimumLevel { get; set; }= LogLevel.Information;
+
   }
   ///<summary>Custom stdout formatter.</summary>
   ///<remarks>This custom formatter generates log entries with this format:

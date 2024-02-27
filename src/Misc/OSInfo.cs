@@ -15,7 +15,7 @@ namespace Tlabs.Misc {
     }
 
   class LazyOSInfo {
-      static LazyOSInfo() { } //Explicit static ctor for *NOT* to marking type with beforefieldinit
+      static LazyOSInfo() { } //Explicit static ctor for *NOT* to mark type with beforefieldinit
       internal static readonly OSPlatform currentOSPlatform= getCurrentOS() ?? throw new GeneralException($"Unknown paltform: '{Environment.OSVersion}");
       static OSPlatform? getCurrentOS() => Environment.OSVersion.Platform switch {
         PlatformID.Unix     => handlePlatformResolve(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? OSPlatform.Linux : null),

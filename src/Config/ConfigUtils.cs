@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
@@ -37,7 +38,7 @@ namespace Tlabs.Config {
             convertToDictionary(config.GetSection(child.Key), data, top);
             continue;
           }
-          var key = top != null ? child.Path.Substring(top.Path.Length + 1) : child.Path;
+          var key= top != null ? child.Path.Substring(top.Path.Length + 1) : child.Path;
           data[key]= child.Value;
         }
       }
@@ -55,13 +56,59 @@ namespace Tlabs.Config {
     }
 
     ///<summary>Load <see cref="IConfigurationBuilder"/> form json file.</summary>
-    public static IConfigurationBuilder LoadJson(string baseName, string path, string? env= null) {
-      var builder= new ConfigurationBuilder()
-        .SetBasePath(path)
-        .AddJsonFile($"{baseName}.json", optional: false, reloadOnChange: true)
-        .AddJsonFile($"{baseName}.{env ?? "__not_specified__"}.json", optional: true);
+    public static IConfigurationBuilder LoadJson(string baseName, string path, string? env= null)
+      => new ConfigurationBuilder().AddJsonConfig(baseName, path, env);
+
+    ///<summary>Add JSON configuration to <paramref name="builder"/> <see cref="IConfigurationBuilder"/>.</summary>
+    ///<remarks>JSON configuration is loaded from
+    ///<para>- {path}/{basename}.json  (required)</para>
+    ///<para>- {path}/{basename}.{resolved-ENV-variable}.json  (optional)</para>
+    ///<example>
+    ///   appsettings.Development.json
+    ///   appsettings.Azure.json
+    ///</example>
+    ///</remarks>
+    public static IConfigurationBuilder AddJsonConfig(this IConfigurationBuilder builder, string baseName, string path, string? env= null)
+      => builder.SetBasePath(path)
+             .AddJsonFile($"{baseName}.json", optional: false, reloadOnChange: true)
+             .AddJsonFile($"{baseName}.{env ?? "__not_specified__"}.json", optional: true);
+
+
+    ///<summary>Base settings file name.</summary>
+    public const string DEFAULT_JSON_BASE_FILENAME= "appsettings";
+    ///<summary>Add JSON configuration to <paramref name="builder"/> <see cref="IConfigurationBuilder"/>.</summary>
+    ///<remarks>JSON configuration is loaded from
+    ///<para>- {path}/{basename}.json  (required)</para>
+    ///<para>- {path}/{basename}.{resolved-ENV-variable}.json  (optional)</para>
+    ///</remarks>
+    public static IConfigurationBuilder AddJsonConfig(this IConfigurationBuilder builder, string? baseJsonFile= null, string? env= null) {
+      baseJsonFile??= DEFAULT_JSON_BASE_FILENAME;
+      var jsonPath= App.ContentRoot;
+      if (Path.IsPathRooted(baseJsonFile)) {
+        jsonPath= Path.GetDirectoryName(baseJsonFile) ?? "";
+        baseJsonFile= Path.GetFileNameWithoutExtension(baseJsonFile);
+      }
+      return builder.AddJsonConfig(baseJsonFile, jsonPath, env);
+    }
+
+    ///<summary>Config extension section.</summary>
+    public const string XCFG_SECTION= "configExtensions";
+    ///<summary>Add application configuration to <paramref name="builder"/> <see cref="IConfigurationBuilder"/>.</summary>
+    ///<remarks>The application configuration is loaded from
+    ///<para>- <paramref name="baseJsonFile"/> (<see cref="AddJsonConfig(IConfigurationBuilder, string?, string?)"/>) or none if <paramref name="baseJsonFile"/> == "" </para>
+    ///<para>- environment variables with <paramref name="envVarPrefix"/>  (optional)</para>
+    ///<para>- <paramref name="cmdArgs"/>  (optional)</para>
+    ///</remarks>
+    public static IConfigurationBuilder AddApplicationConfig(this IConfigurationBuilder builder, string? baseJsonFile= null, string? env= null, string[]? cmdArgs= null, string? envVarPrefix= null) {
+      if (string.Empty != baseJsonFile) {
+        builder.AddJsonConfig(baseJsonFile, env)
+               .ApplyConfigurators(builder.Build(), XCFG_SECTION);
+      }
+      if (!string.IsNullOrEmpty(envVarPrefix)) builder.AddEnvironmentVariables(envVarPrefix);
+      if (null != cmdArgs) builder.AddCommandLine(cmdArgs);
       return builder;
     }
+
 
     ///<summary>Convert section into new <see cref="IConfigurationBuilder"/>.</summary>
     public static IConfigurationBuilder ToConfigurationBuilder(this IConfigurationSection section) {

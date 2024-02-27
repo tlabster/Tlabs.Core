@@ -1,5 +1,7 @@
 ﻿using System;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 #nullable enable
 
@@ -32,7 +34,7 @@ namespace Tlabs.Misc {
 
     ///<summary>Perform <paramref name="action"/> with new service provider scope.</summary>
     public void WithScope(Action<IServiceProvider> action) {
-      using var scope = CreateScope();
+      using var scope= CreateScope();
       action(scope.ServiceProvider);
     }
 
@@ -46,18 +48,20 @@ namespace Tlabs.Misc {
     protected virtual void Dispose(bool disposing) {
       if (!disposing) return;
       (svcProv as IDisposable)?.Dispose();
-      App.InternalInitSvcProv(svcProv= null);
+      App.Setup= App.Setup with { ServiceProv= ApplicationSetup.Default.ServiceProv };
     }
 
     ///<summary>Create new service provider.</summary>
     ///<remarks>This gets invoked once before property <see cref="SvcProv"/> returns the first time.
     ///<para>To be used to add any initialisation once the ServiceProvider has been setup...</para></remarks>
     protected virtual IServiceProvider CreateServiceProvider() {
-      var svcProv= svcColl.BuildServiceProvider(new ServiceProviderOptions {
+      svcColl.TryAddSingleton<ILoggerFactory>(App.LogFactory);
+      svcColl.TryAddSingleton(typeof(ILogger<>), typeof(Tlabs.App.SngLogger<>));
+      App.Setup= App.Setup with { ServiceProv= svcColl.BuildServiceProvider(new ServiceProviderOptions {
         ValidateOnBuild= true,
         ValidateScopes= true
-      });
-      return App.InternalInitSvcProv(svcProv) ?? throw new InvalidOperationException("Failed to initialize app. service-provider");
+      })};
+      return App.ServiceProv;
     }
 
   }
