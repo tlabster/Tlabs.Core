@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Threading;
+using System.Diagnostics;
 
-#nullable enable
-
-namespace Tlabs.Misc {
+namespace Tlabs.Config {
 
   ///<summary>Abstract <see cref="IServiceProvider"/> factory helper.</summary>
   ///<remarks>
@@ -16,6 +16,7 @@ namespace Tlabs.Misc {
   ///NOTE: The <see cref="IServiceProvider"/> returned from property <see cref="SvcProv"/> is from then on also available via <see cref="App.ServiceProv"/>.
   ///</remarks>
   public abstract class AbstractServiceProviderFactory : IDisposable {
+    int disposedCnt= 0;
     IServiceProvider? svcProv;
     ///<summary>Service collection to be configured from derived class.</summary>
     protected readonly IServiceCollection svcColl= new ServiceCollection();
@@ -46,7 +47,8 @@ namespace Tlabs.Misc {
 
     ///<summary>Dispose</summary>
     protected virtual void Dispose(bool disposing) {
-      if (!disposing) return;
+      if (   !disposing
+          || Interlocked.Increment(ref disposedCnt) > 1) return;
       (svcProv as IDisposable)?.Dispose();
       App.Setup= App.Setup with { ServiceProv= ApplicationSetup.Default.ServiceProv };
     }
@@ -62,6 +64,23 @@ namespace Tlabs.Misc {
         ValidateScopes= true
       })};
       return App.ServiceProv;
+    }
+
+  }
+
+  ///<summary>Debug Helper.</summary>
+  public class DbgHelper {
+    ///<summary>Current process info.</summary>
+    public static string ProcInfo() {
+      var proc= System.Diagnostics.Process.GetCurrentProcess();
+      return $"process ID: {proc.Id} ({proc.ProcessName})";
+    }
+    ///<summary>Hard break in debugger.</summary>
+    [Conditional("DEBUG")]
+    public static void HardBreak() {
+      App.Logger<DbgHelper>().LogCritical("Waiting for a debugger attaching to {pinfo}).", ProcInfo());
+      while (!System.Diagnostics.Debugger.IsAttached) System.Threading.Thread.Sleep(700);
+      System.Diagnostics.Debugger.Break();
     }
 
   }

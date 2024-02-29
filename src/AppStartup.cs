@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Tlabs.Config;
 
 namespace Tlabs {
+  using RTinfo = System.Runtime.InteropServices.RuntimeInformation;
 
   ///<summary>Class to facillitate the creation of the application's start-up configuration expressed as a pre-configured <see cref="IHostBuilder"/>.</summary>
   ///<remarks>The ambition of this <see cref="ApplicationStartup"/> class is to reducee hard-coded pre-configuration to an absolute minimum with favor of
@@ -40,15 +41,22 @@ namespace Tlabs {
     public static IHostBuilder CreateAppHostBuilder(string[]? args= null, Action<IHostBuilder, IConfiguration>? cfgBuilder= null) => CreateAppHostBuilder(DFLT_HOST_SECTION, args, cfgBuilder);
     ///<summary>Create a <see cref="IHostBuilder"/> from <paramref name="hostSection"/> and command line <paramref name="args"/>.</summary>
     public static IHostBuilder CreateAppHostBuilder(string hostSection, string[]? args= null, Action<IHostBuilder, IConfiguration>? cfgBuilder= null) {
+      /* Setup the configuration settings only if current settings are empty:
+       * (The actual setings are composed according to ConfigUtilsExtensions.AddApplicationConfig()...)
+       */
       if (!App.Settings.GetChildren().Any()) {
         var envPfx= null != entryAsm ? $"{entryAsm.GetName().Name}_" : null;
         App.Setup.ConfigMngr.AddApplicationConfig(null, APP_ENV_VAR, args, envPfx);
       }
-      App.Setup= App.Setup with {
-        LogFactory= ApplicationSetup.CreateLogFactory(App.Setup.ConfigMngr.GetSection("logging"))
+
+      /* Setup a LogFactory only for a non-empty 'logging' configuration in section:
+       */
+      var logSection= App.Settings.GetSection("logging");
+      if (logSection.GetChildren().Any()) App.Setup= App.Setup with {
+        LogFactory= CreateLogFactory(logSection)
       };
 
-      var appLog= ApplicationSetup.InitLog<ApplicationStartup>(entryAsm);
+      var appLog= InitLog<ApplicationStartup>(entryAsm);
 
       var hostBuilder= new HostBuilder(); //Host.CreateDefaultBuilder(args) [https://github.com/dotnet/runtime/blob/79ae74f5ca5c8a6fe3a48935e85bd7374959c570/src/libraries/Microsoft.Extensions.Hosting/src/Host.cs]
       hostBuilder.UseContentRoot(App.ContentRoot);
@@ -82,6 +90,10 @@ namespace Tlabs {
           new DefaultLoggerLevelConfigureOptions(LogLevel.Information))
         );
 
+        // services.AddMetrics(metrics => {
+        //   metrics.AddConfiguration(hostingContext.Configuration.GetSection("Metrics"));
+        // });
+
         /* Add application service(s) from configuration:
          */
         services.ApplyConfigurators(App.Settings, Tlabs.ApplicationStartup.APP_SVC_SECTION);
@@ -89,6 +101,31 @@ namespace Tlabs {
 
       return new AppHostBuilder(hostBuilder);
     }
+
+    /// <summary>Create a <see cref="ILoggerFactory"/> from config section <paramref name="logConfig"/></summary>
+    public static ILoggerFactory CreateLogFactory(IConfigurationSection logConfig) => LoggerFactory.Create(builder => {
+      builder.AddConfiguration(logConfig);
+      builder.ApplyConfigurators(logConfig, "configurator");
+    });
+
+    ///<summary>Creates an application logger (and intital log output).</summary>
+    ///<param name="entryAsm">Entry assembly</param>
+    ///<typeparam name="T">Application type</typeparam>
+    public static ILogger<T> InitLog<T>(Assembly? entryAsm = null) {
+      entryAsm??= Assembly.GetEntryAssembly();
+      var log= App.Logger<T>();
+      log.LogCritical(        //this is the very first log entry
+        "*** {appName}\n" +
+        "\t({path})\n" +
+        "\ton {netVers} ({arch})\n" +
+        "\t - {os}",
+        entryAsm?.FullName??"?APP",
+        App.MainEntryPath,
+        $"{RTinfo.FrameworkDescription} framwork", RTinfo.OSArchitecture,
+        RTinfo.OSDescription);
+      return log;
+    }
+
 
     private class AppHostBuilder(IHostBuilder hostBuilder) : IHostBuilder {
       public IHost Build() {
