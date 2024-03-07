@@ -1,0 +1,14 @@
+name: CI 
+
+on: 
+  push:
+    branches: 
+      - 'develop'
+
+jobs:
+  Base-tests:
+    cache-name: dotnetcore
+    steps:
+      - run: echo "Running core tests
+      - run: dotnet restore ./tst/Tlabs.Core.Tests.csproj
+      - run: dotnet test ./tst/Tlabs.Core.Tests.csproj       
