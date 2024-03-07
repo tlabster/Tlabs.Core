@@ -53,12 +53,13 @@ namespace Tlabs {
       get => App.appSetup;
       set {
         var sup= App.appSetup= value;
-        AppLifetime= sup.ServiceProv.GetService<IHostApplicationLifetime>() ?? AppLifetime;
+        if (ApplicationSetup.DEFAULT_ServiceProvider != sup.ServiceProv)  //avoid log warning from DEFAULT_ServiceProvider
+          AppLifetime= sup.ServiceProv.GetService<IHostApplicationLifetime>() ?? AppLifetime;
       }
     }
 
     ///<summary>Configuration settings.</summary>
-    public static IConfigurationRoot Settings => Setup.ConfigMngr;
+    public static IConfigurationRoot Settings => Setup.Configuration;
 
     ///<summary>Configuration entry.</summary>
     [Obsolete("Use configuration extension method", error: false)]

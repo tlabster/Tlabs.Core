@@ -54,6 +54,7 @@ namespace Tlabs.Config {
     }
   }
 
+
   ///<summary>Custom stdout formatter.</summary>
   public sealed class CustomStdoutFormatterOptions : ConsoleFormatterOptions {
     ///<summary>Default ctor.</summary>

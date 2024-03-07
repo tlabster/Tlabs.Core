@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Tlabs.Config {
   ///<summary>Configures services specified by assembly qualified names.</summary>
@@ -38,4 +40,26 @@ namespace Tlabs.Config {
       }
     }
   }
+
+  ///<summary>Extensions to configure services.</summary>
+  public static class ServicesConfigExtension {
+    ///<summary>Configure <see cref="ILoggerFactory"/> and <see cref="ILogger{T}"/> as services.</summary>
+    public static void ConfigureLoggingServices(this IServiceCollection svcColl) {
+      svcColl.RemoveAll<ILoggerFactory>();
+      svcColl.AddSingleton<ILoggerFactory>(App.LogFactory);
+
+      svcColl.RemoveAll(typeof(ILogger<>));
+      //services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
+      svcColl.AddSingleton(typeof(ILogger<>), typeof(Tlabs.App.SngLogger<>));
+      svcColl.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<LoggerFilterOptions>>(
+        new DefaultLoggerLevelConfigureOptions(LogLevel.Information))
+      );
+    }
+    sealed class DefaultLoggerLevelConfigureOptions : ConfigureOptions<LoggerFilterOptions> {
+      public DefaultLoggerLevelConfigureOptions(LogLevel level) : base(options => options.MinLevel = level) { }
+    }
+
+  }
+
+
 }

@@ -7,7 +7,7 @@ namespace Tlabs.Dynamic.Misc.Tests {
   public class FunctionLibraryTest {
     [Fact]
     void AgeAtTest() {
-      var now= DateTime.Now;
+      var now= App.TimeInfo.Now;
       var dateAt= new DateTime(2018, 10, 5);
       var date= now.AddYears(-28);
       Assert.Equal(28, Function.AgeAt(date, null));

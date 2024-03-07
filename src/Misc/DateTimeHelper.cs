@@ -22,8 +22,8 @@ namespace Tlabs {
   public class DateTimeHelper : IAppTime {
     readonly TimeZoneInfo tzInfo;
 
-    /// <summary>Default Ctor creating a local <see cref="IAppTime"/>.</summary>
-    public DateTimeHelper() : this(TimeZoneInfo.Local) { }
+    /// <summary>Default Ctor creating a UTC <see cref="IAppTime"/>.</summary>
+    public DateTimeHelper() : this(TimeZoneInfo.Utc) { }
 
     /// <summary>
     /// Constructor from TimeZoneInfo

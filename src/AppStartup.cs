@@ -33,8 +33,8 @@ namespace Tlabs {
     public const string DFLT_HOST_SECTION= "appHosting";
     ///<summary>Application services config section.</summary>
     public const string APP_SVC_SECTION= "applicationServices";
-    const string ENV_DOTNET_PFX= "DOTNET_";
-    const string ENV_ASPNET_PFX= "ASPNET_";
+    internal const string ENV_DOTNET_PFX= "DOTNET_";
+    internal const string ENV_ASPNET_PFX= "ASPNET_";
     static readonly Assembly? entryAsm= Assembly.GetEntryAssembly();
 
     ///<summary>Create a <see cref="IHostBuilder"/> from optional command line <paramref name="args"/>.</summary>
@@ -46,8 +46,9 @@ namespace Tlabs {
        */
       if (!App.Settings.GetChildren().Any()) {
         var envPfx= null != entryAsm ? $"{entryAsm.GetName().Name}_" : null;
-        App.Setup.ConfigMngr.AddApplicationConfig(null, APP_ENV_VAR, args, envPfx);
+        App.Setup.Configuration.AddApplicationConfig(null, APP_ENV_VAR, args, envPfx);
       }
+      var hostConfig= App.Settings.GetSection(hostSection);
 
       /* Setup a LogFactory only for a non-empty 'logging' configuration in section:
        */
@@ -60,11 +61,9 @@ namespace Tlabs {
 
       var hostBuilder= new HostBuilder(); //Host.CreateDefaultBuilder(args) [https://github.com/dotnet/runtime/blob/79ae74f5ca5c8a6fe3a48935e85bd7374959c570/src/libraries/Microsoft.Extensions.Hosting/src/Host.cs]
       hostBuilder.UseContentRoot(App.ContentRoot);
-      hostBuilder.ConfigureHostConfiguration(hostCfg => hostCfg.AddEnvironmentVariables(prefix: ENV_DOTNET_PFX));
-      hostBuilder.ConfigureAppConfiguration((hostingCtx, config) => {
-        config.AddEnvironmentVariables(prefix: ENV_ASPNET_PFX);
-        // configureUserSecret(hostingCtx.HostingEnvironment, config);    //This was a default of CreateDefaultBuilder() - consider to invoke...
-      });
+      hostBuilder.ConfigureHostConfiguration(hostCfg => hostCfg.AddConfiguration(hostConfig)
+                                                               .AddEnvironmentVariables(prefix: ENV_DOTNET_PFX)
+                                                               .AddEnvironmentVariables(prefix: ENV_ASPNET_PFX));
 
       /* Configure additional host settings:
        */
