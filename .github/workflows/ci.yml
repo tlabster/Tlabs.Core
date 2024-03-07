@@ -21,6 +21,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dotnet-
 
-      - run: dotnet restore ./tst/Tlabs.Core.Tests.csproj
+      - run: dotnet restore tst/Tlabs.Core.Tests.csproj
 
-      - run: dotnet test ./tst/Tlabs.Core.Tests.csproj       
+      - run: dotnet test tst/Tlabs.Core.Tests.csproj       
