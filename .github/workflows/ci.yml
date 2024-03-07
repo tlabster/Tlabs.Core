@@ -12,5 +12,15 @@ jobs:
       cache-name: dotnetcore
     steps:
       - run: echo "Running core tests
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-dotnet-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-
+
       - run: dotnet restore ./tst/Tlabs.Core.Tests.csproj
+
       - run: dotnet test ./tst/Tlabs.Core.Tests.csproj       
