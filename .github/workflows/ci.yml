@@ -7,7 +7,9 @@ on:
 
 jobs:
   Base-tests:
-    cache-name: dotnetcore
+    runs-on: ubuntu-latest
+    env:
+      cache-name: dotnetcore
     steps:
       - run: echo "Running core tests
       - run: dotnet restore ./tst/Tlabs.Core.Tests.csproj
