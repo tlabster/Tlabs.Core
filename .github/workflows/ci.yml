@@ -8,8 +8,6 @@ on:
 jobs:
   Base-tests:
     runs-on: ubuntu-latest
-    env:
-      cache-name: dotnetcore
     steps:
       - run: echo "Running core tests"
 
