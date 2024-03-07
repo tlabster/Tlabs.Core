@@ -11,7 +11,7 @@ jobs:
     env:
       cache-name: dotnetcore
     steps:
-      - run: echo "Running core tests
+      - run: echo "Running core tests"
 
       - name: Cache dependencies
         uses: actions/cache@v3
