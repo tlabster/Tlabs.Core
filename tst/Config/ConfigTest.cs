@@ -82,7 +82,6 @@ namespace Tlabs.Config.Tests {
       Assert.IsType<Dictionary<string, object>>(configDict["webHosting"]);
       Assert.True(configDict.TryResolveValue("webHosting.configurator.assemblyPath.options.2", out var val, out var _)); //arrays become dictionaries keyed by index
       Assert.Equal("3", val.ToString());
-
     }
 
     [Fact]
@@ -105,6 +104,18 @@ namespace Tlabs.Config.Tests {
       tstout.WriteLine($"FreeBSD: {System.Runtime.InteropServices.OSPlatform.FreeBSD}");
       tstout.WriteLine(".");
     }
+
+    [Fact]
+    public void SubSectionConfiguratorTest() {
+      var type= typeof(SubSectionConfigurator<Empty>);
+      this.ApplyConfigurators(config, "subsectionConfig");
+      Assert.Equal(2, this.appliedConfigCount);
+
+      type= typeof(IDictionary<string, bool>);
+      tstout.WriteLine(type.FullName);
+    }
+
+
   }
 
 }

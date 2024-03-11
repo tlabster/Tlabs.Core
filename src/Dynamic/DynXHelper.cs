@@ -10,6 +10,17 @@ namespace Tlabs.Dynamic {
   ///<summary>Dynamic expression helper</summary>
   public static class DynXHelper {
 
+    ///<summary>Converts <paramref name="methodInfo"/> into a delegeate</summary>
+    public static Delegate AsDelegate(this MethodInfo methodInfo, object? target= null) {
+      var parmTypes= methodInfo.GetParameters().Select(parm => parm.ParameterType);
+      var delegateType= Expression.GetDelegateType(parmTypes.Append(methodInfo.ReturnType).ToArray());
+
+      if (methodInfo.IsStatic)
+        return methodInfo.CreateDelegate(delegateType);
+      return methodInfo.CreateDelegate(delegateType, target);
+    }
+
+
     ///<summary>Compiled context expression info.</summary>
     public struct ContextExpression {
       ///<summary>Context expression</summary>

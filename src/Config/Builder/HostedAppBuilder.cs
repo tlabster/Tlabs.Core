@@ -22,7 +22,7 @@ namespace Tlabs.Config {
     }
 
     /// <summary>Ctor from optional <paramref name="args"/>.</summary>
-    public HostedAppBuilder(string[]? args = null) : this(DFLT_HOST_SECTION, args) { }
+    public HostedAppBuilder(string[]? args= null) : this(DFLT_HOST_SECTION, args) { }
     /// <summary>Ctor from optional <paramref name="hostSectionName"/> and <paramref name="args"/>.</summary>
     public HostedAppBuilder(string hostSectionName, string[]? args= null)
       : base(new AppBuilderFactory(), hostSectionName, args) { }
