@@ -31,8 +31,10 @@ namespace Tlabs.Config {
     IServiceProvider ServiceProv,
     IAppTime TimeInfo
   ) {
-    /// <summary>Env. variable name to read the host environment</summary>
-    public const string ENV_VAR_NAME= "ASPNETCORE_ENVIRONMENT";
+    /// <summary>ASP.NET env. variable name to read the host environment</summary>
+    public const string ASPNET_ENV_NAME= "ASPNETCORE_ENVIRONMENT";
+    /// <summary>.NET env. variable name to read the host environment</summary>
+    public const string DOTNET_ENV_NAME= "DOTNET_ENVIRONMENT";
 
     internal class EmptyServiceProvider : IServiceProvider {
       public object? GetService(Type serviceType) {
@@ -53,13 +55,20 @@ namespace Tlabs.Config {
     /// <summary>Default ctor</summary>
     public ApplicationSetup() : this(
       Name: (Assembly.GetEntryAssembly() ?? Assembly.GetAssembly(typeof(ApplicationStartup)))?.GetName().Name ?? "?APP",
-      EnvironmentName: Environment.GetEnvironmentVariable(ENV_VAR_NAME) ?? Environments.Production,
+      EnvironmentName:    Environment.GetEnvironmentVariable(ASPNET_ENV_NAME)
+                       ?? Environment.GetEnvironmentVariable(DOTNET_ENV_NAME)
+                       ?? Environments.Production,
       ContentRoot:  AppContext.BaseDirectory, //Directory.GetCurrentDirectory(),
       Configuration:   new(),
       LogFactory:   DEFAULT_LoggerFactory,
       ServiceProv:  DEFAULT_ServiceProvider,
       TimeInfo:     Singleton<DateTimeHelper>.Instance
-    ) { }
+    ) {
+      if (IsDevelopmentEnv) ContentRoot= Environment.CurrentDirectory;
+    }
+
+    /// <summary>True if development environemnt</summary>
+    public bool IsDevelopmentEnv => EnvironmentName == Environments.Development;
 
     /// <summary>Apply application config settings only if current settings are empty</summary>
     /// <remarks>The actual setings are composed according to <see cref="ConfigUtilsExtensions.AddApplicationConfig(IConfigurationBuilder, string, string, string[], string)"/>...</remarks>

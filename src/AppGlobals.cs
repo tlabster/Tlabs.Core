@@ -98,6 +98,14 @@ namespace Tlabs {
       scopedAction(svcScope.ServiceProvider);
     }
 
+    ///<summary>Exceutes the <paramref name="scopedFunc"/> with a service instance of type <typeparamref name="T"/> from a (new) service scope.</summary>
+    ///<returns>The model of type <typeparamref name="M"/> returned from <paramref name="scopedFunc"/></returns>
+    public static M FromScopedServiceInstance<T, M>(Func<IServiceProvider, T, M> scopedFunc, params object[] extraParams) {
+      using var svcScope= ServiceProv.GetRequiredService<IServiceScopeFactory>().CreateScope();
+      var svcInstance= ActivatorUtilities.CreateInstance<T>(svcScope.ServiceProvider, extraParams);
+      return scopedFunc(svcScope.ServiceProvider, svcInstance);
+    }
+
     ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor
     ///resolved from the optional <paramref name="svcProv"/> (defaults to <see cref="ServiceProv"/>).
     ///</summary>
