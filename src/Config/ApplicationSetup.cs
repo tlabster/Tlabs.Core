@@ -108,6 +108,7 @@ namespace Tlabs.Config {
         App.MainEntryPath,
         $"{RTinfo.FrameworkDescription} framwork", RTinfo.OSArchitecture,
         RTinfo.OSDescription);
+      log.LogDebug("Runtime environment: {env}", App.Setup.EnvironmentName);
       return log;
     }
 

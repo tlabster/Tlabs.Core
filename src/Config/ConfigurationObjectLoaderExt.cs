@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace Tlabs.Config {
 
@@ -13,7 +14,7 @@ namespace Tlabs.Config {
       public string? type { get; set; }
       public Dictionary<string, string>? config { get; set; }
     }
-    static string[] objDescFIELDS= typeof(ObjectDescriptor).GetFields().Select(fi => fi.Name).ToArray();
+    static string[] objDescFIELDS= typeof(ObjectDescriptor).GetProperties(BindingFlags.Public|BindingFlags.Instance|BindingFlags.DeclaredOnly).Select(fi => fi.Name).ToArray();
 
     ///<summary>Configuration object with section key.</summary>
     public struct CfgObject<T> {
