@@ -37,20 +37,20 @@ namespace Tlabs.Msg {
     Task<TRet> PublishRequest<TRet>(string subject, object message, int timeout= 0) where TRet : class;
 
     ///<summary>Subscribe on <paramref name="subject"/> to receive messages of type type <typeparamref name="T"/>.</summary>
-    void Subscribe<T>(string subject, Action<T> subHandler) where T : class;
+    void Subscribe<T>(string subject, Action<T> subHandler) where T : notnull;
 
     ///<summary>Subscribe on <paramref name="subject"/> to receive messages of type type <typeparamref name="T"/>.</summary>
-    void Subscribe<T>(string subject, Func<T, Task> subHandler) where T : class;
+    void Subscribe<T>(string subject, Func<T, Task> subHandler) where T : notnull;
 
     ///<summary>Subscribe for a request on <paramref name="subject"/> to receive messages of type type <typeparamref name="TMsg"/> and to return <typeparamref name="TRet"/>.</summary>
-    void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : class;
+    void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, TRet> requestHandler) where TMsg : notnull where TRet : notnull;
 
     ///<summary>Subscribe for a request on <paramref name="subject"/> to receive async. messages of type type <typeparamref name="TMsg"/> and to return <typeparamref name="TRet"/>.</summary>
-    void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, Task<TRet>> requestHandler) where TMsg : class;
+    void SubscribeRequest<TMsg, TRet>(string subject, Func<TMsg, Task<TRet>> requestHandler) where TMsg : notnull where TRet : notnull;
 
     ///<summary>Unsubscribe <paramref name="handler"/> from any subscriptions.</summary>
     ///<returns>true if successfull unsubscribed.</returns>
-    void Unsubscribe(Delegate handler);
+    void Unsubscribe(Delegate? handler);
   }
 
 }

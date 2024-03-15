@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+
+using Tlabs.Misc;
+using Tlabs.Sync;
+
 using Xunit;
 using Xunit.Abstractions;
 
@@ -81,32 +86,23 @@ namespace Tlabs.Misc.Tests {
     }
 
     [Fact]
-    public void LoadTypeTest() {
-      var type= Safe.LoadType("Tlabs.Misc.Tests.MiscTest, Tlabs.Core.Tests", "test type");
-      Assert.IsAssignableFrom<Type>(type);
-
-      type= Safe.LoadType("Tlabs.Misc.Tests.MiscTest+GenericTest`1, Tlabs.Core.Tests & Tlabs.Misc.Tests.MiscTest, Tlabs.Core.Tests", "test type");
-      Assert.IsAssignableFrom<Type>(type);
-
-      Assert.Throws<AppConfigException>(() =>
-        Safe.LoadType("Tlabs.Misc.Tests.MiscTest+GenericTest`1, Tlabs.Core.Tests & Tlabs.Misc.Tests.MiscTest+Dummy, Tlabs.Core.Tests", "test type")
-      );
-
-      Assert.Throws<AppConfigException>(() =>
-        Safe.LoadType("Tlabs.Misc.Tests.XYZ, Tlabs.Core.Tests", "test type")
-      );
+    public void DictionaryListTest() {
+      IDictionaryListTest(new DictionaryList<string, int>());
     }
 
     [Fact]
-    public void DictionaryListTest() {
+    public void SyncDictionaryListTest() {
+      IDictionaryListTest(new SyncDictionaryList<string, int>());
+    }
+
+    void IDictionaryListTest(IDictionaryList<string, int> dlist) {
       const int ONE= 1;
       const int N= 9;
       const int SUM= (N * (N+1)) / 2;
-      var dlist= new DictionaryList<string, int>();
 
       Assert.Empty(dlist);
       Assert.Empty(dlist.Keys);
-      Assert.Throws<KeyNotFoundException>(()=> dlist["x"]);
+      Assert.Throws<KeyNotFoundException>(() => dlist["x"]);
 
       dlist.Add(nameof(ONE), 1);
       Assert.NotEmpty(dlist);
@@ -114,12 +110,16 @@ namespace Tlabs.Misc.Tests {
       Assert.NotEmpty(dlist[nameof(ONE)]);
       Assert.Equal(1, dlist[nameof(ONE)].First());
 
-      for (var l= 1; l <= N; ++l)
+      for (var l = 1; l <= N; ++l)
         dlist.Add(nameof(SUM), l);
       Assert.Equal(2, dlist.Keys.Count());
+      Assert.Equal(1 + N, dlist.Count);
       Assert.Equal(N, dlist[nameof(SUM)].Count());
       Assert.Equal(dlist.Values.Count(), dlist[nameof(SUM)].Count() + dlist[nameof(ONE)].Count());
-      //Assert.Equal(SUM, dlist[nameof(SUM)].Sum());
+      Assert.Equal(SUM, dlist[nameof(SUM)].Sum());
+      dlist.AddRange(nameof(SUM), new int[] { 0, 0 });
+      Assert.Equal(SUM, dlist[nameof(SUM)].Sum());
+
       IEnumerable<int> lst;
       Assert.True(dlist.TryGetValue(nameof(SUM), out lst));
       Assert.Equal(SUM, lst.Sum());
@@ -131,11 +131,78 @@ namespace Tlabs.Misc.Tests {
 
       dlist.Clear();
       Assert.Empty(dlist);
+    }
+
+
+    [Fact]
+    public void LookupDictionaryTest() {
+      var dict= new LookupDictionary<string, int>(k => -1) {
+        ["one"]= 1,
+        ["two"]= 2
+      };
+
+      Assert.NotEmpty(dict);
+      Assert.NotEmpty(dict.Values);
+      Assert.NotEmpty(dict.Keys);
+      foreach (var p in dict) {
+        Assert.Contains(p.Key, dict.Keys);
+        Assert.Contains(p.Value, dict.Values);
+        Assert.Contains(p, dict);
+      }
+      Assert.Equal(2, dict.Count);
+      Assert.Equal(dict.Count, dict.Count());
+      Assert.Equal(1, dict["one"]);
+      dict["three"]= 3;
+      Assert.True(dict.TryGetValue("three", out var i));
+      Assert.Equal(3, i);
+
+      Assert.Equal(-1, dict["undefined"]);
+      Assert.False(dict.TryGetValue("undefined", out i));
+      Assert.Equal(-1, dict.GetOrAdd("more"));
+      Assert.True(dict.TryGetValue("more", out i));
+      Assert.Equal(-1, i);
+
+      Assert.Equal(dict, new LookupDictionary<string, int>(dict, k => -1));
+      Assert.Equal(dict, new LookupDictionary<string, int>((IReadOnlyDictionary<string, int>)dict, k => -1));
+      Assert.Equal(dict, new LookupDictionary<string, int>((IEnumerable<KeyValuePair<string, int>>)dict, k => -1));
+    }
+
+    [Fact]
+    public void GenericEqualityTest() {
+      var eq= new GenericEqualityComp<string>((a, b) => a == b, a => a.GetHashCode());
+
+      Assert.Equal(StringComparer.Ordinal.Equals("abc", "abc"), eq.Equals("abc", "abc"));
+      Assert.Equal(StringComparer.Ordinal.Equals("abc", "x"), eq.Equals("abc", "x"));
+      Assert.Equal(StringComparer.Ordinal.GetHashCode("abc"), eq.GetHashCode("abc"));
 
     }
-    public class GenericTest<T> where T : MiscTest {
 
+
+    [Fact]
+    public void CollExtensionTest() {
+      var set= new HashSet<string> {"one", "two", "three"};
+      Assert.Same("one", set.GetOrAdd("one"));
+      Assert.Equal(3, set.Count);
+      Assert.Same("new", set.GetOrAdd("new"));
+      Assert.Equal(4, set.Count);
+
+      var sset= new SortedSet<string>(set, StringComparer.OrdinalIgnoreCase);
+      Assert.True(set.ContentEquals(sset));
+      Assert.Same("two", sset.GetOrAdd("tWo", StringComparer.OrdinalIgnoreCase));
+      Assert.Equal(4, sset.Count);
+      Assert.True(set.ContentEquals(sset, StringComparer.OrdinalIgnoreCase));
+
+      Assert.True(ImmutableDictionary<string, int>.Empty.ContentEquals(ImmutableDictionary<string, int>.Empty));
+      Assert.True(ImmutableDictionary<string, string>.Empty.ContentEquals(ImmutableDictionary<string, string>.Empty, StringComparer.OrdinalIgnoreCase));
     }
-    public class Dummy { }
+
+    [Fact]
+    public void Array2dTest() {
+      float[,] ary2d= { {0, 0.1f, 0.2f}, {1.0f, 1.1f, 1.2f} };
+      var ary= new Array2DRowSlice<float>(ary2d, 1);
+      Assert.Equal(3, ary.Count);
+      Assert.Equal(1.0, ary[0]);
+      Assert.Equal(new float[] { 1.0f, 1.1f, 1.2f }, ary);
+    }
   }
 }

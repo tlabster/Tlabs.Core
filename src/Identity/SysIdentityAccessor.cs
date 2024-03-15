@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Security.Claims;
 
 namespace Tlabs.Identity {
@@ -16,7 +17,7 @@ namespace Tlabs.Identity {
     ///<inheritdoc/>
     public virtual int Id => 0;
     ///<inheritdoc/>
-    public virtual string[] Roles => null;
+    public virtual string[] Roles => Array.Empty<string>();
     ///<inheritdoc/>
     public virtual bool HasRole(string role) => false;
   }

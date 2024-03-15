@@ -4,11 +4,10 @@ using System.Collections.Generic;
 using Xunit;
 
 namespace Tlabs.Dynamic.Misc.Tests {
-  [Collection("MemoryDB")]
   public class FunctionLibraryTest {
     [Fact]
     void AgeAtTest() {
-      var now= DateTime.Now;
+      var now= App.TimeInfo.Now;
       var dateAt= new DateTime(2018, 10, 5);
       var date= now.AddYears(-28);
       Assert.Equal(28, Function.AgeAt(date, null));
@@ -46,7 +45,7 @@ namespace Tlabs.Dynamic.Misc.Tests {
     void AfterDaysTest() {
       var date1= new DateTime(2018, 12, 09);
       Assert.Equal(5, Function.DaysDiff(date1, Function.AfterDays(date1, 5)));
-      //If it falls in a sunday one day is added on top
+      //If it falls on a sunday one day is added on top
       Assert.Equal(8, Function.DaysDiff(date1, Function.AfterDays(date1, 7)));
     }
 
@@ -167,12 +166,5 @@ namespace Tlabs.Dynamic.Misc.Tests {
       Assert.False(Function.AllEx<string>(new string[] { "Alcohol", "Lottery" }, new string[] { "Alcohol" }));
     }
 
-      // [Fact]
-      // void AterDaysTest() {
-      //   var date1= new DateTime(1985, 12, 21);
-      //   var date2= new DateTime(1990, 12, 20);
-      //   Assert.Equal(1, Function.DaysDiff(date1, date2));
-      //   Assert.Equal(1, Function.DaysDiff(date2, date1));
-      // }
-    }
+  }
 }

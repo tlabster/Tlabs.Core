@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.IO;
+using System.Threading;
 
 #nullable enable
 
@@ -21,6 +22,7 @@ namespace Tlabs.Misc {
     ReadOnlySequence<byte> sequence;
 
     ///<summary>Ctor from <paramref name="stream"/> and option <paramref name="chunkSize"/></summary>
+    [Obsolete("Use SegmentReadBuffer as drop-in replacement", false)]
     public ReadStreamBuffer(Stream stream, int chunkSize= 4096) {
       if (null == (this.strm= stream)) throw new ArgumentNullException(nameof(stream));
       if (0 >= (this.MinChunkSz= chunkSize)) throw new ArgumentException(nameof(chunkSize));
@@ -45,7 +47,7 @@ namespace Tlabs.Misc {
     }}
 
     ///<summary>Expand buffer with more data from stream.</summary>
-    public ref readonly ReadOnlySequence<byte> Expand() {
+    public ref readonly ReadOnlySequence<byte> Expand() {   //***TODO: Make this more generic to expand even from different data sources
       if (isEndOfStream) throw new InvalidOperationException("End of stream");
       /* Append segment:
        */
@@ -91,7 +93,7 @@ namespace Tlabs.Misc {
     sealed class BufferSegment : ReadOnlySequenceSegment<byte>, IDisposable {
       public IMemoryOwner<byte> Buffer { get; }
       readonly BufferSegment? prev;
-      private bool isDisposed;
+      int isDisposed;
 
       public BufferSegment(int size, BufferSegment? prev) {
         Buffer= MemoryPool<byte>.Shared.Rent(size);
@@ -99,6 +101,7 @@ namespace Tlabs.Misc {
 
         Memory= Buffer.Memory;
         RunningIndex= prev?.RunningIndex + prev?.Memory.Length ?? 0;
+        // this.prev?.SetNext(this);
       }
 
       public BufferSegment(BufferSegment end) {
@@ -111,11 +114,9 @@ namespace Tlabs.Misc {
       public void SetNext(BufferSegment next) => Next= next;
 
       public void Dispose() {
-        if (!isDisposed) {
-          isDisposed= true;
-          Buffer.Dispose();
-          prev?.Dispose();
-        }
+        if (0 != Interlocked.Exchange(ref isDisposed, 1)) return;
+        Buffer.Dispose();
+        prev?.Dispose();
       }
     }
   }

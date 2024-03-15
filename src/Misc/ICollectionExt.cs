@@ -9,7 +9,7 @@ namespace Tlabs.Misc {
 
     ///<summary>Adds the elements of the specified <paramref name="rng"/> to the end of collection <paramref name="col"/>.</summary>
     public static void AddRange<T>(this ICollection<T> col, IEnumerable<T> rng) {
-      if (null == col) throw new ArgumentNullException(nameof(col));
+      ArgumentNullException.ThrowIfNull(col);
       if (null == rng) return;
       if (col is List<T> specificLst) {
         specificLst.AddRange(rng);
@@ -44,9 +44,9 @@ namespace Tlabs.Misc {
 #endif
 
     ///<summary>Gets an exisiting or adds the <paramref name="itm"/> to the <see cref="ISet{T}"/>.</summary>
-    public static T GetOrAdd<T>(this ISet<T> set, T itm, IEqualityComparer<T> cmp= null) {
-      if (null == set) throw new ArgumentNullException(nameof(set));
-      if (null == itm) throw new ArgumentNullException(nameof(itm));
+    public static T GetOrAdd<T>(this ISet<T> set, T itm, IEqualityComparer<T>? cmp= null) {
+      ArgumentNullException.ThrowIfNull(set);
+      ArgumentNullException.ThrowIfNull(itm);
 
       if (set is HashSet<T> hashSet) {
         if (hashSet.TryGetValue(itm, out var itm2)) return itm2;
@@ -57,23 +57,23 @@ namespace Tlabs.Misc {
       if (set.Add(itm)) return itm;
       return   (null != cmp)
              ? set.Where(i => cmp.Equals(i, itm)).First()
-             : set.Where(i => i.Equals(itm)).First();
+             : set.Where(i => Object.Equals(i, itm)).First();
     }
 
     ///<summary>Compares <see cref="IDictionary{K,T}"/> contents for equality.</summary>
-    public static bool ContentEquals<K, T>(this IDictionary<K, T> dict, IDictionary<K, T> other) where T : class {
-      if (null == dict) throw new ArgumentNullException(nameof(dict));
-      if (null == other) throw new ArgumentNullException(nameof(other));
+    public static bool ContentEquals<K, T>(this IDictionary<K, T> dict, IDictionary<K, T> other) {
+      ArgumentNullException.ThrowIfNull(dict);
+      ArgumentNullException.ThrowIfNull(other);
 
       if (dict.Count != other.Count) return false;
-      return dict.All(p => other.TryGetValue(p.Key, out var val) && p.Value == val);
+      return dict.All(p => other.TryGetValue(p.Key, out var val) && object.Equals(p.Value, val));
     }
 
     ///<summary>Compares <see cref="IDictionary{K,T}"/> contents for equality.</summary>
     public static bool ContentEquals<K, T>(this IDictionary<K, T> dict, IDictionary<K, T> other, IEqualityComparer<T> cmp) {
-      if (null == dict) throw new ArgumentNullException(nameof(dict));
-      if (null == other) throw new ArgumentNullException(nameof(other));
-      if (null == cmp) throw new ArgumentNullException(nameof(cmp));
+      ArgumentNullException.ThrowIfNull(dict);
+      ArgumentNullException.ThrowIfNull(other);
+      ArgumentNullException.ThrowIfNull(cmp);
 
       if (dict.Count != other.Count) return false;
       return dict.All(p => other.TryGetValue(p.Key, out var val) && cmp.Equals(p.Value, val));
@@ -81,8 +81,8 @@ namespace Tlabs.Misc {
 
     ///<summary>Compares <see cref="IEnumerable{T}"/> contents for equality.</summary>
     public static bool ContentEquals<T>(this IEnumerable<T> seq, IEnumerable<T> other) where T : class {
-      if (null == seq) throw new ArgumentNullException(nameof(seq));
-      if (null == other) throw new ArgumentNullException(nameof(other));
+      ArgumentNullException.ThrowIfNull(seq);
+      ArgumentNullException.ThrowIfNull(other);
 
       if (seq.TryGetNonEnumeratedCount(out var seqCnt) && other.TryGetNonEnumeratedCount(out var otherCnt) && seqCnt != otherCnt) return false;
       var set= other.ToHashSet();
@@ -91,9 +91,9 @@ namespace Tlabs.Misc {
 
     ///<summary>Compares <see cref="IEnumerable{T}"/> contents for equality.</summary>
     public static bool ContentEquals<T>(this IEnumerable<T> seq, IEnumerable<T> other, IEqualityComparer<T> cmp) where T : class {
-      if (null == seq) throw new ArgumentNullException(nameof(seq));
-      if (null == other) throw new ArgumentNullException(nameof(other));
-      if (null == cmp) throw new ArgumentNullException(nameof(cmp));
+      ArgumentNullException.ThrowIfNull(seq);
+      ArgumentNullException.ThrowIfNull(other);
+      ArgumentNullException.ThrowIfNull(cmp);
 
       if (seq.TryGetNonEnumeratedCount(out var seqCnt) && other.TryGetNonEnumeratedCount(out var otherCnt) && seqCnt != otherCnt) return false;
       var set= other.ToHashSet(cmp);

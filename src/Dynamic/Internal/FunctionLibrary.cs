@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Globalization;
-using System.Collections;
 using System.Linq;
+using Tlabs.Misc;
 
 namespace Tlabs.Dynamic.Misc  {
 
@@ -19,9 +19,9 @@ namespace Tlabs.Dynamic.Misc  {
     private static readonly Expression<Func<bool, bool, bool, bool, bool>> AtMostOne4Exp= (b1, b2, b3, b4) => AtMostOne(b1, b2, b3, b4);
     private static readonly Expression<Func<bool, bool, bool, bool, bool, bool>> AtMostOne5Exp= (b1, b2, b3, b4, b5) => AtMostOne(b1, b2, b3, b4, b5);
     private static readonly Expression<Func<bool, bool, bool, bool, bool, bool, bool>> AtMostOne6Exp= (b1, b2, b3, b4, b5, b6) => AtMostOne(b1, b2, b3, b4, b5, b6);
-    private static readonly Expression<Func<object, object, object>> Choose2Exp= (c1, c2) => Choose(c1, c2);
-    private static readonly Expression<Func<object, object, object, object>> Choose3Exp= (c1, c2, c3) => Choose(c1, c2, c3);
-    private static readonly Expression<Func<object, object, object, object, object>> Choose4Exp= (c1, c2, c3, c4) => Choose(c1, c2, c3, c4);
+    private static readonly Expression<Func<object, object, object?>> Choose2Exp= (c1, c2) => Choose(c1, c2);
+    private static readonly Expression<Func<object, object, object, object?>> Choose3Exp= (c1, c2, c3) => Choose(c1, c2, c3);
+    private static readonly Expression<Func<object, object, object, object, object?>> Choose4Exp= (c1, c2, c3, c4) => Choose(c1, c2, c3, c4);
     private static readonly Expression<Func<object, int>> AgeExp= (o) => AgeAt(o, App.TimeInfo.Now);
     private static readonly Expression<Func<object, DateTime?, int>> AgeAtExp= (o, now) => AgeAt(o, now);
     private static readonly Expression<Func<object, object, decimal>> YearsDiffExp= (d1, d2) => YearsDiff(d1, d2);
@@ -37,7 +37,7 @@ namespace Tlabs.Dynamic.Misc  {
     private static readonly Expression<Func<object, decimal>> NumExp= (o) => Num(o);
     private static readonly Expression<Func<object, object, bool>> HasFlagsExp= (o1, o2) => HasFlags(o1, o2);
     private static readonly Expression<Func<object, DateTime>> DateExp= (o) => Date(o);
-    private static readonly Expression<Func<object, List<object>>> ListExp= (o) => List(o);
+    private static readonly Expression<Func<object, List<object>?>> ListExp= (o) => List(o);
     private static readonly Expression<Func<object, object, bool>> AnyStrInExp= (a, b) => AnyIn<string>(a, b);
     private static readonly Expression<Func<object, object, bool>> AnyStrExExp= (a, b) => AnyEx<string>(a, b);
     private static readonly Expression<Func<object, object, bool>> AllStrInExp= (a, b) => AllIn<string>(a, b);
@@ -102,7 +102,7 @@ namespace Tlabs.Dynamic.Misc  {
       return res;
     }
 
-    internal static object Choose(params object[] parms) {
+    internal static object? Choose(params object[] parms) {
       foreach(var p in parms)
         if (null != p) return p;
       return null;
@@ -143,7 +143,7 @@ namespace Tlabs.Dynamic.Misc  {
       return num ?? 0;
     }
 
-    internal static List<object> List(object o) => o switch {
+    internal static List<object>? List(object o) => o switch {
       List<string> stList   => stList.Cast<object>().ToList(),
       List<decimal> decList => decList.Cast<object>().ToList(),
       List<int> intList     => intList.Cast<object>().ToList(),
@@ -152,14 +152,14 @@ namespace Tlabs.Dynamic.Misc  {
     };
 
     internal static bool AnyIn<T>(object o1, object o2) where T : class {
-      var sub= o1 as IEnumerable<T> ?? new T[] {o1 as T};
-      var set= o2 as IEnumerable<T> ?? new T[] {o2 as T};
+      var sub= o1 as IEnumerable<T> ?? (o1 is T t1 ? EnumerableUtil.One<T>(t1) : null);
+      var set= o2 as IEnumerable<T> ?? (o2 is T t2 ? EnumerableUtil.One<T>(t2) : null);
       return null != sub && null != set && sub.Any(itm => set.Contains(itm));
     }
 
     internal static bool AllIn<T>(object o1, object o2) where T : class {
-      var sub= o1 as IEnumerable<T> ?? new T[] {o1 as T};
-      var set= o2 as IEnumerable<T> ?? new T[] {o2 as T};
+      var sub= o1 as IEnumerable<T> ?? (o1 is T t1 ? EnumerableUtil.One<T>(t1) : null);
+      var set= o2 as IEnumerable<T> ?? (o2 is T t2 ? EnumerableUtil.One<T>(t2) : null);
       return null != sub && null != set && sub.All(itm => set.Contains(itm));
     }
 

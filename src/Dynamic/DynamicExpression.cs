@@ -41,7 +41,7 @@ namespace Tlabs.Dynamic {
     /// <para>
     /// </para>
     ///</remarks>
-    public DynamicExpression(string expression, IReadOnlyDictionary<string, Type> ctxConverter= null, IReadOnlyDictionary<string, object> funcLib= null) {
+    public DynamicExpression(string expression, IReadOnlyDictionary<string, Type>? ctxConverter= null, IReadOnlyDictionary<string, object>? funcLib= null) {
       if (null == (this.expression= expression)) throw new ArgumentNullException(nameof(expression));
       funcLib??= Misc.Function.Library;
 

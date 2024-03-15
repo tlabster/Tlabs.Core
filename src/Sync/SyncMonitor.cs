@@ -23,18 +23,18 @@ namespace Tlabs.Sync {
     public SyncMonitor() : base(null) { }
 
     /// <summary>Ctor with specified lock/monitor object.</summary>
-    public SyncMonitor(object syncRoot) : base(syncRoot) { }
+    public SyncMonitor(object? syncRoot) : base(syncRoot) { }
 
     /// <summary>Suspends the calling thread until the change of value gets signaled.</summary>
     /// <returns>Current value of type T.</returns>
-    public T WaitForSignal() => WaitForSignal(Timeout.Infinite);
+    public T? WaitForSignal() => WaitForSignal(Timeout.Infinite);
 
     /// <summary>Suspends the calling thread until the change of value gets signaled.</summary>
     /// <param name="timeOut">Maximum number of milliseconds to wait for a signal.</param>
     /// <returns>Current value of type T.</returns>
     /// <exception cref="TimeoutException">Exception thrown when <paramref name="timeOut"/> milliseconds elapsed
     /// w/o signal.</exception>
-    public T WaitForSignal(int timeOut) {
+    public T? WaitForSignal(int timeOut) {
       lock (syncRoot) {
         while (SignalState.None == pendingSignal) {    //while loop, because we might loose the race with another waiter on the lock
           if (!Monitor.Wait(syncRoot, timeOut)) throw new TimeoutException("WaitForSignal() timed out.");
@@ -56,15 +56,15 @@ namespace Tlabs.Sync {
     public AsyncMonitor(object syncRoot) : base(syncRoot) { }
 
     /// <summary>Source for task result signaling.</summary>
-    protected TaskCompletionSource<T> complSrc= new();
+    protected TaskCompletionSource<T?> complSrc= new();
 
     /// <summary>Returns a <see cref="Task{T}"/> to be awaited for a signaled value.</summary>
-    public Task<T> SignaledValue(CancellationToken? ctok= null) => SignaledValue(Timeout.Infinite, ctok);
+    public Task<T?> SignaledValue(CancellationToken? ctok= null) => SignaledValue(Timeout.Infinite, ctok);
 
     /// <summary>Returns a <see cref="Task{T}"/> to be awaited for a signaled value.</summary>
     /// <param name="timeOut">Maximum number of milliseconds to wait for a signal until the <see cref="Task{T}"/> is cancelled.</param>
     /// <param name="ctok">Cancellation token</param>
-    public Task<T> SignaledValue(int timeOut, CancellationToken? ctok= null) {
+    public Task<T?> SignaledValue(int timeOut, CancellationToken? ctok= null) {
       if (IsSignaled) return Task.FromResult(this.Value);
       if (timeOut > 0) {
         var ctokSrc= new CancellationTokenSource(timeOut);
@@ -78,11 +78,11 @@ namespace Tlabs.Sync {
     public override void ResetSignal() {
       base.ResetSignal();
       this.complSrc.TrySetCanceled();
-      this.complSrc= new TaskCompletionSource<T>();
+      this.complSrc= new TaskCompletionSource<T?>();
     }
 
     ///<inheritdoc/>
-    protected override T IternalSignal(SignalState state= SignalState.OneShot, T val= default(T), bool hasVal= false) {
+    protected override T? IternalSignal(SignalState state= SignalState.OneShot, T? val= default, bool hasVal= false) {
       val= base.IternalSignal(state, val, hasVal);
       complSrc.TrySetResult(val);
       return val;
@@ -105,30 +105,30 @@ namespace Tlabs.Sync {
     /// <summary>Pending signal state.</summary>
     protected volatile SignalState pendingSignal;
     /// <summary>Value.</summary>
-    protected T val;
+    protected T? val;
 
     /// <summary>Ctor with specified lock/monitor object.</summary>
-    protected BaseMonitor(object syncRoot) => this.syncRoot= syncRoot ?? this;
+    protected BaseMonitor(object? syncRoot) => this.syncRoot= syncRoot ?? this;
 
     /// <summary>Getter / setter to the monitored value.</summary>
     /// <remarks>Setting the monitor value through this property does _not_ signal it's change.
     /// (Use <see cref="Signal(T)"/> instead.)</remarks>
-    public T Value {
+    public T? Value {
       get { lock (syncRoot) return val; }
       set { lock (syncRoot) val= value; }
     }
 
     /// <summary>Signal current monitor value to one next waiter.</summary>
-    public T Signal() => IternalSignal();
+    public T? Signal() => IternalSignal();
 
     /// <summary>Set value <paramref name="val"/> and signal it's change to one next waiter.</summary>
-    public T Signal(T val) => IternalSignal(SignalState.OneShot, val, true);
+    public T? Signal(T val) => IternalSignal(SignalState.OneShot, val, true);
 
     /// <summary>Signal current monitor value to all next waiter.</summary>
-    public T SignalPermanent() => IternalSignal(SignalState.Permanent);
+    public T? SignalPermanent() => IternalSignal(SignalState.Permanent);
 
     /// <summary>Set value <paramref name="val"/> and starts a permanent signaling of it's change to all waiter(s) until <see cref="ResetSignal()"/>.</summary>
-    public T SignalPermanent(T val) => IternalSignal(SignalState.Permanent, val, true);
+    public T? SignalPermanent(T val) => IternalSignal(SignalState.Permanent, val, true);
 
     /// <summary>Reset signaling of a one-time or permanent signal.</summary>
     public virtual void ResetSignal() {
@@ -142,7 +142,7 @@ namespace Tlabs.Sync {
     public object Sync => syncRoot;
 
     /// <summary>Signal monitor <paramref name="state"/> with optional <paramref name="val"/> and <paramref name="hasVal"/> indicator.</summary>
-    protected virtual T IternalSignal(SignalState state= SignalState.OneShot, T val= default(T), bool hasVal= false) {
+    protected virtual T? IternalSignal(SignalState state= SignalState.OneShot, T? val= default, bool hasVal= false) {
       lock (syncRoot) {
         if (hasVal) this.val= val;
         if (SignalState.Permanent == state) {

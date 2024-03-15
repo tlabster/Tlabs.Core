@@ -14,16 +14,15 @@ namespace Tlabs.Config {
     readonly object sync= new();
     readonly ILogger log;
     readonly string basePath;
-    string cfgPath;
-    string[] paths;
+    string? cfgPath;
 
     ///<summary>Default ctor.</summary>
     public AssemblyPathConfigurator() : this(null) { }
     ///<summary>Ctor from <paramref name="config"/> dictionary.</summary>
-    public AssemblyPathConfigurator(IDictionary<string, string> config) {
+    public AssemblyPathConfigurator(IDictionary<string, string>? config) {
       this.log= App.Logger<AssemblyPathConfigurator<T>>();
       var cfg= config ?? new Dictionary<string, string>();
-      this.basePath= Path.GetDirectoryName(App.MainEntryPath);
+      this.basePath= Path.GetDirectoryName(App.MainEntryPath) ?? "";
       log.LogDebug("Assembly base-path: {basePath}", basePath);
       if (!cfg.TryGetValue("path", out cfgPath)) return;   //no assembly path to be set
     }
@@ -36,11 +35,11 @@ namespace Tlabs.Config {
     public void ExtendAsmPath() {
       if (null != cfgPath) lock(sync) if (null != cfgPath) {
 
-        this.paths= cfgPath.Split(';');
+        var paths= cfgPath.Split(';');
         cfgPath= null;
         AssemblyLoadContext.Default.Resolving+= (ctx, asmName) => {
-          Assembly asm= null;
-          foreach (var path in this.paths) {
+          Assembly? asm= null;
+          if (null != asmName.Name) foreach (var path in paths) {
             var asmPath= Path.Combine(basePath, path, asmName.Name) + ".dll";
             if (File.Exists(asmPath)) try {
               log.LogInformation("Resolving extended assembly: {asmName}", asmName.FullName);

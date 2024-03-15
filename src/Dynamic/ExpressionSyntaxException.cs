@@ -8,7 +8,7 @@ namespace Tlabs.Dynamic {
   /// <summary>Exception thrown on expression syntax error.</summary>
   public class ExpressionSyntaxException : AppConfigException {
     /// <summary>Syntax errors.</summary>
-    public readonly IList<ExpressionSyntaxException> SyntaxErrors;
+    public readonly IList<ExpressionSyntaxException>? SyntaxErrors;
 
     /// <summary>Default ctor</summary>
     public ExpressionSyntaxException() : base() { }

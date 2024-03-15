@@ -21,7 +21,7 @@ namespace Tlabs.Config {
     public ApiClientConfigurator() : this(null) { }
 
     ///<summary>Ctor from <paramref name="config"/>.</summary>
-    public ApiClientConfigurator(IDictionary<string, string> config) {
+    public ApiClientConfigurator(IDictionary<string, string>? config) {
       this.config= config ?? new Dictionary<string, string>();
     }
 

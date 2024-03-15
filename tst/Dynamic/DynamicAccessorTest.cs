@@ -15,9 +15,10 @@ namespace Tlabs.Dynamic.Tests {
       public string propStr { get; set; }
       public bool propBool { get; set; }
       public decimal? propDec { get; set; }
-      public List<string> propList { get; set; }
+      public IList<string> propList { get; set; }
       public IList<decimal> decList { get; set;}
       public IList<object> objList { get; set; }
+      public int[] intArr { get; set; }
     }
 
     [Fact]
@@ -55,10 +56,13 @@ namespace Tlabs.Dynamic.Tests {
         propInt= 123,
         propStr= "test",
         propBool= true,
-        propDec= 1.23m
+        propDec= 1.23m,
+        propList= STRLST,
+        decList= DECLST
       };
 
       var propAcc= new DynamicAccessor(typeof(TstType));
+      Assert.True(propAcc.Has("pROpInt"));  //case insensitive
 
       propAcc["propInt"].Set(obj, 999);
       Assert.Equal(999, propAcc["propInt"].Get(obj));
@@ -87,6 +91,14 @@ namespace Tlabs.Dynamic.Tests {
       var list= (List<string>) propAcc["propList"].Get(obj);
       Assert.Equal("test2", list.First());
 
+      propAcc["propList"].Set(obj, new List<object> { "from obj" });   //type coercing from List<object> to List<string>
+      list= (List<string>) propAcc["propList"].Get(obj);
+      Assert.Equal("from obj", list.First());
+
+      propAcc["intArr"].Set(obj, new List<object> { "1", 2, "3" });   //type coercing from List<object> to int[]
+      var array= (int[])propAcc["intArr"].Get(obj);
+      Assert.Equal(new int[] {1, 2, 3}, array);
+
       // Assigning an object of a type that does not implement IConvertible fails
       IEnumerable olst= new TestEnumerable(new object[] { "small", 123, 'x', 1.2345m });
       Assert.Throws<InvalidCastException>(()=> propAcc["objList"].Set(obj, olst));
@@ -104,7 +116,19 @@ namespace Tlabs.Dynamic.Tests {
 
       var propAcc= new DynamicAccessor(typeof(TstType));
       var props= propAcc.ToDictionary(obj);
+      Assert.True(props.Count > 3);
+      Assert.False(props.IsReadOnly);
+      Assert.NotEmpty(props.Keys);
+      Assert.NotEmpty(props.Values);
+      Assert.Contains(new KeyValuePair<string, object>("propInt", 123), props);
+      Assert.False(props.TryGetValue("undefined", out var x));
+      var array= new KeyValuePair<string, object>[props.Count];
+      props.CopyTo(array, 0);
+      Assert.Equal(props, array);
+
       foreach(var prop in props) {
+        Assert.True(props.ContainsKey(prop.Key));
+        Assert.True(props.TryGetValue(prop.Key.ToUpperInvariant(), out var o));
         Assert.Equal(propAcc[prop.Key].Get(obj), prop.Value);
         Assert.Equal(propAcc[prop.Key].Get(obj), props[prop.Key]);
       }
@@ -145,6 +169,29 @@ namespace Tlabs.Dynamic.Tests {
       Assert.Equal(lst2[0], obj.decList[0]);
       Assert.Equal(lst2[1], ((IList<decimal>)propAcc["decList"].Get(obj))[1]);
       Assert.Equal(lst2[1], obj.decList[1]);
+
+      Assert.Throws<InvalidOperationException>(() => props.Clear());
+      Assert.Throws<InvalidOperationException>(() => props.Remove("any"));
+      Assert.Throws<InvalidOperationException>(() => ((ICollection<KeyValuePair<string, object>>)props).Remove(new KeyValuePair<string, object>("any", 0)));
+      Assert.Throws<InvalidOperationException>(() => props.Add("any", null));
+    }
+
+    [Fact]
+    public void ValueDictionaryTest() {
+      var obj= new TstType {
+        propInt= 123
+      };
+
+      var propAcc= new DynamicAccessor(typeof(TstType));
+      var props= propAcc.ToValueDictionary(obj);
+
+      props.Add("add", 123);
+      Assert.Equal(123, props["add"]);
+
+      props["propInt"]= 999;
+      Assert.NotEqual(999, propAcc["propInt"].Get(obj));
+      Assert.Equal(123, propAcc["propInt"].Get(obj));
+
     }
   }
 
