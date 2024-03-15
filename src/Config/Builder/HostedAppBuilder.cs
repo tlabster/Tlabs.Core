@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Tlabs.Config {
 
-  /// <summary>Factory of an (hosted) <see cref="IHostApplicationBuilder"/> builder.</summary>
+  /// <summary>Hosted <see cref="IHostApplicationBuilder"/> builder.</summary>
   public class HostedAppBuilder : BaseHostedAppBuilder {
     internal const string DFLT_HOST_SECTION= "appHosting";
 

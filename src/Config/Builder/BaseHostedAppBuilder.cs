@@ -16,7 +16,11 @@ namespace Tlabs.Config {
     public IHostApplicationBuilder Create(IConfigurationSection hostConfig, string[]? args);
   }
 
-  /// <summary>Factory of an (hosted) <see cref="IHostApplicationBuilder"/> builder.</summary>
+  /// <summary>Base implementation of an (hosted) <see cref="IHostApplicationBuilder"/> builder.</summary>
+  /// <remarks>This basically coordinates the adjustment of the <see cref="ApplicationSetup"/> according to the configuration defined with an <c>appsettings.json</c>.
+  /// <para>The actual creation of an <see cref="IHostApplicationBuilder"/> is deferred to the <see cref="IHostedBuilderFactory"/>.
+  /// </para>
+  /// </remarks>
   public abstract class BaseHostedAppBuilder : IHostApplicationBuilder {
     internal const string ENV_ASPNET_PFX= "ASPNET_";
     internal const string ENV_DOTNET_PFX= "DOTNET_";
