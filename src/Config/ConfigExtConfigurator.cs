@@ -41,6 +41,7 @@ namespace Tlabs.Config {
   }
 
   ///<summary>Environment config. values configurator.</summary>
+  ///<remarks>Adds environment values with a name prefix specified with <c>config.envPrefix</c></remarks>
   public class EnvConfigExtConfigurator : IConfigurator<IConfigurationBuilder> {
     ///<summary>Env. variable name prefix</summary>
     public const string ENV_PREFIX_CFG= "envPrefix";

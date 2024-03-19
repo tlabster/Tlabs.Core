@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace Tlabs.Misc {
 
-  ///<summary><see cref="Stream"/> reader that buffers data as <see cref="ReadOnlySequence{T}"/></summary>
+  ///<summary>OBSOLETE <see cref="Stream"/> reader that buffers data as <see cref="ReadOnlySequence{T}"/></summary>
   ///<remarks>
   ///This provides a chunk of data read from the stream as <see cref="Sequence"/>.
   ///if not <see cref="IsEndOfStream"/> <see cref="Expand()"/> reads another chunk of data from the stream and appends it to <see cref="Sequence"/>.

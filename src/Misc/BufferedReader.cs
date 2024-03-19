@@ -14,7 +14,8 @@ using Tlabs.Sync;
 namespace Tlabs.Misc {
 
   ///<summary>Buffered <see cref="TextReader"/>.</summary>
-  ///<remarks>
+  ///<remarks>The buffer gets filled with <see cref="BufferLine(string?)"/>.
+  ///<para>Buffered lines can be read from this <see cref="TextReader"/> implementation.</para>
   ///</remarks>
   public class BufferedReader : TextReader {
     static readonly ILogger log= App.Logger<BufferedReader>();
@@ -46,8 +47,8 @@ namespace Tlabs.Misc {
     ///<summary>Event fired on closing</summary>
     public event Action? Closing;
 
-    ///<summary>Buffer one <paramref name="line"/></summary>
-    ///<remarks>if <paramref name="line"/> is null the reader is closed.</remarks>
+    ///<summary>Buffer one <paramref name="line"/> of text.</summary>
+    ///<remarks>A <paramref name="line"/> == null indicates the end of text data.</remarks>
     public BufferedReader BufferLine(string? line) {
       if (endOfText && null != line) throw new InvalidOperationException("End of stream already reached.");
       lineQ.Enqueue(line);

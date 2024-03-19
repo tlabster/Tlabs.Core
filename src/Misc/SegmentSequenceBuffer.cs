@@ -14,7 +14,7 @@ namespace Tlabs.Misc {
     public int Read(Memory<byte> buf);
   }
 
-  ///<summary>Buffer segment reader from a <see cref="Stream"/></summary>
+  ///<summary>Segment reader from a <see cref="Stream"/></summary>
   public sealed class StreamSegmentReader : ISegmentReader {
     readonly Stream strm;
 
@@ -38,7 +38,7 @@ namespace Tlabs.Misc {
   ///<remarks>
   ///<param>Access to the buffer is provided with a <see cref="ReadOnlySequence{T}"/>.</param>
   ///<param>The optional <see cref="ISegmentReader"/> is used to read more data on <see cref="Expand()"/>.
-  ///As an alternative the <see cref="IBufferWriter{T}"/> interface is implemented to manually append data.</param>
+  ///As an alternative the <see cref="IBufferWriter{T}"/> interface is implemented to allow for manually data append.</param>
   ///</remarks>
   public sealed class SegmentSequenceBuffer : IBufferWriter<byte>, IDisposable {
     readonly ISegmentReader? segReader;
@@ -47,17 +47,17 @@ namespace Tlabs.Misc {
     int endPos;  //exclusive end position
     ReadOnlySequence<byte> sequence;
 
-    ///<summary>Ctor from option <paramref name="chunkSize"/></summary>
+    ///<summary>Ctor from optional <paramref name="chunkSize"/></summary>
     public SegmentSequenceBuffer(int chunkSize= 4096) {
       if (0 >= (this.MinChunkSz= chunkSize)) throw new ArgumentException(nameof(chunkSize));
     }
 
-    ///<summary>Ctor from <paramref name="reader"/> and option <paramref name="chunkSize"/></summary>
+    ///<summary>Ctor from <paramref name="reader"/> and optional <paramref name="chunkSize"/></summary>
     public SegmentSequenceBuffer(ISegmentReader reader, int chunkSize= 4096) : this(chunkSize) {
       this.segReader= reader;
     }
 
-    ///<summary>Ctor from <paramref name="strm"/> and option <paramref name="chunkSize"/></summary>
+    ///<summary>Ctor from <paramref name="strm"/> and optional <paramref name="chunkSize"/></summary>
     public SegmentSequenceBuffer(Stream strm, int chunkSize= 4096) : this(new StreamSegmentReader(strm), chunkSize) { }
 
     ///<summary>Minimum buffer chunk size.</summary>
