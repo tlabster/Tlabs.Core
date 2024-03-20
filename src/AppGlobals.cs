@@ -185,9 +185,9 @@ namespace Tlabs {
     }
 
     private class NotYetALifeApplication : IHostApplicationLifetime {
-      public CancellationToken ApplicationStarted => throw new NotImplementedException();
-      public CancellationToken ApplicationStopping => throw new NotImplementedException();
-      public CancellationToken ApplicationStopped => throw new NotImplementedException();
+      public CancellationToken ApplicationStarted => default;
+      public CancellationToken ApplicationStopping => default;
+      public CancellationToken ApplicationStopped => default;
       public void StopApplication() {
         throw new NotImplementedException();
       }

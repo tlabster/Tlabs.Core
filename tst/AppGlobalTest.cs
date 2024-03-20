@@ -30,7 +30,7 @@ namespace Tlabs.Tests {
       Assert.Empty(App.Settings.ToDictionary());
       Assert.Null(App.ServiceProv.GetService(typeof(IServiceScopeFactory)));
       Assert.NotNull(App.AppLifetime);
-      Assert.Throws<NotImplementedException>(() => App.AppLifetime.ApplicationStopped.IsCancellationRequested);
+      Assert.Throws<NotImplementedException>(() => App.AppLifetime.StopApplication());
 
       var log= App.Logger<AppGlobalTest>();
       Assert.NotNull(log);
