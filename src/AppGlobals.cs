@@ -159,13 +159,18 @@ namespace Tlabs {
     ///<summary>Application <see cref="TimeZoneInfo"/></summary>
     public static IAppTime TimeInfo => Setup.TimeInfo;
 
-    internal class WrappedLogger<T> : ILogger<T> {
-      readonly ILogger<T> log= App.LogFactory.CreateLogger<T>();
+    internal class WrappedLogger : ILogger {
+      public WrappedLogger(Type tp) { this.log= App.LogFactory.CreateLogger(tp); }
+      readonly ILogger log;
       public IDisposable? BeginScope<TState>(TState state) where TState : notnull { return log.BeginScope(state); }
       public bool IsEnabled(LogLevel logLevel) { return log.IsEnabled(logLevel); }
       public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
         log.Log<TState>(logLevel, eventId, state, exception, formatter);
       }
+    }
+
+    internal class WrappedLogger<T> : WrappedLogger, ILogger<T> {
+      public WrappedLogger() : base(typeof(T)) { }
     }
 
     internal class SngLogger<T> : ILogger<T> {

@@ -95,10 +95,9 @@ namespace Tlabs.Config {
       builder.ApplyConfigurators(logConfig, "configurator");
     });
 
-    ///<summary>Creates an application logger (and intital log output).</summary>
-    ///<typeparam name="T">Application type</typeparam>
-    public static ILogger<T> InitLog<T>() {
-      var log= App.Logger<T>();
+    ///<summary>Creates an application logger (and intital log output) for <paramref name="tp"/>.</summary>
+    public static ILogger InitLog(Type tp) {
+      var log= App.LogFactory.CreateLogger(tp);
       log.LogCritical(        //this is the very first log entry
         "*** {appName}\n" +
         "\t({path})\n" +
@@ -109,7 +108,14 @@ namespace Tlabs.Config {
         $"{RTinfo.FrameworkDescription} framwork", RTinfo.OSArchitecture,
         RTinfo.OSDescription);
       log.LogDebug("Runtime environment: {env}", App.Setup.EnvironmentName);
+      log.LogDebug("ContentRoot: {croot}", App.Setup.ContentRoot);
       return log;
+    }
+
+    ///<summary>Creates an application logger (and intital log output).</summary>
+    ///<typeparam name="T">Application type</typeparam>
+    public static ILogger<T> InitLog<T>() {
+      return (ILogger<T>)InitLog(typeof(T));
     }
 
     /// <summary>Create a console <see cref="ILoggerFactory"/> from <paramref name="options"/></summary>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -39,7 +40,8 @@ namespace Tlabs.Config {
 
       ApplicationSetup.SetupLogFactory("logging");
 
-      log= ApplicationSetup.InitLog<BaseHostedAppBuilder>();
+      var entryPointType= Assembly.GetEntryAssembly()?.EntryPoint?.DeclaringType;
+      log= ApplicationSetup.InitLog(entryPointType ?? typeof(IHostApplicationBuilder));
 
       this.hostConfig= App.Settings.GetSection(hostSectionName);
 

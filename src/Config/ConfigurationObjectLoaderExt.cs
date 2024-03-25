@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace Tlabs.Config {
 
@@ -15,6 +16,7 @@ namespace Tlabs.Config {
       public Dictionary<string, string>? config { get; set; }
     }
     static string[] objDescFIELDS= typeof(ObjectDescriptor).GetProperties(BindingFlags.Public|BindingFlags.Instance|BindingFlags.DeclaredOnly).Select(fi => fi.Name).ToArray();
+    static readonly ILogger log= App.Logger<IConfigurationBuilder>();
 
     ///<summary>Configuration object with section key.</summary>
     public struct CfgObject<T> {
@@ -36,8 +38,7 @@ namespace Tlabs.Config {
       foreach (var tpair in objDcs.OrderBy(p => p.Value?.ord ?? 100)) {
         ObjectDescriptor objDsc= tpair.Value;
         if (null == objDsc || String.IsNullOrEmpty(objDsc.type)) {
-          // do not use any logger, since it could be to early for logger being initialized
-          Console.WriteLine($"Invalid {nameof(ObjectDescriptor)} - {{0}} instance NOT LOADED (from section {{1}}.{{2}}).", typeName, secName, tpair.Key ?? "?");
+          log.LogError($"Invalid {nameof(ObjectDescriptor)} - failed to load instance of {{type}} (from section {{secName}}.{{subSec}}).", typeName, secName, tpair.Key ?? "?");
           continue;
         }
         var configDesc= $"{secName}:{tpair.Key ?? "?"}:type: {objDsc.type}";
