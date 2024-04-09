@@ -103,7 +103,7 @@ namespace Tlabs.Config {
         "\t({path})\n" +
         "\ton {netVers} ({arch})\n" +
         "\t - {os}",
-        App.Setup.Name,
+        $"{App.Setup.Name} {Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0"}",
         App.MainEntryPath,
         $"{RTinfo.FrameworkDescription} framwork", RTinfo.OSArchitecture,
         RTinfo.OSDescription);
