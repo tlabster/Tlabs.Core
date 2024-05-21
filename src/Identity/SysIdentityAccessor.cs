@@ -11,9 +11,11 @@ namespace Tlabs.Identity {
     ///<inheritdoc/>
     public virtual ClaimsPrincipal Principal => sysPrincipal;
     ///<inheritdoc/>
-    public virtual string Name => SysIdentity.Instance.Name;
+    public virtual string? Name => SysIdentity.Instance.Name;
     ///<inheritdoc/>
-    public virtual string AuthenticationType => SysIdentity.Instance.AuthenticationType;
+    public virtual string? AuthenticationType => SysIdentity.Instance.AuthenticationType;
+    ///<inheritdoc/>
+    public bool IsAuthenticated => SysIdentity.Instance.IsAuthenticated;
     ///<inheritdoc/>
     public virtual int Id => 0;
     ///<inheritdoc/>
