@@ -1,8 +1,9 @@
-name: CI 
+name: CI
 
-on: 
+on:
+  pull_request:
   push:
-    branches: 
+    branches:
       - 'githubActions'
 
 jobs:
@@ -16,8 +17,8 @@ jobs:
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 3.1.x
+        # with:
+        #   dotnet-version: 3.1.x
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -29,4 +30,4 @@ jobs:
 
       - run: dotnet restore ./tst/Tlabs.Core.Tests.csproj
 
-      - run: dotnet test ./tst/Tlabs.Core.Tests.csproj       
+      - run: dotnet test ./tst/Tlabs.Core.Tests.csproj
