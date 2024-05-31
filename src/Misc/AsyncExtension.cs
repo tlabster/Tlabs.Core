@@ -39,9 +39,12 @@ namespace Tlabs.Misc {
     }
 
     ///<summary>Convert this <see cref="CancellationToken"/> into a <see cref="Task"/> that could be awaited for cancellation.</summary>
-    public static Task AsTask(this CancellationToken cancellationToken) {
-      var tcs= new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-      cancellationToken.Register(() => tcs.TrySetCanceled(), false);
+    public static Task AsTask(this CancellationToken cancellationToken, bool completeOnCancel= false) {
+      var tcs= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+      cancellationToken.Register(() => {
+        if (completeOnCancel) tcs.TrySetResult();
+        else tcs.TrySetCanceled();
+      }, false);
       return tcs.Task;
     }
 

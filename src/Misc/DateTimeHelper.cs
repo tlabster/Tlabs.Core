@@ -3,10 +3,6 @@ using System.Globalization;
 
 namespace Tlabs {
 
-  /*  TODO: Refactor DateTimeHelper into IAppTime
-   *        Also consider to return IAppTime from AppGlobals in place of AppGlobals.TZinfo.
-   */
-
   ///<summary>Application time-zone specific time helper.</summary>
   public interface IAppTime {
     ///<summary>Current time in application time-zone</summary>
@@ -26,8 +22,8 @@ namespace Tlabs {
   public class DateTimeHelper : IAppTime {
     readonly TimeZoneInfo tzInfo;
 
-    /// <summary>Default Ctor creating a local <see cref="IAppTime"/>.</summary>
-    public DateTimeHelper() : this(TimeZoneInfo.Local) { }
+    /// <summary>Default Ctor creating a UTC <see cref="IAppTime"/>.</summary>
+    public DateTimeHelper() : this(TimeZoneInfo.Utc) { }
 
     /// <summary>
     /// Constructor from TimeZoneInfo

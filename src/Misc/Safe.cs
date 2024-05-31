@@ -18,7 +18,7 @@ namespace Tlabs.Misc {
     /// <typeparam name="D">A a reference type that implements <see cref="IDisposable"/> and has a default ctor.</typeparam>
     /// <param name="allocT">A delegate that creates an instance of type T.</param>
     /// <returns>instance of T</returns>
-    public static T Allocated<T, D>(Func<D, T> allocT) where D : class, IDisposable, new() {
+    public static T? Allocated<T, D>(Func<D, T> allocT) where D : class, IDisposable, new() {
       return Safe.Allocated(
         () => new D(),
         (d) => allocT(d)
@@ -35,8 +35,8 @@ namespace Tlabs.Misc {
     /// <param name="allocD">A delegate that creates an instance of disposable type D</param>
     /// <param name="allocT">A delegate that creates an instance of type T.</param>
     /// <returns>instance of T</returns>
-    public static T Allocated<T, D>(Func<D> allocD, Func<D, T> allocT) where D : class, IDisposable {
-      D res= null;
+    public static T? Allocated<T, D>(Func<D> allocD, Func<D, T> allocT) where D : class, IDisposable {
+      D? res= null;
       try {
         T ret= allocT(res= allocD());
         res= null;
@@ -63,18 +63,19 @@ namespace Tlabs.Misc {
     /// <param name="allocT">A delegate that creates an instance of type T.</param>
     /// <param name="setupT">A delegate to further setup an instance of type T.</param>
     /// <returns>instance of T</returns>
-    public static T Allocated<T, D>(Func<D> allocD,
+    public static T? Allocated<T, D>(Func<D> allocD,
                                     Func<D, T> allocT,
-                                    Action<D, T> setupT)
+                                    Action<D?, T?> setupT)
       where T : class, IDisposable
       where D : class, IDisposable {
-      D d= null;
+      D? d= null;
       try {
         d= allocD();
-        T t= null;
+        T? t= null;
         try {
           t= allocT(d);
-          setupT(Undisposable(ref d), t);
+          setupT(d, t);
+          Undisposable(ref d);
           return Undisposable(ref t);
         }
         finally { t?.Dispose(); }
@@ -89,19 +90,21 @@ namespace Tlabs.Misc {
     /// <typeparam name="T">type of <paramref name="obj"/></typeparam>
     /// <param name="obj"><see cref="IDisposable"/></param>
     /// <returns><paramref name="obj"/></returns>
-    public static T Undisposable<T>(ref T obj) where T : class, IDisposable {
-      T tmp= obj;
+    public static T? Undisposable<T>(ref T? obj) where T : class, IDisposable {
+      T? tmp= obj;
       obj= null;
       return tmp;
     }
 
     ///<summary>Compares <paramref name="location"/> with <paramref name="comparand"/> (of reference type <typeparamref name="T"/> for reference equality and,
-    ///if they are equal, replaces <paramref name="location"/> with the value returned from <paramref name="creator"/>.</summary>
+    ///if they are equal, replaces <paramref name="location"/> with the value returned from <paramref name="valueCreator"/>.</summary>
     ///<returns>The original value in <paramref name="location"/></returns>
-    public static T CompareExchange<T>(ref T location, T comparand, Func<T> creator) where T : class {
-      T orgVal;
-      if (comparand != (orgVal= location)) return orgVal;
-      var newVal= creator();
+    public static T CompareExchange<T>(ref T location, T comparand, Func<T> valueCreator) where T : class? {
+      T? orgVal= null;
+      Interlocked.CompareExchange<T?>(ref orgVal, location, null);
+      if (comparand != orgVal) return orgVal;    //if (comparand != (orgVal= location)) return orgVal;
+
+      var newVal= valueCreator();
       if (comparand != (orgVal= Interlocked.CompareExchange<T>(ref location, newVal, comparand)))
         (newVal as IDisposable)?.Dispose();
       return orgVal;
@@ -144,12 +147,12 @@ namespace Tlabs.Misc {
 
       try {
         if (1 == typeNameParts.Length)  //simple non generic type?
-          return Type.GetType(qualifiedTypeName= typeNameParts[0].Trim(), true);
+          return Type.GetType(qualifiedTypeName= typeNameParts[0].Trim(), throwOnError:true)!;    //throwOnError:true
         /* Load generic type with parameters:
          */
         var types= new Type[typeNameParts.Length];
         for (int l = 0; l < types.Length; ++l)
-          types[l]= Type.GetType(qualifiedTypeName= typeNameParts[l].Trim(), true);
+          types[l]= Type.GetType(qualifiedTypeName= typeNameParts[l].Trim(), true)!;        //throwOnError: true
         try {
           return types[0].MakeGenericType(types.Skip(1).ToArray());
         }

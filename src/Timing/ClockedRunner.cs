@@ -11,10 +11,16 @@ namespace Tlabs.Timing {
   ///<summary>Utillity to invoke a delegate repeatingly with a given clock interval.</summary>
   public sealed class ClockedRunner : IDisposable {
     static readonly ILogger log= Tlabs.App.Logger<ClockedRunner>();
- 
+
     readonly Stopwatch timer= new();
     readonly CancellationTokenSource cts;
-    bool isDisposed;
+    int isDisposed;
+
+    ///<summary>Clocked runner title.</summary>
+    public string Title { get; }
+
+    ///<summary>Clocked runner interval.</summary>
+    public long ClockInterval { get; }
 
     ///<summary>Ctor to start the clocked runner.</summary>
     ///<param name="runnerTitle">Diagnostic title of the runner</param>
@@ -25,21 +31,23 @@ namespace Tlabs.Timing {
     /// Failing to do so will result into a <see cref="TimeoutException"/>
     ///</remarks>
     public ClockedRunner(string runnerTitle, long interval, Func<CancellationToken, bool> run, CancellationToken ctk= default) {
-      this.cts= CancellationTokenSource.CreateLinkedTokenSource(ctk);
-      _= startClockedRunner(runnerTitle, interval, run);
+      this.Title= runnerTitle;
+      this.ClockInterval= interval;
+      this.cts= CancellationTokenSource.CreateLinkedTokenSource(ctk, App.AppLifetime.ApplicationStopping);
+      _= startClockedRunner(run);
     }
 
-    private async Task startClockedRunner(string runnerTitle, long interval, Func<CancellationToken, bool> run) {
+    private async Task startClockedRunner(Func<CancellationToken, bool> run) {
       try {
-        log.LogInformation("Starting clocked running of: {title}...", runnerTitle);
+        log.LogInformation("Starting clocked running of: {title}...", Title);
         timer.Start();
         for (long t= 0; !cts.Token.IsCancellationRequested;) {
-          t+= interval;
+          t+= ClockInterval;
           var untilNext= (int)(t - timer.ElapsedMilliseconds);
           while (untilNext < 0) {
-            for (long l= 0, n= -untilNext / interval; l < n+1; ++l ) {
+            for (long l= 0, n= -untilNext / ClockInterval; l < n+1; ++l ) {
               if (cts.Token.IsCancellationRequested || run(cts.Token)) return;    //catch up missed invocations
-              t+= interval;
+              t+= ClockInterval;
               Task.Yield().GetAwaiter().GetResult();    //yield to other tasks
             }
             untilNext= (int)(t - timer.ElapsedMilliseconds);
@@ -52,17 +60,16 @@ namespace Tlabs.Timing {
         log.LogError("Error on clocked running: {title}", e);
       }
       finally {
-        log.LogInformation("Stopped clocked running of: {title}", runnerTitle);
+        log.LogInformation("Stopped clocked running of: {title}", Title);
         this.Dispose();
       }
     }
 
     ///<summary>Stopps the clocked runner and release of all resources.</summary>
     public void Dispose() {
-      if (isDisposed) return;
+      if (0 != Interlocked.Exchange(ref isDisposed, 1)) return;
       cts.Cancel();
       cts.Dispose();
-      isDisposed= true;
     }
   }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,8 +10,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Tlabs.Config;
 using Tlabs.Misc;
-
-#nullable enable
 
 namespace Tlabs {
 
@@ -29,12 +26,10 @@ namespace Tlabs {
     ///   appsettings.Development.json
     ///   appsettings.Azure.json
     ///</example>
-    public const string APP_ENV_VAR= "ASPNETCORE_ENVIRONMENT";
+    public const string APP_ENV_VAR= ApplicationStartup.APP_ENV_VAR;
     ///<summary>Config extension section.</summary>
-    public const string XCFG_SECTION= "configExtensions";
+    public const string XCFG_SECTION= ConfigUtilsExtensions.XCFG_SECTION;
 
-    ///<summary>Content root path.</summary>
-    public static readonly string ContentRoot;
     ///<summary>Main entry exe path.</summary>
     public static readonly string MainEntryPath;
     ///<summary>Current framework version.</summary>
@@ -42,40 +37,32 @@ namespace Tlabs {
     ///<summary>Default format provider.</summary>
     public static readonly System.Globalization.CultureInfo DfltFormat= System.Globalization.CultureInfo.InvariantCulture;
 
-    static readonly Lazy<IConfigurationRoot> cfgSettings;
-    // static IWebHost host;
-    static ILoggerFactory? logFactory;
-    static ILoggerFactory? tmpLogFactory;
-    static IHostApplicationLifetime? appLifetime= Singleton<NotYetALifeApplication>.Instance;
-    static IServiceProvider? appSvcProv;
-
-    static IAppTime? appTime;
+    static ApplicationSetup appSetup= ApplicationSetup.Default;
 
     static App() {
-      ContentRoot= Directory.GetCurrentDirectory();
       MainEntryPath= Assembly.GetEntryAssembly()?.Location ?? "";
       if ("" == MainEntryPath) MainEntryPath= System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
       FrameworkVersion= Environment.Version.ToString();  //Path.GetFileName(Path.GetDirectoryName(typeof(System.Runtime.GCSettings).GetTypeInfo().Assembly.Location));
+    }
 
-      //Lazy configuration loading
-      cfgSettings= new Lazy<IConfigurationRoot>(() => {
-        var config= ConfigUtilsExtensions.LoadJson(
-                      SETTING_BASE_FILENAME,
-                      ContentRoot,
-                      Environment.GetEnvironmentVariable(APP_ENV_VAR)
-                    );
-       var baseSettings= config.Build();
-       config.ApplyConfigurators(baseSettings, XCFG_SECTION);
-       return config.Build();
-      });
+    ///<summary>Content root path.</summary>
+    public static string ContentRoot => Setup.ContentRoot;
+
+    ///<summary>General application setup.</summary>
+    public static ApplicationSetup Setup {
+      get => App.appSetup;
+      set {
+        var sup= App.appSetup= value;
+        if (ApplicationSetup.DEFAULT_ServiceProvider != sup.ServiceProv)  //avoid log warning from DEFAULT_ServiceProvider
+          AppLifetime= sup.ServiceProv.GetService<IHostApplicationLifetime>() ?? AppLifetime;
+      }
     }
 
     ///<summary>Configuration settings.</summary>
-    public static IConfigurationRoot Settings {
-      get => cfgSettings.Value;
-    }
+    public static IConfigurationRoot Settings => Setup.Configuration;
 
     ///<summary>Configuration entry.</summary>
+    [Obsolete("Use configuration extension method", error: false)]
     public static string SettingsEntry(params string[] key) {
       var path= ConfigurationPath.Combine(key);
       return    App.Settings[path]
@@ -87,63 +74,36 @@ namespace Tlabs {
     ///<para>This is the central <see cref="ILoggerFactory"/> that has been setup for the application.</para>
     ///NOTE: To obtain a singleton instance of <see cref="ILogger{T}"/> for type T it is best to call <see cref="App.Logger{T}()"/>
     ///</remarks>
-    public static ILoggerFactory LogFactory {
-      get => getOrInitLogFact(CreateDefaultLogFactory);
-      set => getOrInitLogFact(() => value, true);
-    }
-
-    private static ILoggerFactory getOrInitLogFact(Func<ILoggerFactory> loggerFact, bool setOnce= false) {
-      if (setOnce || null == logFactory) {
-        var old= Interlocked.CompareExchange<ILoggerFactory?>(ref logFactory, loggerFact(), null);
-        if (   setOnce
-            && null != old
-            && tmpLogFactory != Interlocked.CompareExchange<ILoggerFactory?>(ref logFactory, loggerFact(), tmpLogFactory)
-        ) throw new InvalidOperationException($"{nameof(LogFactory)} is already set.");
-      }
-      return logFactory;
-    }
-
-    static ILoggerFactory CreateDefaultLogFactory() {
-      Console.WriteLine($"++ Using temporary default {nameof(LoggerFactory)}");
-      return tmpLogFactory= LoggerFactory.Create(builder => {
-        builder.AddConsole(opt => {
-          // opt.TimestampFormat= "???";
-        });
-        builder.SetMinimumLevel(LogLevel.Trace);
-      });
-    }
+    public static ILoggerFactory LogFactory => Setup.LogFactory;
 
     ///<summary>Returns a <see cref="ILogger{T}"/> for <typeparamref name="T"/></summary>
     ///<remarks>
     ///The logger returned is internally managed as singleton.
     ///</remarks>
-    public static ILogger<T> Logger<T>() { return Singleton<AppLogger<T>>.Instance; }
+    public static ILogger<T> Logger<T>() { return Singleton<WrappedLogger<T>>.Instance; }
 
     ///<summary>Application <see cref="IHostApplicationLifetime"/></summary>
-    public static IHostApplicationLifetime AppLifetime => appLifetime ?? Singleton<NotYetALifeApplication>.Instance;
+    public static IHostApplicationLifetime AppLifetime { get; private set; }= Singleton<NotYetALifeApplication>.Instance;
 
     ///<summary>Application wide <see cref="IServiceProvider"/></summary>
     ///<remarks>
     /// This should be set (once) during application startup.
     ///</remarks>
-    public static IServiceProvider ServiceProv => appSvcProv ?? Singleton<DEFAULT_ServiceProvider>.Instance;
-
-    /* Internal ServiceProv initialization:
-     * To support some unit-test szenarios, repeated IServiceProvider initalization is possible once a previously
-     * set IServiceProvider gets reset by providing null...
-     */
-    internal static IServiceProvider? InternalInitSvcProv(IServiceProvider? svcProv) {
-      if (null == svcProv) return (appSvcProv= null);
-      if (null != appSvcProv || null != Interlocked.CompareExchange<IServiceProvider?>(ref appSvcProv, svcProv, null)) throw new InvalidOperationException($"{nameof(ServiceProv)} is already set.");
-      Interlocked.CompareExchange<IHostApplicationLifetime?>(ref appLifetime, ServiceProv.GetService(typeof(IHostApplicationLifetime)) as IHostApplicationLifetime, Singleton<NotYetALifeApplication>.Instance);
-      return appSvcProv;
-    }
+    public static IServiceProvider ServiceProv => Setup.ServiceProv;
 
     ///<summary>Exceutes the <paramref name="scopedAction"/> with a (new) scoped <see cref="IServiceProvider"/>.</summary>
     public static void WithServiceScope(Action<IServiceProvider> scopedAction) {
       var scopeFac= ServiceProv.GetRequiredService<IServiceScopeFactory>();
       using var svcScope= scopeFac.CreateScope();
       scopedAction(svcScope.ServiceProvider);
+    }
+
+    ///<summary>Exceutes the <paramref name="scopedFunc"/> with a service instance of type <typeparamref name="T"/> from a (new) service scope.</summary>
+    ///<returns>The model of type <typeparamref name="M"/> returned from <paramref name="scopedFunc"/></returns>
+    public static M FromScopedServiceInstance<T, M>(Func<IServiceProvider, T, M> scopedFunc, params object[] extraParams) {
+      using var svcScope= ServiceProv.GetRequiredService<IServiceScopeFactory>().CreateScope();
+      var svcInstance= ActivatorUtilities.CreateInstance<T>(svcScope.ServiceProvider, extraParams);
+      return scopedFunc(svcScope.ServiceProvider, svcInstance);
     }
 
     ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor
@@ -197,23 +157,25 @@ namespace Tlabs {
     }
 
     ///<summary>Application <see cref="TimeZoneInfo"/></summary>
-    public static IAppTime TimeInfo {
-      get {
-        //if (null == appTime) throw new InvalidOperationException("Application time-zone info not set.");
-        return appTime ?? Singleton<DateTimeHelper>.Instance;
-      }
-      set {
-        if (   null != appTime
-            || null != Interlocked.CompareExchange<IAppTime?>(ref appTime, value, null)) throw new InvalidOperationException($"{nameof(appTime)} already determined.");
+    public static IAppTime TimeInfo => Setup.TimeInfo;
+
+    internal class WrappedLogger : ILogger {
+      public WrappedLogger(Type tp) { this.log= App.LogFactory.CreateLogger(tp); }
+      readonly ILogger log;
+      public IDisposable? BeginScope<TState>(TState state) where TState : notnull { return log.BeginScope(state); }
+      public bool IsEnabled(LogLevel logLevel) { return log.IsEnabled(logLevel); }
+      public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
+        log.Log<TState>(logLevel, eventId, state, exception, formatter);
       }
     }
 
-    internal class AppLogger<T> : ILogger<T> {
-      readonly ILogger<T> log;
-      public AppLogger() {
-        this.log= App.LogFactory.CreateLogger<T>();
-      }
-      public IDisposable BeginScope<TState>(TState state) { return log.BeginScope(state); }
+    internal class WrappedLogger<T> : WrappedLogger, ILogger<T> {
+      public WrappedLogger() : base(typeof(T)) { }
+    }
+
+    internal class SngLogger<T> : ILogger<T> {
+      readonly ILogger<T> log= App.Logger<T>();
+      public IDisposable? BeginScope<TState>(TState state) where TState : notnull { return log.BeginScope(state); }
       public bool IsEnabled(LogLevel logLevel) { return log.IsEnabled(logLevel); }
       public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
         log.Log<TState>(logLevel, eventId, state, exception, formatter);
@@ -228,12 +190,9 @@ namespace Tlabs {
     }
 
     private class NotYetALifeApplication : IHostApplicationLifetime {
-      public CancellationToken ApplicationStarted => throw new NotImplementedException();
-
-      public CancellationToken ApplicationStopping => throw new NotImplementedException();
-
-      public CancellationToken ApplicationStopped => throw new NotImplementedException();
-
+      public CancellationToken ApplicationStarted => default;
+      public CancellationToken ApplicationStopping => default;
+      public CancellationToken ApplicationStopped => default;
       public void StopApplication() {
         throw new NotImplementedException();
       }

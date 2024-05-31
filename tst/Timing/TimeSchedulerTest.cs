@@ -4,14 +4,14 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace Tlabs.Timing.Test {
-  [CollectionDefinition("TstTimeScope")]
+  [CollectionDefinition("App.Setup")]
   public class AppTimeCollection : ICollectionFixture<TstTimeEnvironment> {
     // This class has no code, and is never created. Its purpose is simply
     // to be the place to apply [CollectionDefinition] and all the
     // ICollectionFixture<> interfaces.
   }
 
-  [Collection("TstTimeScope")]
+  [Collection("App.Setup")]
   public class TimeSchedulerTest {
     private TstTimeEnvironment appTimeEnv;
     DateTime expectedTime;
@@ -160,7 +160,7 @@ namespace Tlabs.Timing.Test {
       tmScheduler.Remove(dueTimeTestHandler3);
       tmScheduler.Remove(dueTimeTestHandler1);
     }
-    
+
     private void DueTimeTestHandler1() {
       ++testHandlerCnt1;
       Sync.Pulse();
@@ -176,7 +176,7 @@ namespace Tlabs.Timing.Test {
       Sync.Pulse();
     }
 
-   
+
     class TestScheduleTime : ITimePlan {
       public DateTime ScheduleTime;
 
@@ -189,7 +189,7 @@ namespace Tlabs.Timing.Test {
       private static Sync sync;
       private int value;
       private Sync() { }
-      
+
       public static void Pulse() {
         var sy= sync;
         if(null != sy) lock (sy) {

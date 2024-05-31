@@ -1,46 +1,12 @@
-﻿using System;
-using System.IO;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using System.IO;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 
 namespace Tlabs.Config {
-  ///<summary>Configures a console logger.</summary>
-  public class SysLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inheritdoc/>
-    public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
-      var optConfig= cfg.GetSection("options");
-      log.Services.Configure<ConsoleFormatterOptions>(optConfig);
-    
-     log.AddSystemdConsole();
-    }
-  }
 
-  ///<summary>Configures a Serilog file logger.</summary>
-  public class FileLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inheritdoc/>
-    public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
-      Environment.SetEnvironmentVariable("EXEPATH", Path.GetDirectoryName(App.MainEntryPath));
-      var optConfig= cfg.GetSection("options");
-      log.AddFile(optConfig);
-      // App.AppLifetime.ApplicationStopped.Register(()=> Serilog.Log.CloseAndFlush());
-    }
-  }
-
-  ///<summary>Configures a console logger.</summary>
-  public class StdoutLoggingConfigurator : IConfigurator<ILoggingBuilder> {
-    ///<inheritdoc/>
-    public void AddTo(ILoggingBuilder log, IConfiguration cfg) {
-      var optConfig= cfg.GetSection("options");
-      log.Services.Configure<CustomStdoutFormatterOptions>(optConfig);
-
-      log.AddConsole(opt => opt.FormatterName= CustomStdoutFormatter.NAME)
-         .AddConsoleFormatter<CustomStdoutFormatter, CustomStdoutFormatterOptions>();
-    }
-  }
 
   ///<summary>Custom stdout formatter.</summary>
   public sealed class CustomStdoutFormatterOptions : ConsoleFormatterOptions {
@@ -52,6 +18,10 @@ namespace Tlabs.Config {
 
     ///<summary>Include category with log entry.</summary>
     public bool IncludeCategory { get; set; }
+
+    ///<summary>Defualt min. level.</summary>
+    public LogLevel DfltMinimumLevel { get; set; } = LogLevel.Information;
+
   }
   ///<summary>Custom stdout formatter.</summary>
   ///<remarks>This custom formatter generates log entries with this format:
@@ -66,7 +36,7 @@ namespace Tlabs.Config {
       this.options= opt.Value;
     }
     ///<inheritdoc/>
-    public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider scopeProvider, TextWriter textWriter) {
+    public override void Write<TState>(in LogEntry<TState> logEntry, IExternalScopeProvider? scopeProvider, TextWriter textWriter) {
       var msg= logEntry.Formatter(logEntry.State, logEntry.Exception);
       if (string.IsNullOrEmpty(msg) && null == logEntry.Exception) return;  //nothing to log
 
@@ -75,15 +45,15 @@ namespace Tlabs.Config {
         textWriter.Write(' ');
       }
       textWriter.Write(logLevelMark(logEntry.LogLevel));
-      
+
       if (options.IncludeCategory) {
         textWriter.Write(logEntry.Category);
         textWriter.Write(": ");
       }
-      
+
       if (options.IncludeScopes && null != scopeProvider) {
         scopeProvider.ForEachScope((scope, state) => {
-          state.Write("=> ");
+          state.Write("=>");
           state.Write(scope);
           state.Write(' ');
         }, textWriter);
@@ -101,13 +71,13 @@ namespace Tlabs.Config {
     }
 
     static string logLevelMark(LogLevel lev) => lev switch {
-      LogLevel.Critical     => "[CRT] ",
-      LogLevel.Error        => "[ERR] ",
-      LogLevel.Warning      => "[WRN] ",
-      LogLevel.Information  => "[INF] ",
-      LogLevel.Debug        => "[DBG] ",
-      LogLevel.Trace        => "[TRC] ",
-      _                     => "[???]"
+      LogLevel.Critical => "[CRT] ",
+      LogLevel.Error => "[ERR] ",
+      LogLevel.Warning => "[WRN] ",
+      LogLevel.Information => "[INF] ",
+      LogLevel.Debug => "[DBG] ",
+      LogLevel.Trace => "[TRC] ",
+      _ => "[???] "
     };
   }
 

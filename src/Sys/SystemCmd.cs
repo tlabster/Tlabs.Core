@@ -18,7 +18,7 @@ namespace Tlabs.Sys {
    * -...
    */
   public class SystemCmd {
-    static readonly ILogger log = Tlabs.App.Logger<SystemCmd>();
+    static readonly ILogger log= Tlabs.App.Logger<SystemCmd>();
 
     readonly string[] shellCmd;
     readonly SysCmdTemplates.CmdLine cmdLine;
@@ -65,8 +65,7 @@ namespace Tlabs.Sys {
       proc.BeginErrorReadLine();
       proc.BeginOutputReadLine();
 
-      await proc.WaitForExitAsync(ctk);
-      bufferedRes.ExitCode= proc.ExitCode;
+      bufferedRes.ExitCode= await waitforExit(proc, ctk);
       bufferedRes.StdErr= new StringReader(stdErr.ToString());
       bufferedRes.StdOut= new StringReader(stdOut.ToString());
 
@@ -104,16 +103,30 @@ namespace Tlabs.Sys {
       }
 
       try {
-        await proc.WaitForExitAsync(ctk);
-        cmdRes.ExitCode= proc.ExitCode;
+        cmdRes.ExitCode= await waitforExit(proc, ctk);
       }
       finally {
         stdIO?.CloseAll();
-        if (!proc.HasExited) proc.Kill(entireProcessTree: true);
       }
       return cmdRes;
     }
 
+    static async ValueTask<int> waitforExit(Process proc, CancellationToken ctk) {
+      try {
+        await proc.WaitForExitAsync(ctk);
+        return proc.ExitCode;
+      }
+      catch (OperationCanceledException) when (ctk.IsCancellationRequested) {
+        log.LogDebug("Canceled waiting for command (pid:{pid}) to finish...", proc.Id);
+        throw;
+      }
+      finally {
+        if (!proc.HasExited) {
+          log.LogWarning("Forcing command (pid:{pid}) to exit.", proc.Id);
+          proc.Kill(entireProcessTree: true);
+        }
+      }
+    }
 
     private Process createProcess(SysCmdResult cmdRes, bool redirStdOut= false, bool redirStdErr= false, bool redirStdIn= false) {
       var run= this.CmdLine;

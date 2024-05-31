@@ -131,5 +131,27 @@
         "all": {"cmd": [".\\to-all.bat", "1", "2"], "wrkDir": "D:\\tmp"}
       }
     }
+  },
+
+  "subsectionConfig": {
+    "normalConfig": {
+      "type": "Tlabs.Config.Tests.ConfigTest+TestConfigurator, Tlabs.Core.Tests",
+      "config": {
+        "test": "x"
+      }
+    },
+    "apiEndpoints": { //subsection
+      "ord": 100,
+      "type": "Tlabs.Config.SubSectionConfigurator`1[[Tlabs.Config.Tests.ConfigTest, Tlabs.Core.Tests]], Tlabs.Core",
+      "proto.Module.API": {
+        "type": "Tlabs.Config.Tests.ConfigTest+TestConfigurator, Tlabs.Core.Tests"
+      },
+      // "/api/v1/test/{id}": {
+      //   "type": "Tlabs.Config.ApiEndpointConfigurator[[ProtoApp.OneModule.Api.SpecialEndPoints, Proto.OneModule]], Tlabs.SrvBase",
+      //   "method": "GET",
+      //   "action": "methodNanme"
+      // }
+    }
   }
+
 }

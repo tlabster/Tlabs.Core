@@ -1,18 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <VersionPrefix>2.1.23</VersionPrefix>
-    <TargetFramework>net6.0</TargetFramework>
+    <VersionPrefix>2.2.3</VersionPrefix>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <!--<RuntimeFrameworkVersion>6.0.1</RuntimeFrameworkVersion>-->
+    <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <Description>The common core utility classes of a Tlabs web-application.</Description>
     <Authors>Tlabs</Authors>
 
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisLevel>6</AnalysisLevel>
-    <AnalysisMode>Recommended</AnalysisMode>
+    <AnalysisModeDesign>Recommended</AnalysisModeDesign>
     <AnalysisModeSecurity>All</AnalysisModeSecurity>
     <AnalysisModeNaming>None</AnalysisModeNaming>
     <!--
@@ -26,26 +25,21 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://bitbucket.org/tlabster/tlabs.core</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/tlabster/tlabs.core</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.*" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.*" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.*" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.*" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.*" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.*" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.*" />
 
     <PackageReference Include="Serilog.Extensions.Logging.File"  Version="2.0.*" />
-<!--
-    Avoid any reference to System.Reactive!
-    (This currently causes a weak reference to net5.0 which in turn requires the explicit decalaration of the net6.0 target framework
-    to avoid an implicit fallback to net5.0 with "dotnet run -f net6.0")
-    ***TODO: Need to figure out how use System.Reactive.Core with net6.0 !!!
-
-    <PackageReference Include="System.Reactive.Core" Version="5.0.*" />
--->
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.3.*" />
+
+    <None Include="../README.md" Pack="true" PackagePath=""/>
   </ItemGroup>
 
 </Project>

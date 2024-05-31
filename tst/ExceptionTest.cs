@@ -1,5 +1,4 @@
 using System;
-using System.Text.RegularExpressions;
 
 using Xunit;
 using Xunit.Abstractions;
@@ -10,10 +9,6 @@ namespace Tlabs.Tests {
     public ExceptionTest(ITestOutputHelper tstout) {
       this.tstout= tstout;
     }
-    internal static readonly Regex TMPL_PATTERN= new Regex(
-      @"{(\w+)}",
-      RegexOptions.Singleline
-    );
 
     const string msgTmpl= "With '{par01}' and {par02} resolved.";
 

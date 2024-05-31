@@ -13,7 +13,7 @@ namespace Tlabs {
     ///<inheritdoc/>
     public override string ToString() => $"<{nameof(VoidUnit)}>";
     ///<inheritdoc/>
-    public override bool Equals(object obj) => obj is VoidUnit unit && Equals(unit);
+    public override bool Equals(object? obj) => obj is VoidUnit unit && Equals(unit);
     ///<summary>Equality operator.</summary>
     public static bool operator ==(VoidUnit left, VoidUnit right) => left.Equals(right);
     ///<summary>Inequality operator.</summary>

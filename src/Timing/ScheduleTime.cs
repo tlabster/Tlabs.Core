@@ -45,14 +45,14 @@ namespace Tlabs.Timing {
     }
 
     DateTime fromNow;
-    string[] patComp;
-    IList<DayOfWeek> weekDays;
+    string[] patComp= Array.Empty<string>();
+    IList<DayOfWeek>? weekDays;
     readonly int[] timeComp= new int[PAT_COMP_COUNT];
 
     ///<summary>Ctor from <paramref name="scheduleTimePattern"/></summary>
     ///<remarks>(See class for schedule-time pattern.)</remarks>
     public ScheduleTime(string scheduleTimePattern) {
-      if (null == scheduleTimePattern) throw new ArgumentNullException(nameof(scheduleTimePattern));
+      ArgumentNullException.ThrowIfNull(scheduleTimePattern);
       var parts= scheduleTimePattern.Split('|');
       if (parts.Length > 2) throw new ArgumentException($"Invalid schedule time pattern: '{scheduleTimePattern}'");
       var wDays= new List<DayOfWeek>();
@@ -69,7 +69,7 @@ namespace Tlabs.Timing {
 
     private void Init(string timePattern, IList<DayOfWeek> weekDays) {
       //time pattern format is: "yyyy-mm-dd hh:mm:ss"
-      if (null == timePattern) throw new ArgumentNullException(nameof(timePattern));
+      ArgumentNullException.ThrowIfNull(timePattern);
       if (PAT_COMP_COUNT != (patComp= timePattern.Split(TIME_PAT_SEP)).Length)
         throw new ArgumentException($"Invalid schedule time pattern: '{timePattern}'");
 
@@ -84,7 +84,7 @@ namespace Tlabs.Timing {
     public DateTime DueDate(DateTime fromNow) {
       this.fromNow= fromNow;
       TIME_COMP_BASE.CopyTo(timeComp, 0);
-      IList<int> wildPos= new List<int>();
+      var wildPos= new List<int>();
       var nowComp= new int[] { fromNow.Year, fromNow.Month, fromNow.Day, fromNow.Hour, fromNow.Minute, fromNow.Second };
 
       for (int l = 0; l < PAT_COMP_COUNT; ++l) {

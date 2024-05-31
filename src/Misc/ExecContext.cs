@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 
 namespace Tlabs.Misc {
 
@@ -7,7 +6,7 @@ namespace Tlabs.Misc {
   ///<remarks>This allows to setup some simple context data that will be accessible within the call stack of an <see cref="Action"/>>.</remarks>
   public static class ExecContext<T> where T : class {
     [ThreadStatic]
-    private static T thloc; //a thread local storage of T
+    private static T? thloc; //a thread local storage of T
 
     ///<summary>true if has constext data from started context.</summary>
     public static bool HasData => (null != thloc);
@@ -18,7 +17,7 @@ namespace Tlabs.Misc {
       if (null == ctxData) throw new ArgumentException(nameof(ctxData));
       if (null != thloc)
         throw new InvalidOperationException(nameof(ExecContext<T>) + " already started.");
-      
+
       try {
         thloc= ctxData; // set data on context start
         ctxAction();

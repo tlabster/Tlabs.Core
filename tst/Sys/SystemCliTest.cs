@@ -82,7 +82,7 @@ namespace Tlabs.Sys.Tests {
     public async void BufferedHelloTest() {
       var cli= new SystemCli(new TstOptions<Dictionary<string, SysCmdTemplates>>(this.sysCmdTemplates));
       var cmd= cli.Command("hello");
-      var res= await cmd.UseArguments("one", "two")
+      using var res= await cmd.UseArguments("one", "two")
                         .BufferedRun();
       var outLine= res.StdOut.ReadLine();
       tstout.WriteLine(outLine);
@@ -111,7 +111,7 @@ namespace Tlabs.Sys.Tests {
       Assert.Equal("Params: \"one\" \"two\"", outLine);
       var endTsk= cmdIO.StdOut.ReadToEndAsync();
 
-      var res= await cmdTsk;
+      using var res= await cmdTsk;
       Assert.Equal(0, res.ExitCode);
       Assert.Empty((await endTsk).Trim());
 

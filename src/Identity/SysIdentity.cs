@@ -1,5 +1,4 @@
-﻿using System;
-using System.Security.Principal;
+﻿using System.Security.Principal;
 
 namespace Tlabs.Identity {
 
@@ -11,10 +10,10 @@ namespace Tlabs.Identity {
     ///<summary>Singleton instance.</summary>
     public static readonly SysIdentity Instance= new SysIdentity();
     ///<inheritdoc/>
-    public string AuthenticationType => "none";
+    public string? AuthenticationType => "none";
     ///<inheritdoc/>
     public bool IsAuthenticated => false;
     ///<inheritdoc/>
-    public string Name => "system";
+    public string? Name => "system";
   }
 }
