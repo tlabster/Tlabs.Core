@@ -34,7 +34,7 @@ jobs:
           token: ${{ secrets.GH_ACCESS_TOKEN }}
 
       - name: Build and Publish NuGet
-        uses: ./.github/tlabs-actions/publish-nuget-to-nuget_org
+        uses: ./.github/tlabs-actions/publish-dotnet-package-to-nuget_org
         with:
           context: src
           github_token: ${{ secrets.GH_ACCESS_TOKEN }}
