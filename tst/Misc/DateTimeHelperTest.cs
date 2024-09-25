@@ -13,10 +13,10 @@ namespace Tlabs.Misc.Tests {
     [Fact]
     public void BasicTestTest() {
       Assert.NotNull(appTimeEnv);
-      Assert.Equal(TimeZoneInfo.Local, App.TimeInfo.TZinfo);
+      Assert.Equal(TimeZoneInfo.Utc, App.TimeInfo.TZinfo);
 
       var dt= App.TimeInfo.Now;
-      Assert.Equal(DateTimeKind.Local, dt.Kind);
+      Assert.Equal(DateTimeKind.Utc, dt.Kind);
     }
 
     [Fact]
