@@ -4,5 +4,6 @@ using System.Runtime.CompilerServices;
 #if DEBUG
 [assembly: InternalsVisibleTo("Tlabs.Core.Tests")]
 [assembly: InternalsVisibleTo("Tlabs.SrvBase.Tests")]
+[assembly: InternalsVisibleTo("Tlabs.CalcNgn.Tests")]
 #endif
 

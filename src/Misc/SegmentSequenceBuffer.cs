@@ -126,7 +126,7 @@ namespace Tlabs.Misc {
     public Memory<byte> GetMemory(int sizeHint= 0) {
       if (IsEndOfStream) throw new InvalidOperationException("End of data reached");
 
-      end= new BufferSegment(MinChunkSz, end);  //append new end
+      end= new BufferSegment(Math.Max(MinChunkSz, sizeHint), end);  //append new end
       start??= end;
       endPos= 0;
       return end.Buffer.Memory;
@@ -143,30 +143,30 @@ namespace Tlabs.Misc {
     }
 
     sealed class BufferSegment : ReadOnlySequenceSegment<byte>, IDisposable {
+      public BufferSegment? Prev { get; }
       public IMemoryOwner<byte> Buffer { get; }
-      readonly BufferSegment? prev;
       int isDisposed;
 
       public BufferSegment(int size, BufferSegment? prev) {
         Buffer= MemoryPool<byte>.Shared.Rent(size);
-        this.prev= prev;
+        this.Prev= prev;
 
         Memory= Buffer.Memory;
         RunningIndex= prev?.RunningIndex + prev?.Memory.Length ?? 0;
-        this.prev?.setNext(this);
+        this.Prev?.setNext(this);
       }
 
       public BufferSegment(BufferSegment end) {
         Buffer= end.Buffer;
         Memory= Buffer.Memory;
         RunningIndex= 0;
-        end.prev?.Dispose();
+        end.Prev?.Dispose();
       }
 
       void setNext(BufferSegment next) => Next= next;
 
       public void Dispose() {
-        for (var buf= this; null != buf; buf= buf.prev) { //dispose this and all previous in the linked chain
+        for (var buf= this; null != buf; buf= buf.Prev) { //dispose this and all previous in the linked chain
           if (0 != Interlocked.Exchange(ref buf.isDisposed, 1)) return;
           Buffer.Dispose();
         }
