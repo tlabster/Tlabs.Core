@@ -8,6 +8,6 @@ namespace Tlabs.Dynamic {
     /// <summary>
     /// Dictionary containing the dynamic properties to be validated
     /// </summary>
-    Dictionary<string, object> Properties { get; }
+    IDictionary<string, object> Properties { get; }
   }
 }
