@@ -65,7 +65,7 @@ namespace Tlabs {
     [Obsolete("Use configuration extension method", error: false)]
     public static string SettingsEntry(params string[] key) {
       var path= ConfigurationPath.Combine(key);
-      return    App.Settings[path]
+      return App.Settings[path]
              ?? $"--[ {path} ]--";
     }
 
@@ -83,7 +83,7 @@ namespace Tlabs {
     public static ILogger<T> Logger<T>() { return Singleton<WrappedLogger<T>>.Instance; }
 
     ///<summary>Application <see cref="IHostApplicationLifetime"/></summary>
-    public static IHostApplicationLifetime AppLifetime { get; private set; }= Singleton<NotYetALifeApplication>.Instance;
+    public static IHostApplicationLifetime AppLifetime { get; private set; } = Singleton<NotYetALifeApplication>.Instance;
 
     ///<summary>Application wide <see cref="IServiceProvider"/></summary>
     ///<remarks>
@@ -98,6 +98,13 @@ namespace Tlabs {
       scopedAction(svcScope.ServiceProvider);
     }
 
+    ///<summary>Exceutes the <paramref name="scopedActionAsync"/> with a (new) scoped <see cref="IServiceProvider"/>.</summary>
+    public static async Task WithServiceScopeAsync(Func<IServiceProvider, Task> scopedActionAsync) {
+      var scopeFac = ServiceProv.GetRequiredService<IServiceScopeFactory>();
+      await using var svcScope = scopeFac.CreateAsyncScope();
+      await scopedActionAsync(svcScope.ServiceProvider);
+    }
+
     ///<summary>Exceutes the <paramref name="scopedFunc"/> with a service instance of type <typeparamref name="T"/> from a (new) service scope.</summary>
     ///<returns>The model of type <typeparamref name="M"/> returned from <paramref name="scopedFunc"/></returns>
     public static M FromScopedServiceInstance<T, M>(Func<IServiceProvider, T, M> scopedFunc, params object[] extraParams) {
@@ -109,7 +116,7 @@ namespace Tlabs {
     ///<summary>Create a new instance of <paramref name="instanceType"/> with any service dependencies from a suitable ctor
     ///resolved from the optional <paramref name="svcProv"/> (defaults to <see cref="ServiceProv"/>).
     ///</summary>
-    public static object CreateResolvedInstance(Type instanceType, IServiceProvider? svcProv= null) => ActivatorUtilities.CreateInstance(svcProv ?? ServiceProv, instanceType);
+    public static object CreateResolvedInstance(Type instanceType, IServiceProvider? svcProv = null) => ActivatorUtilities.CreateInstance(svcProv ?? ServiceProv, instanceType);
 
     ///<summary>Runs an asynchronous background service by calling <paramref name="runSvc"/>.</summary>
     ///<typeparam name="TSvc">Type of the service being created.</typeparam>
